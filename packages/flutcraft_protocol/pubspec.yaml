@@ -1,0 +1,22 @@
+name: flutcraft_protocol
+description: >-
+  What a Flutcraft client and server say to each other, and how it is spelled
+  on the wire. Pure Dart with no sockets in it, so every message can be
+  decoded in a test that opens nothing.
+publish_to: none
+version: 0.1.0
+
+environment:
+  sdk: ^3.12.2
+
+resolution: workspace
+
+dependencies:
+  flutcraft_domain:
+    path: ../flutcraft_domain
+  vector_math: ^2.1.4
+
+dev_dependencies:
+  coverage: ^1.11.0
+  flutter_lints: ^6.0.0
+  test: ^1.25.0

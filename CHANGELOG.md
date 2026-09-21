@@ -23,6 +23,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Saving: the world is stored as a seed plus the blocks that differ from it,
   with a tolerant reader, autosave and a save when the app goes to the
   background.
+- `flutcraft_protocol`: sealed client and server messages with a JSON codec,
+  ready for a server to speak. The world travels as a seed plus its edits.
 - `tool/check_layering.dart`, `tool/check_english.dart` and
   `tool/check_platform_config.dart`, all wired into CI.
 
