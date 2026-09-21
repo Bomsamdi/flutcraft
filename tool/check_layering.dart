@@ -12,6 +12,14 @@ const forbiddenDependencies = <String, List<String>>{
   'flutcraft_ui': ['flame', 'flame_3d', 'flutcraft_engine'],
   'flutcraft_engine': ['flutcraft_ui', 'flutcraft_l10n'],
   'flutcraft_l10n': ['flame', 'flame_3d', 'flutcraft_ui'],
+  'flutcraft_protocol': [
+    'flutter',
+    'flame',
+    'flame_3d',
+    'flutcraft_ui',
+    'flutcraft_engine',
+    'flutcraft_l10n',
+  ],
 };
 
 /// Import prefixes banned inside a package's `lib/`, with the reason shown
@@ -26,6 +34,11 @@ const forbiddenImports = <String, Map<String, String>>{
     'package:flame': 'atlas generation must not touch the GPU',
   },
   'flutcraft_ui': {'package:flame': 'every screen must render without a GPU'},
+  'flutcraft_protocol': {
+    'package:flutter/': 'the protocol has to compile into a server binary',
+    'package:flame': 'a message is data, not something that draws',
+    'dart:io': 'a message must decode in a test that opens no socket',
+  },
 };
 
 void main() {

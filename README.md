@@ -40,14 +40,14 @@ by good intentions.
 
 ```
                   flutcraft_domain   (pure Dart — no Flutter)
-                   /      |       \
-     flutcraft_atlas      |     flutcraft_l10n
-                   \      |       /
-                    flutcraft_ui    (Flutter + Riverpod, no flame)
-                          |
-     flutcraft_engine (flame_3d) ───┐
-                          |         |
-                     app/flutcraft ─┘
+                 /     /      |       \
+ flutcraft_protocol   /       |     flutcraft_l10n
+                     /        |       /
+      flutcraft_atlas     flutcraft_ui    (Flutter + Riverpod, no flame)
+                              |
+         flutcraft_engine (flame_3d) ───┐
+                              |         |
+                         app/flutcraft ─┘
 ```
 
 | Package | Contains |
@@ -57,6 +57,7 @@ by good intentions.
 | `flutcraft_l10n` | ARB files for English and Polish, and the mapping from domain enums to names. |
 | `flutcraft_ui` | Every widget and every Riverpod provider. |
 | `flutcraft_engine` | Meshing, chunk streaming, mob models and the Flame game that drives the loop. |
+| `flutcraft_protocol` | What a client and a server say to each other, and how it is spelled. No sockets: a message decodes in a test that opens nothing. |
 | `app/flutcraft` | The composition root, the platform folders and the save file adapter. |
 
 **Three rules do most of the work:**

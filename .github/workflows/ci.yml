@@ -47,6 +47,8 @@ jobs:
         working-directory: packages/flutcraft_domain
       - run: dart test
         working-directory: packages/flutcraft_atlas
+      - run: dart test
+        working-directory: packages/flutcraft_protocol
 
   test-flutter:
     name: Test (Flutter)
@@ -97,6 +99,12 @@ jobs:
             --out=coverage/lcov.info --report-on=lib
       - name: Atlas
         working-directory: packages/flutcraft_atlas
+        run: |
+          dart test --coverage=coverage
+          dart run coverage:format_coverage --lcov --in=coverage \
+            --out=coverage/lcov.info --report-on=lib
+      - name: Protocol
+        working-directory: packages/flutcraft_protocol
         run: |
           dart test --coverage=coverage
           dart run coverage:format_coverage --lcov --in=coverage \
