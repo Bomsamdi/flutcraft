@@ -12,6 +12,7 @@ import '../input/game_action.dart';
 import '../input/input_frame.dart';
 import '../items/item_type.dart';
 import '../save/save_sink.dart';
+import 'addressed_event.dart';
 import 'game_command.dart';
 import 'game_event.dart';
 import 'game_state.dart';
@@ -68,20 +69,23 @@ class GameLoop implements MobTickContext {
   /// Where each player's recipe book should return to when closed.
   final Map<PlayerId, UiRoute?> _routeBeforeRecipes = {};
 
-  final List<GameEvent> _events = [];
+  final List<AddressedEvent> _events = [];
 
   /// Advances the world by [dt] seconds and returns what happened.
   ///
   /// Takes one frame of input per player. A player with nothing in [inputs]
   /// is still simulated — they simply asked for nothing this tick, which is
   /// what a disconnected client looks like from here.
-  List<GameEvent> tick(double dt, Map<PlayerId, InputFrame> inputs) {
+  List<AddressedEvent> tick(double dt, Map<PlayerId, InputFrame> inputs) {
     _events.clear();
 
     // Furnaces and autosave belong to the world, and keep going even while
     // somebody has a screen open.
     _furnaces.update(state, dt);
-    if (_autosave?.update(state, dt) ?? false) _events.add(const GameSaved());
+    if (_autosave?.update(state, dt) ?? false) {
+      // The world was saved, not one player's copy of it.
+      _events.add(const AddressedEvent.everyone(GameSaved()));
+    }
 
     for (final participant in state.participants.values) {
       _tickPlayer(participant, dt, inputs[participant.id] ?? InputFrame.idle);
@@ -121,25 +125,32 @@ class GameLoop implements MobTickContext {
     }
     _movement.update(it, dt, input.moveFor(flying: it.player.flying));
     _aiming.update(state, it);
+    // A system answers what happened; the loop knows whose turn it was.
     _events.addAll(
-      _mining.update(state, it, dt, active: input.isHeld(GameAction.primary)),
+      addressedTo(
+        it.id,
+        _mining.update(state, it, dt, active: input.isHeld(GameAction.primary)),
+      ),
     );
     _events.addAll(
-      _placement.update(
-        state,
-        it,
-        dt,
-        active: input.isHeld(GameAction.secondary),
+      addressedTo(
+        it.id,
+        _placement.update(
+          state,
+          it,
+          dt,
+          active: input.isHeld(GameAction.secondary),
+        ),
       ),
     );
   }
 
   /// Advances a single-player game.
-  List<GameEvent> tickSolo(double dt, InputFrame input) =>
+  List<AddressedEvent> tickSolo(double dt, InputFrame input) =>
       tick(dt, {state.solo.id: input});
 
   /// Applies one player's action and returns what it caused.
-  List<GameEvent> dispatch(PlayerId who, GameCommand command) {
+  List<AddressedEvent> dispatch(PlayerId who, GameCommand command) {
     final it = state.participants[who];
     // A command from somebody who has left is not an error, it is late.
     if (it == null) return const [];
@@ -166,7 +177,7 @@ class GameLoop implements MobTickContext {
       case ToggleFlight():
         it.player.flying = !it.player.flying;
         if (it.player.flying) it.player.velocity.y = 0;
-        _events.add(FlightToggled(it.player.flying));
+        _events.add(AddressedEvent(FlightToggled(it.player.flying), who));
       case Respawn():
         it.player.respawn();
         // Only a solo game may clear the world on one player's death; with
@@ -176,19 +187,20 @@ class GameLoop implements MobTickContext {
           _projectiles.clear(state);
         }
         it.route = UiRoute.none;
-        _events.add(const PlayerRespawned());
+        _events.add(AddressedEvent(const PlayerRespawned(), who));
       case UseOrPlace():
         _useOrPlace(it);
       case SaveGame():
         if (_autosave?.saveNow(state) ?? false) {
-          _events.add(const GameSaved());
+          // Asked for by one player, so told to that one.
+          _events.add(AddressedEvent(const GameSaved(), who));
         }
     }
     return _events.sublist(before);
   }
 
   /// Applies an action in a single-player game.
-  List<GameEvent> dispatchSolo(GameCommand command) =>
+  List<AddressedEvent> dispatchSolo(GameCommand command) =>
       dispatch(state.solo.id, command);
 
   void _useOrPlace(Participant it) {
@@ -201,7 +213,7 @@ class GameLoop implements MobTickContext {
           it.openFurnace = hit.pos;
           _openRoute(it, UiRoute.furnace);
         case null:
-          _events.addAll(_placement.placeNow(state, it));
+          _events.addAll(addressedTo(it.id, _placement.placeNow(state, it)));
       }
     }
   }
@@ -315,11 +327,14 @@ class GameLoop implements MobTickContext {
   ItemStack? get craftPreview => craftPreviewFor(state.solo);
 
   @override
-  void spawnArrow(Vector3 from, Vector3 direction) => state.arrows.add(
+  void spawnArrow(Vector3 from, Vector3 direction) => state.launch(
     Arrow(world: state.world, spawn: from, direction: direction),
   );
 
   @override
-  void explode(Vector3 at, double radius, int maxDamage) =>
-      _events.addAll(_explosions.explode(state, at, radius, maxDamage));
+  void explode(Vector3 at, double radius, int maxDamage) => _events.addAll([
+    // A blast is heard by everyone, not only by whoever it caught.
+    for (final event in _explosions.explode(state, at, radius, maxDamage))
+      AddressedEvent.everyone(event),
+  ]);
 }

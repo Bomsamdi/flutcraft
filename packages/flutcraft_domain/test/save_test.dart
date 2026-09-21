@@ -262,7 +262,7 @@ void main() {
       final sink = RecordingSaveSink();
       final loop = loopWith(sink);
 
-      var events = <GameEvent>[];
+      var events = <AddressedEvent>[];
       for (var i = 0; i < 60 * 9; i++) {
         events = loop.tickSolo(1 / 60, InputFrame.idle);
       }
@@ -273,7 +273,7 @@ void main() {
         if (tickEvents.isNotEmpty) events = tickEvents;
       }
       expect(sink.saves, hasLength(1));
-      expect(events.whereType<GameSaved>(), hasLength(1));
+      expect(events.map((e) => e.event).whereType<GameSaved>(), hasLength(1));
     });
 
     test('keeps saving while a screen is open', () {
@@ -294,7 +294,7 @@ void main() {
       final events = loop.dispatchSolo(const SaveGame());
 
       expect(sink.saves, hasLength(1));
-      expect(events.single, isA<GameSaved>());
+      expect(events.events.single, isA<GameSaved>());
     });
 
     test('an explicit save restarts the countdown', () {

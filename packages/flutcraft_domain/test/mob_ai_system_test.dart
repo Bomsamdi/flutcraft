@@ -65,7 +65,7 @@ void main() {
       final events = system.update(state, 1 / 60, context);
 
       expect(state.mobs, isNot(contains(mob)));
-      expect(events.whereType<MobKilled>(), hasLength(1));
+      expect(events.events.whereType<MobKilled>(), hasLength(1));
       expect(state.solo.inventory.countOf(ItemType.bone), greaterThan(0));
     });
 
@@ -80,6 +80,7 @@ void main() {
 
       final killed = system
           .update(state, 1 / 60, context)
+          .events
           .whereType<MobKilled>()
           .single;
 

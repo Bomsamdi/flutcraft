@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import '../input/input_frame.dart';
+import 'addressed_event.dart';
 import 'game_command.dart';
 import 'game_event.dart';
 import 'game_loop.dart';
@@ -71,8 +72,13 @@ class LoopGameSession implements GameSession {
     _publishSnapshot();
   }
 
-  void _publishEvents(List<GameEvent> events) {
-    for (final event in events) {
+  /// Publishes what this player is meant to hear.
+  ///
+  /// The loop reports everyone's events; a single-player session filters to
+  /// its own. That is what keeps [GameSession.events] the same four-member
+  /// contract the widgets were written against.
+  void _publishEvents(List<AddressedEvent> events) {
+    for (final event in events.forPlayer(loop.state.solo.id)) {
       _events.add(event);
     }
   }

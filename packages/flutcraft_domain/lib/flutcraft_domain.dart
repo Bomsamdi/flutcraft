@@ -6,6 +6,7 @@
 /// `BuildContext` or a GPU resource.
 library;
 
+export 'src/actors/entity_id.dart';
 export 'src/actors/mob.dart';
 export 'src/actors/mob_behavior.dart';
 export 'src/actors/player.dart';
@@ -36,6 +37,7 @@ export 'src/save/save_codec.dart';
 export 'src/save/save_data.dart';
 export 'src/save/save_repository.dart';
 export 'src/save/save_sink.dart';
+export 'src/session/addressed_event.dart';
 export 'src/session/game_command.dart';
 export 'src/session/game_event.dart';
 export 'src/session/game_loop.dart';
