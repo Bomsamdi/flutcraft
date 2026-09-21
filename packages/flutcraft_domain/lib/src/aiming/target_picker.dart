@@ -1,26 +1,13 @@
 import 'package:vector_math/vector_math.dart';
+
 import '../actors/mob.dart';
 import '../world/voxel_world.dart';
+import 'aim_result.dart';
 
-/// Co znalazł promień z oka gracza: blok, potwór albo nic.
-class AimResult {
-  const AimResult.block(this.blockHit) : mob = null;
-  const AimResult.mob(this.mob) : blockHit = null;
-
-  static const AimResult nothing = AimResult.block(null);
-
-  final RayHit? blockHit;
-  final Mob? mob;
-
-  bool get isMob => mob != null;
-
-  bool get isEmpty => mob == null && blockHit == null;
-}
-
-/// Wybiera cel pod celownikiem.
+/// Picks what the player is aiming at.
 ///
-/// Potwór wygrywa tylko wtedy, gdy stoi bliżej niż trafiony blok - dzięki
-/// temu nie da się uderzyć zombie przez ścianę.
+/// A mob only wins when it stands closer than the block the ray hit, which
+/// is what stops the player from punching a zombie through a wall.
 AimResult pickTarget({
   required VoxelWorld world,
   required Iterable<Mob> mobs,
@@ -41,7 +28,7 @@ AimResult pickTarget({
     nearest = mob;
   }
 
-  if (nearest != null) return AimResult.mob(nearest);
-  if (blockHit == null) return AimResult.nothing;
-  return AimResult.block(blockHit);
+  if (nearest != null) return MobTarget(nearest, nearestDistance);
+  if (blockHit == null) return const NoTarget();
+  return BlockTarget(blockHit);
 }
