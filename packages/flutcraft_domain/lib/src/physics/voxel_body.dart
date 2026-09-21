@@ -45,7 +45,7 @@ class VoxelBody {
     _axis(2, dz);
   }
 
-  /// Standardowy krok fizyki: grawitacja plus ruch.
+  /// The usual physics step: gravity, then movement.
   void stepPhysics(double dt, {double gravity = 28, double terminal = 60}) {
     velocity.y -= gravity * dt;
     if (velocity.y < -terminal) velocity.y = -terminal;

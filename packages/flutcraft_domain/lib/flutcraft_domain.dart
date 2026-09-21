@@ -44,6 +44,7 @@ export 'src/session/game_state.dart';
 export 'src/session/loop_game_session.dart';
 export 'src/session/systems/aiming_system.dart';
 export 'src/session/systems/autosave_system.dart';
+export 'src/session/systems/entity_separation_system.dart';
 export 'src/session/systems/explosion_system.dart';
 export 'src/session/systems/furnace_system.dart';
 export 'src/session/systems/mining_system.dart';

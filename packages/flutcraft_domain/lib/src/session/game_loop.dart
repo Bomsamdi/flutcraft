@@ -17,6 +17,7 @@ import 'game_event.dart';
 import 'game_state.dart';
 import 'systems/aiming_system.dart';
 import 'systems/autosave_system.dart';
+import 'systems/entity_separation_system.dart';
 import 'systems/explosion_system.dart';
 import 'systems/furnace_system.dart';
 import 'systems/mining_system.dart';
@@ -51,6 +52,7 @@ class GameLoop implements MobTickContext {
   final MiningSystem _mining;
   final MobAiSystem _mobAi;
   final PlacementSystem _placement = PlacementSystem();
+  final EntitySeparationSystem _separation = const EntitySeparationSystem();
   final ExplosionSystem _explosions = const ExplosionSystem();
   final ProjectileSystem _projectiles = const ProjectileSystem();
   final FurnaceSystem _furnaces = const FurnaceSystem();
@@ -97,6 +99,8 @@ class GameLoop implements MobTickContext {
     }
     _movement.update(state, dt, input.moveFor(flying: state.player.flying));
     _events.addAll(_mobAi.update(state, dt, this));
+    // Everyone has moved by now, so this is the moment to untangle them.
+    _separation.update(state);
     _projectiles.update(state, dt);
     _aiming.update(state);
     _events.addAll(

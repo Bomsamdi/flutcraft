@@ -48,10 +48,28 @@ void main() {
   group('MeleeBehavior', () {
     const behavior = MeleeBehavior();
 
-    test('it always pushes forward, whatever the distance', () {
+    test('it walks in until the two bodies touch, then holds', () {
       final mob = mobOf(MobKind.zombie);
-      expect(behavior.desiredSpeed(mob, 20), MobKind.zombie.speed);
-      expect(behavior.desiredSpeed(mob, 1), MobKind.zombie.speed);
+      final contact = behavior.contactDistance(mob, player);
+
+      expect(behavior.desiredSpeed(mob, 20, context), MobKind.zombie.speed);
+      expect(
+        behavior.desiredSpeed(mob, contact + 0.5, context),
+        MobKind.zombie.speed,
+      );
+      // Walking further would put it inside the player, where it cannot be
+      // seen and is awkward to swing at.
+      expect(behavior.desiredSpeed(mob, contact, context), 0);
+      expect(behavior.desiredSpeed(mob, 0.1, context), 0);
+    });
+
+    test('it stops far enough out that it can still be hit', () {
+      final mob = mobOf(MobKind.zombie);
+
+      expect(
+        behavior.contactDistance(mob, player),
+        greaterThan(mob.halfWidth + player.halfWidth),
+      );
     });
 
     test('it only hurts the player within arm\'s reach', () {
@@ -66,13 +84,13 @@ void main() {
       expect(player.health, Player.maxHealth);
     });
 
-    test('cooldown blokuje drugi cios w tej samej chwili', () {
+    test('the cooldown blocks a second hit in the same moment', () {
       final mob = mobOf(MobKind.zombie, x: 33.2);
       behavior.act(mob, 1 / 60, 0.7, context);
       final afterFirst = player.health;
       player.hurtCooldown = 0; // drop the player's invulnerability
       behavior.act(mob, 1 / 60, 0.7, context);
-      expect(player.health, afterFirst, reason: 'cooldown potwora trzyma');
+      expect(player.health, afterFirst, reason: 'the mob cooldown holds');
     });
   });
 
@@ -83,9 +101,9 @@ void main() {
       'far off it closes in, up close it backs away, in the window it holds',
       () {
         final mob = mobOf(MobKind.skeleton);
-        expect(behavior.desiredSpeed(mob, 15), greaterThan(0));
-        expect(behavior.desiredSpeed(mob, 3), lessThan(0));
-        expect(behavior.desiredSpeed(mob, 8), 0);
+        expect(behavior.desiredSpeed(mob, 15, context), greaterThan(0));
+        expect(behavior.desiredSpeed(mob, 3, context), lessThan(0));
+        expect(behavior.desiredSpeed(mob, 8, context), 0);
       },
     );
 
