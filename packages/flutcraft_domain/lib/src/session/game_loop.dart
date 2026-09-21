@@ -62,6 +62,7 @@ class GameLoop implements MobTickContext {
     // cannot start with an underscore.
     // ignore: prefer_initializing_formals
   }) : _world = world,
+       _placement = const PlacementSystem(),
        _mining = MiningSystem(random: random ?? Random());
 
   /// A loop that only works out what its own player is doing.
@@ -72,6 +73,7 @@ class GameLoop implements MobTickContext {
   /// the systems that would decide it are simply not here.
   GameLoop.predicting({required this.state, Random? random})
     : _world = null,
+      _placement = const PlacementSystem(consumesHeldItem: false),
       _mining = MiningSystem(random: random ?? Random());
 
   final GameState state;
@@ -83,7 +85,7 @@ class GameLoop implements MobTickContext {
   bool get isAuthoritative => _world != null;
 
   final MiningSystem _mining;
-  final PlacementSystem _placement = const PlacementSystem();
+  final PlacementSystem _placement;
   final AimingSystem _aiming = const AimingSystem();
 
   /// Which blocks react to being used, and how.

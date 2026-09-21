@@ -53,19 +53,23 @@ class VoxelWorld {
   final int sizeZ;
   final Uint8List _blocks;
 
-  final Set<BlockPos> _changed = {};
+  final Map<BlockPos, BlockType> _changed = {};
 
-  /// Blocks changed since the last [drainChanges].
+  /// Blocks changed since the last [drainChanges], and what was there before.
   ///
   /// The renderer already tracks whole chunks, because that is the unit it
   /// rebuilds. A server needs the blocks themselves: a chunk is 16x48x16 and
   /// nobody wants to send it down a wire because one torch moved.
-  Set<BlockPos> get changedBlocks => _changed;
+  ///
+  /// The *previous* block is kept rather than the new one, which is already
+  /// in the world. It is what a client needs to undo a placement the server
+  /// turns out not to have agreed with.
+  Map<BlockPos, BlockType> get changedBlocks => Map.unmodifiable(_changed);
 
   /// Takes the accumulated block changes and starts a new batch.
-  Set<BlockPos> drainChanges() {
+  Map<BlockPos, BlockType> drainChanges() {
     if (_changed.isEmpty) return const {};
-    final taken = Set<BlockPos>.of(_changed);
+    final taken = Map<BlockPos, BlockType>.of(_changed);
     _changed.clear();
     return taken;
   }
@@ -113,10 +117,13 @@ class VoxelWorld {
   /// for a mesh rebuild, and records the change for the save.
   void setBlock(int x, int y, int z, BlockType block) {
     if (!inBounds(x, y, z)) return;
+    final previous = blockAt(x, y, z);
     _blocks[_index(x, y, z)] = block.index;
     final pos = BlockPos(x, y, z);
+    // Remember what was here first, and only the first time: a cell written
+    // twice in one batch still has exactly one thing to be put back to.
+    _changed.putIfAbsent(pos, () => previous);
     edits[pos] = block;
-    _changed.add(pos);
 
     final cx = x ~/ chunkSize;
     final cz = z ~/ chunkSize;

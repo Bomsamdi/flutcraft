@@ -28,9 +28,21 @@ void main() {
 
       expect(first, hasLength(2));
       expect(first, contains(const BlockPos(4, 2, 4)));
+      // The value is what was there before, which is what an undo needs.
+      expect(first[const BlockPos(4, 2, 4)], BlockType.air);
       // Draining starts a new batch, so a tick that changed nothing sends
       // nothing.
       expect(world.drainChanges(), isEmpty);
+    });
+
+    test('a cell written twice remembers only what it started as', () {
+      final world = VoxelWorld(sizeX: 32, sizeY: 16, sizeZ: 32);
+      world
+        ..setRaw(4, 2, 4, BlockType.stone)
+        ..setBlock(4, 2, 4, BlockType.planks)
+        ..setBlock(4, 2, 4, BlockType.brick);
+
+      expect(world.drainChanges()[const BlockPos(4, 2, 4)], BlockType.stone);
     });
 
     test('generating terrain is not a batch of changes', () {

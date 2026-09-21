@@ -203,8 +203,10 @@ class GameHost {
     final changed = state.world.drainChanges();
     if (changed.isEmpty) return;
 
+    // The log remembers what each cell *was*; what goes on the wire is what
+    // it is now, read back out of the world.
     final delta = WorldDelta(_tick, [
-      for (final pos in changed)
+      for (final pos in changed.keys)
         BlockChange(pos, state.world.blockAt(pos.x, pos.y, pos.z)),
     ]);
     for (final link in _links.values) {

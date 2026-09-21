@@ -5,7 +5,10 @@
 /// compile into a Flutter app and into a server binary.
 library;
 
+export 'src/entity_mirror.dart';
 export 'src/json_message_codec.dart';
+export 'src/message_channel.dart';
 export 'src/message_codec.dart';
 export 'src/messages.dart';
+export 'src/remote_game_session.dart';
 export 'src/wire_values.dart';
