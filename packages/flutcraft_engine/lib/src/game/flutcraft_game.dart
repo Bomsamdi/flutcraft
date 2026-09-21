@@ -18,7 +18,7 @@ import 'package:flutter/foundation.dart';
 /// The game itself: voxels, crafting, furnaces and mobs.
 class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera> {
   factory FlutcraftGame({
-    required LoopGameSession session,
+    required SimulatedSession session,
     required InputRouter input,
     required EngineAtlas atlas,
   }) {
@@ -43,7 +43,11 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera> {
 
   /// The simulation, assembled by the composition root. The engine does not
   /// create it — it only drives it and draws it.
-  final LoopGameSession session;
+  ///
+  /// An interface, not the single-player class: a networked session keeps a
+  /// local world in step with a server and satisfies exactly the same three
+  /// members, so nothing here has to know which one it got.
+  final SimulatedSession session;
 
   /// Built by the composition root; the engine only uses it.
   final EngineAtlas atlas;
@@ -60,9 +64,9 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera> {
 
   /// The player this client is looking through.
   ///
-  /// The simulation can hold several; a renderer draws exactly one point of
-  /// view, and for now that is the only one there is.
-  Participant get viewer => state.solo;
+  /// `state.solo` used to stand here, and it is `participants.values.single`:
+  /// the renderer would have thrown the instant a second player joined.
+  Participant get viewer => session.viewer;
 
   Player get player => viewer.player;
 
@@ -78,9 +82,7 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera> {
   /// the engine.
   final InputRouter input;
 
-  GameLoop get loop => session.loop;
-
-  GameState get state => loop.state;
+  GameState get state => session.state;
 
   double _fps = 0;
 
