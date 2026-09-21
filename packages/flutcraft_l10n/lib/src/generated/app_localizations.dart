@@ -617,7 +617,7 @@ abstract class AppLocalizations {
   /// UI text
   ///
   /// In en, this message translates to:
-  /// **'Drag with finger or mouse'**
+  /// **'Right stick / drag / arrow keys'**
   String get helpLook;
 
   /// UI text

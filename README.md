@@ -121,8 +121,8 @@ into any portions you like.
 
 | Input | Action |
 |---|---|
-| `W` `S` `A` `D` / joystick | Walk |
-| Mouse or finger drag | Look around |
+| `W` `S` `A` `D` / left stick | Walk |
+| Right stick (touch) / mouse or finger drag | Look around |
 | Hold / `MINE` button | Mine and attack |
 | Right click / `R` / `USE` | Place a block, use a table or furnace |
 | `1`–`9`, a slot, the scroll wheel | Select an item |
@@ -135,6 +135,11 @@ into any portions you like.
 | `F` / `FLY` | Toggle flight |
 | `F5` | Save now |
 | Arrow keys | Look around with the keyboard |
+
+On a touch screen the controls are laid out like a gamepad: the left stick
+walks, the right stick turns. Dragging the screen still looks around, but a
+drag has to end at the edge of the screen, so turning right around took four
+of them.
 
 Keys are bound in one table (`defaultKeymap`); nothing in the simulation
 compares a key code.

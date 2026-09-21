@@ -413,7 +413,7 @@
   "@helpMoveAction": {
     "description": "UI text"
   },
-  "helpLook": "Drag with finger or mouse",
+  "helpLook": "Right stick / drag / arrow keys",
   "@helpLook": {
     "description": "UI text"
   },

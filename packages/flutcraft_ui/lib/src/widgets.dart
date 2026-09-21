@@ -264,12 +264,23 @@ class TargetHealthBar extends StatelessWidget {
   }
 }
 
-/// A virtual stick: reports -1..1 on both axes.
+/// A virtual stick: reports -1..1 on both axes, x to the right and y upwards.
+///
+/// Used twice: the left one walks, the right one turns. Which is which is not
+/// this widget's business — it reports a deflection and nothing else.
 class VirtualJoystick extends StatefulWidget {
-  const VirtualJoystick({required this.onChanged, this.size = 132, super.key});
+  const VirtualJoystick({
+    required this.onChanged,
+    this.size = 132,
+    this.color = Colors.white,
+    super.key,
+  });
 
-  final void Function(double strafe, double forward) onChanged;
+  final void Function(double x, double y) onChanged;
   final double size;
+
+  /// Tint of the knob, so the two sticks can be told apart at a glance.
+  final Color color;
 
   @override
   State<VirtualJoystick> createState() => _VirtualJoystickState();
@@ -332,7 +343,7 @@ class _VirtualJoystickState extends State<VirtualJoystick> {
               height: widget.size * 0.38,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.white.withValues(alpha: 0.55),
+                color: widget.color.withValues(alpha: 0.55),
               ),
             ),
           ),

@@ -318,7 +318,7 @@ class AppLocalizationsPl extends AppLocalizations {
   String get helpMoveAction => 'chodzenie';
 
   @override
-  String get helpLook => 'Przeciągnij palcem lub myszą';
+  String get helpLook => 'Prawy drążek / przeciągnięcie / strzałki';
 
   @override
   String get helpLookAction => 'rozglądanie';

@@ -47,7 +47,9 @@ class Hud extends ConsumerWidget {
           Align(
             alignment: Alignment.bottomCenter,
             child: Padding(
-              padding: EdgeInsets.only(bottom: showTouchControls ? 116 : 18),
+              // Clears the thumb row: the sticks are 132 tall plus their
+              // padding, so anything lower puts the hotbar under a thumb.
+              padding: EdgeInsets.only(bottom: showTouchControls ? 160 : 18),
               child: const _BottomBar(),
             ),
           ),
@@ -363,61 +365,67 @@ class _TouchControls extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(inputRouterProvider);
 
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            VirtualJoystick(
-              onChanged: (strafe, forward) =>
-                  router.setStick(forward: forward, strafe: strafe),
-            ),
-            const Spacer(),
-            Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
-                  children: [
-                    HoldButton(
-                      label: context.t.buttonMineHit,
-                      icon: Icons.construction,
-                      color: Colors.amberAccent,
-                      onChanged: (down) =>
-                          router.hold(GameAction.primary, down: down),
-                    ),
-                    const SizedBox(width: 10),
-                    HoldButton(
-                      label: context.t.buttonUse,
-                      icon: Icons.add_box_outlined,
-                      color: Colors.lightGreenAccent,
-                      onChanged: (down) =>
-                          router.hold(GameAction.secondary, down: down),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                Row(
-                  children: [
-                    HoldButton(
-                      label: context.t.buttonJump,
-                      icon: Icons.arrow_upward,
-                      onChanged: (down) =>
-                          router.hold(GameAction.jump, down: down),
-                    ),
-                    const SizedBox(width: 10),
-                    HoldButton(
-                      label: context.t.buttonFly,
-                      icon: Icons.flight,
-                      color: Colors.lightBlueAccent,
-                      onChanged: (down) =>
-                          router.hold(GameAction.toggleFlight, down: down),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ],
+    // Fills the stack on purpose: a non-positioned child of a Stack is sized
+    // to its content and pinned to the top-left, which put the controls in
+    // the sky. `end` only means the bottom of the screen if the row is as
+    // tall as the screen.
+    return Positioned.fill(
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              VirtualJoystick(
+                onChanged: (x, y) => router.setStick(forward: y, strafe: x),
+              ),
+              const Spacer(),
+              // One row rather than a 2x2 block: stacked, the buttons grew
+              // taller than the sticks and reached up into the hotbar.
+              Row(
+                children: [
+                  HoldButton(
+                    label: context.t.buttonMineHit,
+                    icon: Icons.construction,
+                    color: Colors.amberAccent,
+                    onChanged: (down) =>
+                        router.hold(GameAction.primary, down: down),
+                  ),
+                  const SizedBox(width: 10),
+                  HoldButton(
+                    label: context.t.buttonUse,
+                    icon: Icons.add_box_outlined,
+                    color: Colors.lightGreenAccent,
+                    onChanged: (down) =>
+                        router.hold(GameAction.secondary, down: down),
+                  ),
+                  const SizedBox(width: 10),
+                  HoldButton(
+                    label: context.t.buttonJump,
+                    icon: Icons.arrow_upward,
+                    onChanged: (down) =>
+                        router.hold(GameAction.jump, down: down),
+                  ),
+                  const SizedBox(width: 10),
+                  HoldButton(
+                    label: context.t.buttonFly,
+                    icon: Icons.flight,
+                    color: Colors.lightBlueAccent,
+                    onChanged: (down) =>
+                        router.hold(GameAction.toggleFlight, down: down),
+                  ),
+                ],
+              ),
+              const SizedBox(width: 14),
+              // The right stick, where a thumb rests on a gamepad. Dragging the
+              // screen still works, but a drag ends at the edge of the screen,
+              // so turning right around took four of them.
+              VirtualJoystick(
+                color: Colors.lightBlueAccent,
+                onChanged: (x, y) => router.setLookStick(x: x, y: y),
+              ),
+            ],
+          ),
         ),
       ),
     );

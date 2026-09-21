@@ -315,7 +315,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get helpMoveAction => 'walk';
 
   @override
-  String get helpLook => 'Drag with finger or mouse';
+  String get helpLook => 'Right stick / drag / arrow keys';
 
   @override
   String get helpLookAction => 'look around';

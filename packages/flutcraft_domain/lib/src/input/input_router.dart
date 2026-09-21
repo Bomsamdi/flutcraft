@@ -8,16 +8,24 @@ import 'input_frame.dart';
 /// blended and clamped in exactly one place, and a joystick pushed while the
 /// movement keys are held no longer produces a speed of two.
 class InputRouter {
-  InputRouter({this.keyboardLookSpeed = 1.8});
+  InputRouter({this.keyboardLookSpeed = 1.8, this.lookStickSpeed = 2.8});
 
   /// Radians per second while a look key is held.
   final double keyboardLookSpeed;
+
+  /// Radians per second at full deflection of the look stick.
+  ///
+  /// Roughly 160 degrees a second, so turning right around is a held thumb
+  /// rather than four swipes across the screen.
+  final double lookStickSpeed;
 
   final Set<GameAction> _held = {};
   final List<GameAction> _pressed = [];
 
   double _stickForward = 0;
   double _stickStrafe = 0;
+  double _lookStickX = 0;
+  double _lookStickY = 0;
   double _lookYaw = 0;
   double _lookPitch = 0;
 
@@ -59,6 +67,20 @@ class InputRouter {
     _lookPitch += pitch;
   }
 
+  /// The look stick, each axis -1..1, with [x] to the right and [y] upwards.
+  ///
+  /// A stick is a *rate*, not a delta: a drag moves the view by how far the
+  /// finger travelled, while a stick keeps turning for as long as it is held.
+  /// That is the whole reason it exists — a drag has to end at the edge of
+  /// the screen, so a half-turn takes four of them.
+  ///
+  /// Which way the view moves is decided here rather than by the widget, for
+  /// the same reason every other axis is clamped in one place.
+  void setLookStick({required double x, required double y}) {
+    _lookStickX = x.clamp(-1, 1);
+    _lookStickY = y.clamp(-1, 1);
+  }
+
   /// Everything goes up — call it when focus is lost, or the player keeps
   /// walking into a wall while typing somewhere else.
   void releaseAll() {
@@ -66,6 +88,8 @@ class InputRouter {
     _pressed.clear();
     _stickForward = 0;
     _stickStrafe = 0;
+    _lookStickX = 0;
+    _lookStickY = 0;
   }
 
   /// Builds the frame for this tick and consumes the edges it reports.
@@ -85,12 +109,14 @@ class InputRouter {
           _lookYaw +
           _axis(0, GameAction.lookLeft, GameAction.lookRight) *
               keyboardLookSpeed *
-              dt,
+              dt -
+          _curved(_lookStickX) * lookStickSpeed * dt,
       lookPitch:
           _lookPitch +
           _axis(0, GameAction.lookUp, GameAction.lookDown) *
               keyboardLookSpeed *
-              dt,
+              dt +
+          _curved(_lookStickY) * lookStickSpeed * dt,
       held: Set.unmodifiable(_held),
       pressed: List.unmodifiable(_pressed),
     );
@@ -100,6 +126,13 @@ class InputRouter {
     _lookPitch = 0;
     return frame;
   }
+
+  /// Squares the deflection while keeping its sign.
+  ///
+  /// A linear stick is twitchy: the small movements used for aiming live in
+  /// the same few degrees of travel as a full spin. Squaring gives fine
+  /// control near the centre without giving up the top speed at the edge.
+  static double _curved(double value) => value * value.abs();
 
   double _axis(double base, GameAction positive, GameAction negative) {
     var value = base;
