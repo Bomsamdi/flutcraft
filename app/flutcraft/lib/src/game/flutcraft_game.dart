@@ -68,7 +68,6 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
 
   static const double reach = 5.5;
   static const double lookSensitivity = 0.0032;
-  static const double placeCooldown = 0.22;
 
   VoxelWorld get voxels => state.world;
   late final TextureAtlas atlas;
@@ -140,6 +139,9 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
 
   /// Kopanie i walka wręcz - cała logika czasu i obrażeń w domenie.
   late final MiningSystem _mining = MiningSystem(random: spawner.rng);
+
+  /// Stawianie bloków wraz z regułami, gdzie wolno.
+  final PlacementSystem _placement = PlacementSystem();
   bool _placing = false;
 
   // --- stan gry -------------------------------------------------------------
@@ -148,7 +150,6 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
   set _aim(AimResult value) => state.aim = value;
   double get _breakProgress => state.breakProgress;
   set _breakProgress(double value) => state.breakProgress = value;
-  double _placeTimer = 0;
   double _swingTimer = 0;
   double _hudTimer = 0;
   double _fps = 0;
@@ -450,10 +451,7 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
   // --- stawianie i interakcja -----------------------------------------------
 
   void _updatePlacing(double dt) {
-    _placeTimer -= dt;
-    if (!_placing || _placeTimer > 0) return;
-    _placeTimer = placeCooldown;
-    interactOrPlace();
+    _applyPlacement(_placement.update(state, dt, active: _placing));
   }
 
   /// Prawy przycisk: otwiera stół/piec albo stawia blok.
@@ -462,8 +460,22 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
       if (blocks.isInteractive(hit.block)) {
         _openBlock(hit);
       } else {
-        _place(hit);
+        placeBlock();
       }
+    }
+  }
+
+  void placeBlock() => _applyPlacement(_placement.placeNow(state));
+
+  void _applyPlacement(List<GameEvent> events) {
+    for (final event in events) {
+      _emit(event);
+    }
+    if (events.isEmpty && _aim is BlockTarget) {
+      _swingTimer = _swingDuration;
+      _syncHeldMesh();
+      revision++;
+      _publishHud();
     }
   }
 
@@ -479,39 +491,6 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
         openFurnaceKey = pos;
         _openScreen(UiRoute.furnace);
     }
-  }
-
-  void placeBlock() {
-    if (_aim case BlockTarget(:final hit)) _place(hit);
-  }
-
-  void _place(RayHit hit) {
-
-    final stack = inventory[selected];
-    final item = stack?.type;
-    if (stack == null || item == null || !item.isBlock) {
-      _emit(const PlacementRejected(PlacementRejection.notABlock));
-      return;
-    }
-
-    final (x, y, z) = hit.placement;
-    if (!voxels.inBounds(x, y, z)) return;
-    if (voxels.blockAt(x, y, z).solid) return;
-    if (player.occupies(x, y, z)) {
-      _emit(const PlacementRejected(PlacementRejection.insidePlayer));
-      return;
-    }
-    if (mobs.any((m) => m.occupies(x, y, z))) {
-      _emit(const PlacementRejected(PlacementRejection.insideMob));
-      return;
-    }
-
-    voxels.setBlock(x, y, z, item.block!);
-    inventory.takeFrom(selected, 1);
-    _swingTimer = _swingDuration;
-    _syncHeldMesh();
-    revision++;
-    _publishHud();
   }
 
   // --- piec -----------------------------------------------------------------
@@ -575,7 +554,7 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
 
   void setPlacing(bool value) {
     _placing = value && !screen.pausesWorld;
-    if (_placing) _placeTimer = 0;
+    if (_placing) _placement.resetCooldown();
   }
 
   void selectSlot(int index) {
