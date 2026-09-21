@@ -47,3 +47,4 @@ app.*.map.json
 # Melos / pub workspace
 .melos_tool/
 pubspec_overrides.yaml
+coverage/

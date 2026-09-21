@@ -16,6 +16,7 @@ dependencies:
   vector_math: ^2.1.4
 
 dev_dependencies:
+  coverage: ^1.11.0
   # Lint rules only - this package still has no Flutter dependency.
   flutter_lints: ^6.0.0
   test: ^1.25.0

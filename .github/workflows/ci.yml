@@ -76,6 +76,43 @@ jobs:
           flutter-version: ${{ env.FLUTTER_VERSION }}
       - run: dart run tool/check_layering.dart
 
+  coverage:
+    name: Coverage thresholds
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+      - run: flutter pub get
+      - name: Domain
+        working-directory: packages/flutcraft_domain
+        run: |
+          dart test --coverage=coverage
+          dart run coverage:format_coverage --lcov --in=coverage \
+            --out=coverage/lcov.info --report-on=lib
+      - name: Atlas
+        working-directory: packages/flutcraft_atlas
+        run: |
+          dart test --coverage=coverage
+          dart run coverage:format_coverage --lcov --in=coverage \
+            --out=coverage/lcov.info --report-on=lib
+      - name: Interface
+        working-directory: packages/flutcraft_ui
+        run: flutter test --coverage
+      # The engine is deliberately not measured: covering it needs a GPU.
+      - run: dart run tool/check_coverage.dart
+
+  literals:
+    name: No untranslatable text
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+      - run: dart run tool/check_no_translatable_literals.dart
+
   english:
     name: Source reads in English
     runs-on: ubuntu-latest
