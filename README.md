@@ -170,11 +170,17 @@ what a change is expected to come with.
 ## Running a server
 
 ```bash
-dart run packages/flutcraft_server/bin/server.dart --port 8787 --seed 1337
+dart run packages/flutcraft_server/bin/server.dart \
+  --port 8787 --seed 1337 --world ./world
 # or, as it ships:
 dart compile exe packages/flutcraft_server/bin/server.dart -o flutcraft-server
-./flutcraft-server
+./flutcraft-server --world ./world
 ```
+
+`--world` is the directory the world is kept in: one file for the terrain and
+one per player. Without it the server keeps everything in memory and the world
+goes when the process does. With it, the world is written every minute and
+again on `SIGTERM`, and `--seed` is ignored once a world exists there.
 
 One world, many players, no dependencies beyond `dart:io`. To play on it:
 
@@ -186,6 +192,22 @@ flutter run -d macos --dart-define=FLUTCRAFT_SERVER=ws://127.0.0.1:8787
 The client simulates its own player straight away and corrects itself against
 the server; everything else in the world — mobs, arrows, other people — is
 mirrored and interpolated. Nothing above `GameSession` knows the difference.
+
+### In a container
+
+```bash
+docker build -t flutcraft-server .
+docker run -p 8787:8787 -v flutcraft-world:/world flutcraft-server --seed 1337
+```
+
+The image is Debian rather than `scratch`, because `dart compile exe` embeds
+the Dart runtime but still links against the host's libc. Mount something over
+`/world` or the world goes with the container. Arguments after the image name
+are passed to the server.
+
+Dart does not cross-compile: the image has to be built on the architecture it
+runs on, or with `docker build --platform linux/amd64` on a machine that can
+emulate one.
 
 ## Known limits
 

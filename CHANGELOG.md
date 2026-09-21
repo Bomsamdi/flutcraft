@@ -32,6 +32,13 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - A networked client: `RemoteGameSession` predicts its own movement, corrects
   itself against the server and mirrors everything else. The app joins a
   server with `--dart-define=FLUTCRAFT_SERVER=ws://host:port`.
+- A server image: a two-stage `Dockerfile` that compiles the binary and ships
+  it on `debian-slim` as a non-root user, with the world on a volume. CI
+  builds it, puts up a building, restarts the container and checks the
+  building is still standing.
+- `--world <dir>` keeps a server's world on disk: written every minute and on
+  `SIGTERM`, reloaded on start, with each player's belongings in their own
+  file so an autosave cannot overwrite somebody else's.
 - `tool/check_layering.dart`, `tool/check_english.dart` and
   `tool/check_platform_config.dart`, all wired into CI.
 
@@ -40,6 +47,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Mobs no longer walk inside the player. Bodies push each other apart, and a
   melee mob stops where the two boxes touch instead of pressing on — you can
   see what is hitting you, and swing at it.
+- Joining a server no longer arrives empty-handed. The client waited for the
+  welcome on one subscription and listened for the rest on another, and a
+  broadcast stream keeps nothing for whoever is not listening yet — the
+  inventory, sent immediately behind the welcome, fell into the gap.
 
 ### Changed
 

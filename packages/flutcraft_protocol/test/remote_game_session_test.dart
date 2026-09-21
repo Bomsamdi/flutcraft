@@ -34,6 +34,9 @@ Future<void> serverSays(FakeChannel channel, ServerMessage message) async {
   await Future<void>.delayed(Duration.zero);
 }
 
+/// Lets the event loop hand out whatever is already queued.
+Future<void> pump() => Future<void>.delayed(Duration.zero);
+
 SelfState correction({
   required int ackTick,
   required Vector3 position,
@@ -75,6 +78,39 @@ void main() {
       final (session, channel) = await joined();
 
       expect(session.currentTick, 100);
+      await session.close();
+    });
+
+    test('nothing sent right behind the welcome is lost', () async {
+      final channel = FakeChannel();
+      final joining = RemoteGameSession.join(channel, me);
+
+      // A server sends the welcome and the player's belongings back to back.
+      // Waiting for the welcome on one subscription and the rest on another
+      // leaves a gap, and a broadcast stream keeps nothing for whoever was
+      // not listening yet: the inventory fell into it every time.
+      channel
+        ..deliver(
+          const Welcome(
+            you: me,
+            tick: 1,
+            world: WorldState(seed: 1, edits: {}),
+          ),
+        )
+        ..deliver(
+          const InventoryState(
+            revision: 3,
+            slots: [ItemStack(ItemType.cobblestone, 16)],
+            selectedSlot: 0,
+          ),
+        );
+
+      final session = await joining;
+      // The welcome resolves before the stream hands over the next event, so
+      // the inventory arrives a turn of the event loop later — the point is
+      // that it arrives at all.
+      await pump();
+      expect(session.viewer.inventory.countOf(ItemType.cobblestone), 16);
       await session.close();
     });
 

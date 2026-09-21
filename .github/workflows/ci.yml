@@ -59,6 +59,25 @@ jobs:
           dart compile exe bin/server.dart -o /tmp/flutcraft_server
           FLUTCRAFT_SERVER=/tmp/flutcraft_server dart test test/compiled_server_test.dart
 
+  docker:
+    name: Server image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+      - run: flutter pub get
+      # Dart does not cross-compile, so the binary inside the image is built
+      # for whatever this runner is. An x86 runner makes an x86 image.
+      - name: Build the image
+        run: docker build -t flutcraft-server .
+      # Building it proves it compiles. Only running it proves the entry
+      # point receives SIGTERM and the volume holds the world.
+      - name: A building outlives the container
+        working-directory: packages/flutcraft_server
+        run: FLUTCRAFT_IMAGE=flutcraft-server dart test test/container_test.dart
+
   test-flutter:
     name: Test (Flutter)
     runs-on: ubuntu-latest
