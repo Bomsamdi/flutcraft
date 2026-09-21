@@ -2,6 +2,7 @@ import 'dart:math';
 
 import '../../actors/mob.dart';
 import '../../actors/mob_behavior.dart';
+import '../addressed_event.dart';
 import '../game_event.dart';
 import '../game_state.dart';
 import '../participant.dart';
@@ -17,8 +18,12 @@ class MobAiSystem {
   final MobSpawner spawner;
   final Random random;
 
-  List<GameEvent> update(GameState state, double dt, MobTickContext context) {
-    final events = <GameEvent>[];
+  List<AddressedEvent> update(
+    GameState state,
+    double dt,
+    MobTickContext context,
+  ) {
+    final events = <AddressedEvent>[];
 
     // One spawn attempt per tick, around one player chosen at random.
     //
@@ -28,7 +33,7 @@ class MobAiSystem {
     final hosts = state.participants.values.toList();
     final host = hosts[random.nextInt(hosts.length)];
     final spawned = spawner.maybeSpawn(dt, host.player, state.mobs.length);
-    if (spawned != null) state.mobs.add(spawned);
+    if (spawned != null) state.spawn(spawned);
 
     for (final mob in List<Mob>.from(state.mobs)) {
       // A mob chases whoever is closest, not whoever happens to be first.
@@ -46,7 +51,9 @@ class MobAiSystem {
       for (final drop in loot) {
         claimant.inventory.add(drop.type, drop.count);
       }
-      events.add(MobKilled(mob.kind, loot));
+      // The notice follows the loot: told to whoever earned it, so nobody
+      // reads that they killed something they never touched.
+      events.add(AddressedEvent(MobKilled(mob.kind, loot), claimant.id));
     }
     return events;
   }

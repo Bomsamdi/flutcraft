@@ -7,6 +7,7 @@ import '../loot/loot_table.dart';
 import 'mob_behavior.dart';
 import '../blocks/tile.dart';
 import 'player.dart';
+import 'entity_id.dart';
 import 'player_id.dart';
 import '../physics/voxel_body.dart';
 import '../world/voxel_world.dart';
@@ -127,6 +128,13 @@ class Mob extends VoxelBody {
   final MobKind kind;
 
   double health;
+
+  /// What this mob is called on the wire.
+  ///
+  /// Assigned when the world takes the mob in, never by the mob itself, so
+  /// that ids come from one counter and stay unique. Reading it before then
+  /// fails loudly rather than handing out a zero that means nothing.
+  late final EntityId id;
 
   /// Which way it faces, in radians; 0 is -Z.
   double yaw = 0;
@@ -264,6 +272,9 @@ class Arrow extends VoxelBody {
     yaw = math.atan2(-direction.x, -direction.z);
     pitch = math.asin(direction.y.clamp(-1.0, 1.0));
   }
+
+  /// What this arrow is called on the wire; see [Mob.id].
+  late final EntityId id;
 
   static const double speed = 26;
   static const int damage = 3;

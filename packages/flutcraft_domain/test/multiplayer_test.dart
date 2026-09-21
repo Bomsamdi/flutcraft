@@ -324,6 +324,137 @@ void main() {
     });
   });
 
+  group('Events reach the player they are about', () {
+    test('a full inventory is one player\'s problem', () {
+      // Fill Alice up so a drop has nowhere to go.
+      for (var i = 0; i < of(alice).inventory.length; i++) {
+        of(alice).inventory[i] = const ItemStack(ItemType.bone, 64);
+      }
+      world.setBlock(20, 3, 20, BlockType.planks);
+      final hit = world.raycast(
+        Vector3(20.5, 3.5, 22),
+        Vector3(0, 0, -1)..normalize(),
+        6,
+      )!;
+
+      final events = addressedTo(
+        alice,
+        MiningSystem(random: Random(1)).breakBlockAt(state, of(alice), hit),
+      );
+
+      expect(events.forPlayer(alice).whereType<InventoryFull>(), isNotEmpty);
+      expect(
+        events.forPlayer(bob),
+        isEmpty,
+        reason: "Bob's screen used to announce that his inventory was full",
+      );
+    });
+
+    test('the kill notice follows the loot', () {
+      final mob =
+          Mob(kind: MobKind.skeleton, world: world, spawn: Vector3(21, 2, 20.5))
+            ..health = 0
+            ..lastHitBy = alice;
+      state.mobs.add(mob);
+      // Bob is nearer the corpse than the player who killed it.
+      of(bob).player.position.setValues(21, 2, 20.5);
+
+      final events = loop.tick(1 / 60, const {});
+
+      expect(events.forPlayer(alice).whereType<MobKilled>(), hasLength(1));
+      expect(events.forPlayer(bob).whereType<MobKilled>(), isEmpty);
+    });
+
+    test('an explosion is heard by everyone, not only its victim', () {
+      // A real creeper, because explode() is called from inside a tick and
+      // the loop clears its event list at the start of every one.
+      state.mobs.add(
+        Mob(kind: MobKind.creeper, world: world, spawn: Vector3(21.5, 2, 20.5)),
+      );
+
+      final heard = <AddressedEvent>[];
+      for (var i = 0; i < 60 * 3; i++) {
+        heard.addAll(loop.tick(kStep, const {}));
+      }
+
+      // Bob is twenty blocks away and still hears the bang.
+      expect(heard.forPlayer(alice).whereType<CreeperExploded>(), hasLength(1));
+      expect(heard.forPlayer(bob).whereType<CreeperExploded>(), hasLength(1));
+      expect(of(alice).player.health, lessThan(Player.maxHealth));
+      expect(
+        of(bob).player.health,
+        Player.maxHealth,
+        reason: 'hearing it is not the same as being caught in it',
+      );
+    });
+
+    test('a single-player session still hears everything it used to', () async {
+      final solo = flatWorld();
+      final session = LoopGameSession(
+        GameLoop(
+          state: GameState.solo(
+            world: solo,
+            player: Player(world: solo, spawn: Vector3(32.5, 2, 32.5)),
+            inventory: Inventory(),
+          ),
+          spawner: MobSpawner(world: solo, seed: 1, maxMobs: 0),
+          random: Random(1),
+        ),
+      );
+      final heard = <GameEvent>[];
+      session.events.listen(heard.add);
+
+      session.dispatch(const ToggleFlight());
+      await Future<void>.delayed(Duration.zero);
+
+      // The filtering must not have cost the one player their own events.
+      expect(heard.whereType<FlightToggled>(), hasLength(1));
+    });
+  });
+
+  group('Entities are named on the way in', () {
+    test('every mob gets its own name', () {
+      final first = state.spawn(
+        Mob(kind: MobKind.zombie, world: world, spawn: Vector3(20, 2, 24)),
+      );
+      final second = state.spawn(
+        Mob(kind: MobKind.zombie, world: world, spawn: Vector3(20, 2, 26)),
+      );
+
+      expect(first.id, isNot(second.id));
+    });
+
+    test('mobs and arrows draw from the same counter', () {
+      final mob = state.spawn(
+        Mob(kind: MobKind.zombie, world: world, spawn: Vector3(20, 2, 24)),
+      );
+      final arrow = state.launch(
+        Arrow(
+          world: world,
+          spawn: Vector3(20, 3, 24),
+          direction: Vector3(0, 0, 1),
+        ),
+      );
+
+      // One name space, so a packet about entity 7 is unambiguous.
+      expect(arrow.id, isNot(mob.id));
+    });
+
+    test('two mobs alike in every value are still two mobs', () {
+      Mob twin() =>
+          Mob(kind: MobKind.zombie, world: world, spawn: Vector3(30, 2, 30));
+      final first = state.spawn(twin());
+      final second = state.spawn(twin());
+
+      // Identity, not equality: the renderer keeps one component per entity
+      // in a map keyed by the object. Value equality here would merge these
+      // two into one component and make a zombie disappear.
+      expect(first == second, isFalse);
+      expect(state.mobs.toSet(), hasLength(2));
+      expect(first.id, isNot(second.id));
+    });
+  });
+
   group('Debt this stage is leaving behind', () {
     test('the save format still holds exactly one player', () {
       // Landmine, not a feature: AutosaveSystem.saveNow calls capture(state),

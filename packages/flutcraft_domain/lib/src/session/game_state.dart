@@ -1,6 +1,7 @@
 import '../actors/player_id.dart';
 import 'package:vector_math/vector_math.dart';
 
+import '../actors/entity_id.dart';
 import '../actors/mob.dart';
 import '../actors/player.dart';
 import '../inventory/inventory.dart';
@@ -51,6 +52,29 @@ class GameState {
 
   final List<Mob> mobs = [];
   final List<Arrow> arrows = [];
+
+  int _lastEntity = 0;
+
+  /// The next name for something entering the world.
+  ///
+  /// One counter per world, so two entities never share a name and a client
+  /// can tell which zombie a packet is about.
+  EntityId nextEntityId() => EntityId(++_lastEntity);
+
+  /// Takes a mob into the world, naming it on the way in.
+  Mob spawn(Mob mob) {
+    mob.id = nextEntityId();
+    mobs.add(mob);
+    return mob;
+  }
+
+  /// Takes an arrow into the world, naming it on the way in.
+  Arrow launch(Arrow arrow) {
+    arrow.id = nextEntityId();
+    arrows.add(arrow);
+    return arrow;
+  }
+
   final FurnaceRegistry furnaces = FurnaceRegistry();
 
   /// The only player, for a game that has only one.

@@ -1,5 +1,6 @@
 import 'package:flame/components.dart';
 import 'package:flame_3d/camera.dart';
+import 'package:flutcraft_domain/flutcraft_domain.dart';
 import 'package:flutcraft_engine/flutcraft_engine.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -20,7 +21,75 @@ class _Marker extends Component {
   final _Entity entity;
 }
 
+/// A real mob, mutated the way a network mirror will mutate one.
+void _mirroringRealMobs() {
+  test('a mob whose state changes keeps the same component', () {
+    final world = VoxelWorld(sizeX: 16, sizeY: 8, sizeZ: 16);
+    final mobs = <Mob>[
+      Mob(kind: MobKind.zombie, world: world, spawn: Vector3(8, 1, 8)),
+    ];
+    final scene = World3D();
+    var built = 0;
+
+    final sync = EntitySync<Mob, Component>(
+      world: scene,
+      source: () => mobs,
+      build: (_) {
+        built++;
+        return Component();
+      },
+      sync: (_, _) {},
+    );
+
+    for (var frame = 0; frame < 100; frame++) {
+      // What a client applying packets does: write into the object it has.
+      mobs.first.position.x += 0.01;
+      mobs.first.health -= 0.05;
+      sync.refresh();
+    }
+
+    // Rebuilding a Mob per packet instead would add and remove every
+    // component twenty times a second, and the mobs would flicker.
+    expect(built, 1);
+    expect(sync.length, 1);
+  });
+
+  test('replacing the object does churn the components', () {
+    final world = VoxelWorld(sizeX: 16, sizeY: 8, sizeZ: 16);
+    final mobs = <Mob>[
+      Mob(kind: MobKind.zombie, world: world, spawn: Vector3(8, 1, 8)),
+    ];
+    final scene = World3D();
+    var built = 0;
+
+    final sync = EntitySync<Mob, Component>(
+      world: scene,
+      source: () => mobs,
+      build: (_) {
+        built++;
+        return Component();
+      },
+      sync: (_, _) {},
+    );
+
+    for (var frame = 0; frame < 10; frame++) {
+      mobs[0] = Mob(
+        kind: MobKind.zombie,
+        world: world,
+        spawn: Vector3(8, 1, 8),
+      );
+      sync.refresh();
+    }
+
+    // This is the failure mode the mirror has to avoid, pinned so that the
+    // cost of getting it wrong is visible rather than theoretical.
+    expect(built, 10);
+  });
+}
+
 void main() {
+  _mirroringRealMobs();
+
   late World3D world;
   late List<_Entity> entities;
   late EntitySync<_Entity, _Marker> sync;

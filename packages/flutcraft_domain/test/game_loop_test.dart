@@ -166,7 +166,7 @@ void main() {
       final game = newGame();
       final events = game.loop.dispatchSolo(const ToggleFlight());
       expect(game.state.solo.player.flying, isTrue);
-      expect(events.single, isA<FlightToggled>());
+      expect(events.events.single, isA<FlightToggled>());
     });
 
     test('respawning heals the player and clears the mobs', () {
@@ -185,7 +185,7 @@ void main() {
       expect(game.state.solo.player.health, Player.maxHealth);
       expect(game.state.mobs, isEmpty);
       expect(game.state.solo.route, UiRoute.none);
-      expect(events.single, isA<PlayerRespawned>());
+      expect(events.events.single, isA<PlayerRespawned>());
     });
 
     test('using a table opens the 3x3 crafting screen', () {
