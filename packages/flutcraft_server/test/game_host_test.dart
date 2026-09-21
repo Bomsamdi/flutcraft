@@ -2,6 +2,7 @@ import 'package:flutcraft_domain/flutcraft_domain.dart';
 import 'package:flutcraft_protocol/flutcraft_protocol.dart';
 import 'package:flutcraft_server/flutcraft_server.dart';
 import 'package:test/test.dart';
+import 'package:vector_math/vector_math.dart';
 
 const alice = PlayerId('alice');
 const bob = PlayerId('bob');
@@ -255,6 +256,32 @@ void main() {
       play(kTicksPerSecond);
 
       expect(host.tick, kTicksPerSecond);
+    });
+
+    test('everybody in a menu still does not stop the world', () {
+      host
+        ..join(alice, toAlice)
+        ..join(bob, toBob)
+        ..receive(alice, const Command(OpenRoute(UiRoute.inventory)))
+        ..receive(bob, const Command(OpenRoute(UiRoute.inventory)));
+      host.state.spawn(
+        Mob(
+          kind: MobKind.zombie,
+          world: host.state.world,
+          spawn:
+              host.state.participants[alice]!.player.position +
+              Vector3(6, 0, 0),
+        ),
+      );
+      final mob = host.state.mobs.first;
+      final start = mob.position.clone();
+
+      play(kTicksPerSecond);
+
+      // On one machine, opening the inventory is a pause. On a server it is
+      // two people sorting their bags, and everybody else's zombies keep
+      // walking.
+      expect(mob.position.distanceTo(start), greaterThan(0.1));
     });
 
     test('one player in a menu does not stop the other', () {

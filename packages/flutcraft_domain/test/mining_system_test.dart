@@ -32,6 +32,28 @@ RayHit hitAt(GameState state, int x, int y, int z) => RayHit(
   distance: 2,
 );
 
+/// A whole swing, the way a loop that rules the world runs one.
+///
+/// A client calls [MiningSystem.accumulate] alone and stops there; this is
+/// the half that only a server is allowed to carry out, added back.
+List<GameEvent> swing(
+  MiningSystem system,
+  GameState state, {
+  required bool active,
+  double dt = 1 / 60,
+}) {
+  final it = state.solo;
+  switch (system.accumulate(it, dt, active: active)) {
+    case SwingContinues():
+      return const [];
+    case MobStruck(:final mob):
+      system.strike(it, mob);
+      return const [];
+    case BlockGivesWay(:final hit):
+      return system.breakBlockAt(state, it, hit);
+  }
+}
+
 void main() {
   group('breakTime', () {
     test('the right tool digs faster than a bare hand', () {
@@ -86,7 +108,7 @@ void main() {
       state.solo
         ..aim = BlockTarget(hitAt(stateWith(), 8, 1, 8))
         ..breakProgress = 0.7;
-      system.update(state, state.solo, 1 / 60, active: false);
+      swing(system, state, active: false);
       expect(state.solo.breakProgress, 0);
     });
 
@@ -96,7 +118,7 @@ void main() {
 
       var events = <GameEvent>[];
       for (var i = 0; i < 300 && state.world.isSolid(8, 1, 8); i++) {
-        events = system.update(state, state.solo, 1 / 60, active: true);
+        events = swing(system, state, active: true);
       }
 
       expect(state.world.blockAt(8, 1, 8), BlockType.air);
@@ -111,7 +133,7 @@ void main() {
 
         var events = <GameEvent>[];
         for (var i = 0; i < 600 && state.world.isSolid(8, 1, 8); i++) {
-          events = system.update(state, state.solo, 1 / 60, active: true);
+          events = swing(system, state, active: true);
         }
 
         expect(state.world.blockAt(8, 1, 8), BlockType.air);
@@ -124,7 +146,7 @@ void main() {
       final state = stateWith(held: ItemType.stonePickaxe);
       state.solo.aim = BlockTarget(hitAt(state, 8, 1, 8));
       for (var i = 0; i < 300 && state.world.isSolid(8, 1, 8); i++) {
-        system.update(state, state.solo, 1 / 60, active: true);
+        swing(system, state, active: true);
       }
       expect(state.solo.inventory.countOf(ItemType.cobblestone), 1);
     });
@@ -138,11 +160,11 @@ void main() {
       );
       state.solo.aim = MobTarget(mob, 2);
 
-      system.update(state, state.solo, 1 / 60, active: true);
+      swing(system, state, active: true);
       final afterFirst = mob.health;
       expect(afterFirst, lessThan(MobKind.zombie.maxHealth));
 
-      system.update(state, state.solo, 1 / 60, active: true);
+      swing(system, state, active: true);
       expect(
         mob.health,
         afterFirst,
@@ -150,7 +172,7 @@ void main() {
       );
 
       for (var i = 0; i < 40; i++) {
-        system.update(state, state.solo, 1 / 60, active: true);
+        swing(system, state, active: true);
       }
       expect(mob.health, lessThan(afterFirst));
     });
@@ -164,9 +186,7 @@ void main() {
           spawn: Vector3(8.5, 2, 6.5),
         );
         state.solo.aim = MobTarget(mob, 2);
-        MiningSystem(
-          random: Random(1),
-        ).update(state, state.solo, 1 / 60, active: true);
+        swing(MiningSystem(random: Random(1)), state, active: true);
         return MobKind.zombie.maxHealth - mob.health;
       }
 
@@ -179,14 +199,14 @@ void main() {
 
     test('aiming at nothing does nothing', () {
       final state = stateWith();
-      expect(system.update(state, state.solo, 1 / 60, active: true), isEmpty);
+      expect(swing(system, state, active: true), isEmpty);
     });
 
     test('bedrock cannot be broken', () {
       final state = stateWith(held: ItemType.ironPickaxe);
       state.solo.aim = BlockTarget(hitAt(state, 8, 0, 8));
       for (var i = 0; i < 600; i++) {
-        system.update(state, state.solo, 1 / 60, active: true);
+        swing(system, state, active: true);
       }
       expect(state.world.blockAt(8, 0, 8), BlockType.bedrock);
     });
@@ -198,7 +218,7 @@ void main() {
       state.solo.aim = BlockTarget(hitAt(state, 8, 1, 8));
 
       for (var i = 0; i < 600 && state.world.isSolid(8, 1, 8); i++) {
-        system.update(state, state.solo, 1 / 60, active: true);
+        swing(system, state, active: true);
       }
       expect(state.furnaces.isEmpty, isTrue);
     });

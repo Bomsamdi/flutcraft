@@ -16,17 +16,12 @@ import 'addressed_event.dart';
 import 'game_command.dart';
 import 'game_event.dart';
 import 'game_state.dart';
+import 'world_systems.dart';
 import 'participant.dart';
 import 'systems/aiming_system.dart';
-import 'systems/autosave_system.dart';
-import 'systems/entity_separation_system.dart';
-import 'systems/explosion_system.dart';
-import 'systems/furnace_system.dart';
 import 'systems/mining_system.dart';
-import 'systems/mob_ai_system.dart';
 import 'systems/placement_system.dart';
 import 'systems/player_movement_system.dart';
-import 'systems/projectile_system.dart';
 import 'ui_route.dart';
 import '../machines/furnace_state.dart';
 import 'package:vector_math/vector_math.dart';
@@ -37,34 +32,63 @@ import 'package:vector_math/vector_math.dart';
 /// no GPU, so a test can run thousands of frames in milliseconds — which is
 /// the point of the entire refactor.
 class GameLoop implements MobTickContext {
+  /// A loop whose word is the world's: it runs everything.
+  ///
+  /// What a single-player game and a server both use. The name is not
+  /// decoration — it is the question every system in here answers.
   GameLoop({
-    required this.state,
+    required GameState state,
     required MobSpawner spawner,
     Random? random,
     SaveSink? saveSink,
     double autosaveInterval = 60,
-  }) : _mobAi = MobAiSystem(spawner: spawner, random: random ?? Random()),
-       _mining = MiningSystem(random: random ?? Random()),
-       _autosave = saveSink == null
-           ? null
-           : AutosaveSystem(sink: saveSink, interval: autosaveInterval);
+  }) : this.authoritative(
+         state: state,
+         world: WorldSystems(
+           spawner: spawner,
+           random: random ?? Random(),
+           saveSink: saveSink,
+           autosaveInterval: autosaveInterval,
+         ),
+         random: random,
+       );
+
+  /// A loop that decides the world.
+  GameLoop.authoritative({
+    required this.state,
+    required WorldSystems world,
+    Random? random,
+    // A named parameter cannot be `this._world`, because a named parameter
+    // cannot start with an underscore.
+    // ignore: prefer_initializing_formals
+  }) : _world = world,
+       _mining = MiningSystem(random: random ?? Random());
+
+  /// A loop that only works out what its own player is doing.
+  ///
+  /// A networked client: it moves the player it is playing, aims, and lets a
+  /// progress bar fill, because waiting a round trip for any of those is
+  /// unshippable. Everything else in the world arrives from the server, and
+  /// the systems that would decide it are simply not here.
+  GameLoop.predicting({required this.state, Random? random})
+    : _world = null,
+      _mining = MiningSystem(random: random ?? Random());
 
   final GameState state;
 
+  /// The systems that rule the world, or `null` on a client.
+  final WorldSystems? _world;
+
+  /// Whether this loop is allowed to change the world itself.
+  bool get isAuthoritative => _world != null;
+
   final MiningSystem _mining;
-  final MobAiSystem _mobAi;
-  final PlacementSystem _placement = PlacementSystem();
-  final EntitySeparationSystem _separation = const EntitySeparationSystem();
-  final ExplosionSystem _explosions = const ExplosionSystem();
-  final ProjectileSystem _projectiles = const ProjectileSystem();
-  final FurnaceSystem _furnaces = const FurnaceSystem();
+  final PlacementSystem _placement = const PlacementSystem();
   final AimingSystem _aiming = const AimingSystem();
-  final PlayerMovementSystem _movement = const PlayerMovementSystem();
 
-  /// `null` when nothing is listening for saves — tests, mostly.
-  final AutosaveSystem? _autosave;
-
+  /// Which blocks react to being used, and how.
   final BlockRegistry _blocks = BlockRegistry.standard;
+  final PlayerMovementSystem _movement = const PlayerMovementSystem();
 
   /// Where each player's recipe book should return to when closed.
   final Map<PlayerId, UiRoute?> _routeBeforeRecipes = {};
@@ -78,11 +102,12 @@ class GameLoop implements MobTickContext {
   /// what a disconnected client looks like from here.
   List<AddressedEvent> tick(double dt, Map<PlayerId, InputFrame> inputs) {
     _events.clear();
+    final world = _world;
 
     // Furnaces and autosave belong to the world, and keep going even while
     // somebody has a screen open.
-    _furnaces.update(state, dt);
-    if (_autosave?.update(state, dt) ?? false) {
+    world?.furnaces.update(state, dt);
+    if (world?.autosave?.update(state, dt) ?? false) {
       // The world was saved, not one player's copy of it.
       _events.add(const AddressedEvent.everyone(GameSaved()));
     }
@@ -91,15 +116,20 @@ class GameLoop implements MobTickContext {
       _tickPlayer(participant, dt, inputs[participant.id] ?? InputFrame.idle);
     }
 
-    // The world itself only stops when everyone has stepped away from it.
-    if (state.participants.values.every((it) => it.route.pausesWorld)) {
+    if (world == null) return List.of(_events);
+
+    // A game on one machine stops when its player opens a screen; that is
+    // what makes a pause a pause. A server does not, because two people
+    // sorting their bags is no reason for everybody else's zombies to freeze.
+    if (world.pausesWhenEveryoneSteppedAway &&
+        state.participants.values.every((it) => it.route.pausesWorld)) {
       return List.of(_events);
     }
 
-    _events.addAll(_mobAi.update(state, dt, this));
+    _events.addAll(world.mobs.update(state, dt, this));
     // Everyone has moved by now, so this is the moment to untangle them.
-    _separation.update(state);
-    _projectiles.update(state, dt);
+    world.separation.update(state);
+    world.projectiles.update(state, dt);
 
     return List.of(_events);
   }
@@ -125,13 +155,28 @@ class GameLoop implements MobTickContext {
     }
     _movement.update(it, dt, input.moveFor(flying: it.player.flying));
     _aiming.update(state, it);
-    // A system answers what happened; the loop knows whose turn it was.
-    _events.addAll(
-      addressedTo(
-        it.id,
-        _mining.update(state, it, dt, active: input.isHeld(GameAction.primary)),
-      ),
+    // The swing is worked out either way — a progress ring that waited for a
+    // round trip would be useless — but only a loop that rules the world may
+    // act on what it came to.
+    final swing = _mining.accumulate(
+      it,
+      dt,
+      active: input.isHeld(GameAction.primary),
     );
+    if (isAuthoritative) {
+      switch (swing) {
+        case SwingContinues():
+          break;
+        case MobStruck(:final mob):
+          _mining.strike(it, mob);
+        case BlockGivesWay(:final hit):
+          _events.addAll(
+            addressedTo(it.id, _mining.breakBlockAt(state, it, hit)),
+          );
+      }
+    }
+
+    // A system answers what happened; the loop knows whose turn it was.
     _events.addAll(
       addressedTo(
         it.id,
@@ -182,16 +227,16 @@ class GameLoop implements MobTickContext {
         it.player.respawn();
         // Only a solo game may clear the world on one player's death; with
         // company, the mobs are everybody's problem.
-        if (state.participants.length == 1) {
-          _mobAi.despawnAll(state);
-          _projectiles.clear(state);
+        if (_world case final world? when state.participants.length == 1) {
+          world.mobs.despawnAll(state);
+          world.projectiles.clear(state);
         }
         it.route = UiRoute.none;
         _events.add(AddressedEvent(const PlayerRespawned(), who));
       case UseOrPlace():
         _useOrPlace(it);
       case SaveGame():
-        if (_autosave?.saveNow(state) ?? false) {
+        if (_world?.autosave?.saveNow(state) ?? false) {
           // Asked for by one player, so told to that one.
           _events.add(AddressedEvent(const GameSaved(), who));
         }
@@ -332,9 +377,18 @@ class GameLoop implements MobTickContext {
   );
 
   @override
-  void explode(Vector3 at, double radius, int maxDamage) => _events.addAll([
-    // A blast is heard by everyone, not only by whoever it caught.
-    for (final event in _explosions.explode(state, at, radius, maxDamage))
-      AddressedEvent.everyone(event),
-  ]);
+  void explode(Vector3 at, double radius, int maxDamage) {
+    final world = _world;
+    if (world == null) return;
+    _events.addAll([
+      // A blast is heard by everyone, not only by whoever it caught.
+      for (final event in world.explosions.explode(
+        state,
+        at,
+        radius,
+        maxDamage,
+      ))
+        AddressedEvent.everyone(event),
+    ]);
+  }
 }

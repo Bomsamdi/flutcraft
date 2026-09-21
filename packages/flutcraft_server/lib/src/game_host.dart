@@ -41,11 +41,16 @@ class GameHost {
     );
     return GameHost(
       state: state,
-      loop: GameLoop(
+      loop: GameLoop.authoritative(
         state: state,
-        spawner: MobSpawner(world: world, seed: seed),
         random: Random(seed),
-        saveSink: saveSink,
+        world: WorldSystems(
+          spawner: MobSpawner(world: world, seed: seed),
+          random: Random(seed),
+          saveSink: saveSink,
+          // A shared world does not stop because somebody opened their bag.
+          pausesWhenEveryoneSteppedAway: false,
+        ),
       ),
     );
   }

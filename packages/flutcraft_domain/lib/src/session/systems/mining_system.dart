@@ -10,6 +10,35 @@ import '../game_event.dart';
 import '../game_state.dart';
 import '../participant.dart';
 
+/// What one tick of holding the primary button came to.
+///
+/// The swing itself — the cooldown, the progress bar — is something a client
+/// may work out for itself; breaking the block and hurting the mob are not.
+/// Splitting the answer from the act is what lets the same system run on both
+/// sides of a connection, with only the loop deciding which half to carry out.
+sealed class Swing {
+  const Swing();
+}
+
+/// Nothing yet: no target, or still chipping away.
+final class SwingContinues extends Swing {
+  const SwingContinues();
+}
+
+/// The block has taken enough and is ready to go.
+final class BlockGivesWay extends Swing {
+  const BlockGivesWay(this.hit);
+
+  final RayHit hit;
+}
+
+/// The swing connected with a mob.
+final class MobStruck extends Swing {
+  const MobStruck(this.mob);
+
+  final Mob mob;
+}
+
 /// Breaking blocks and hitting mobs — both are "the player holds the
 /// primary button while aiming at something".
 ///
@@ -27,52 +56,42 @@ class MiningSystem {
   /// Multiplier applied when the held tool matches the block's preference.
   static const double matchingToolBonus = 2;
 
-  /// Runs one frame for one player. [active] is true while they hold the
-  /// button.
+  /// Advances one player's swing and says what it came to.
   ///
-  /// Returns the events produced this frame.
-  List<GameEvent> update(
-    GameState state,
-    Participant participant,
-    double dt, {
-    required bool active,
-  }) {
+  /// Touches only that player's own timers and progress bar, so a client can
+  /// run it and show a progress ring without waiting for a round trip.
+  /// [active] is true while they hold the button.
+  Swing accumulate(Participant participant, double dt, {required bool active}) {
     if (participant.attackTimer > 0) participant.attackTimer -= dt;
 
     if (!active) {
       participant.breakProgress = 0;
-      return const [];
+      return const SwingContinues();
     }
 
-    return switch (participant.aim) {
-      NoTarget() => const [],
-      MobTarget(:final mob) => _hitMob(participant, mob),
-      BlockTarget(:final hit) => _mineBlock(state, participant, dt, hit),
-    };
+    switch (participant.aim) {
+      case NoTarget():
+        return const SwingContinues();
+
+      case MobTarget(:final mob):
+        if (participant.attackTimer > 0) return const SwingContinues();
+        participant.attackTimer = attackCooldown;
+        return MobStruck(mob);
+
+      case BlockTarget(:final hit):
+        if (!hit.block.breakable) return const SwingContinues();
+        participant.breakProgress +=
+            dt / breakTime(hit.block, participant.heldItem);
+        if (participant.breakProgress < 1) return const SwingContinues();
+        participant.breakProgress = 0;
+        return BlockGivesWay(hit);
+    }
   }
 
-  List<GameEvent> _hitMob(Participant participant, Mob mob) {
-    if (participant.attackTimer > 0) return const [];
-    participant.attackTimer = attackCooldown;
+  /// Hurts a mob. Only a server may say how much health anything has left.
+  void strike(Participant participant, Mob mob) {
     final damage = (participant.heldItem?.damage ?? 1).toDouble();
     mob.damage(damage, source: participant.player.position, by: participant.id);
-    return const [];
-  }
-
-  List<GameEvent> _mineBlock(
-    GameState state,
-    Participant participant,
-    double dt,
-    RayHit hit,
-  ) {
-    final block = hit.block;
-    if (!block.breakable) return const [];
-
-    participant.breakProgress += dt / breakTime(block, participant.heldItem);
-    if (participant.breakProgress < 1) return const [];
-
-    participant.breakProgress = 0;
-    return breakBlockAt(state, participant, hit);
   }
 
   /// Removes the block, banks the drops and reports what happened.

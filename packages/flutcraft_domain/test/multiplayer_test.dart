@@ -197,9 +197,21 @@ void main() {
 
       of(alice).aim = MobTarget(mob, 1);
       of(bob).aim = MobTarget(mob, 1);
-      mining.update(state, of(alice), 1 / 60, active: true);
+      switch (mining.accumulate(of(alice), 1 / 60, active: true)) {
+        case BlockGivesWay(:final hit):
+          mining.breakBlockAt(state, of(alice), hit);
+        case MobStruck(:final mob):
+          mining.strike(of(alice), mob);
+        case SwingContinues():
+          break;
+      }
       final afterAlice = mob.health;
-      mining.update(state, of(bob), 1 / 60, active: true);
+      switch (mining.accumulate(of(bob), 1 / 60, active: true)) {
+        case MobStruck(:final mob):
+          mining.strike(of(bob), mob);
+        case BlockGivesWay() || SwingContinues():
+          break;
+      }
 
       // The swing timer used to be a field on the system, shared by everyone.
       expect(mob.health, lessThan(afterAlice));
@@ -289,7 +301,14 @@ void main() {
       final mining = MiningSystem(random: Random(1));
       of(alice).inventory.add(ItemType.ironSword);
       of(alice).aim = MobTarget(mob, 1);
-      mining.update(state, of(alice), 1 / 60, active: true);
+      switch (mining.accumulate(of(alice), 1 / 60, active: true)) {
+        case BlockGivesWay(:final hit):
+          mining.breakBlockAt(state, of(alice), hit);
+        case MobStruck(:final mob):
+          mining.strike(of(alice), mob);
+        case SwingContinues():
+          break;
+      }
       loop.tick(1 / 60, const {});
 
       expect(mob.lastHitBy, alice);
