@@ -1,5 +1,5 @@
-import 'package:flutcraft/src/core/inventory.dart';
-import 'package:flutcraft/src/core/item.dart';
+import '../inventory/inventory.dart';
+import '../items/item_type.dart';
 
 /// Przepis rzemieślniczy.
 ///

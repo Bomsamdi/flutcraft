@@ -1,7 +1,5 @@
-import 'package:flutcraft/src/core/inventory.dart';
-import 'package:flutcraft/src/core/item.dart';
-import 'package:flutcraft/src/core/recipes.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:flutcraft_domain/flutcraft_domain.dart';
+import 'package:test/test.dart';
 
 Recipe recipeFor(ItemType output) =>
     kRecipes.firstWhere((r) => r.output == output);

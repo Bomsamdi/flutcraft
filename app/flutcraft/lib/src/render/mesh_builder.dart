@@ -1,8 +1,7 @@
 import 'package:flame_3d/core.dart';
 import 'package:flame_3d/resources.dart';
-import 'package:flutcraft/src/core/block.dart';
-import 'package:flutcraft/src/core/tiles.dart';
 import 'package:flutcraft/src/render/atlas.dart';
+import 'package:flutcraft_domain/flutcraft_domain.dart';
 
 /// Jedna z sześciu ścian sześcianu jednostkowego.
 ///

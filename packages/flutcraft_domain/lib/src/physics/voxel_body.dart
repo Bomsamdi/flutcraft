@@ -1,7 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:vector_math/vector_math.dart';
-import 'package:flutcraft/src/world/voxel_world.dart';
+import '../world/voxel_world.dart';
 
 /// Bryła AABB poruszająca się po siatce wokseli.
 ///

@@ -1,7 +1,7 @@
 import 'dart:math' as math;
 
-import 'package:flutcraft/src/core/block.dart';
-import 'package:flutcraft/src/world/voxel_world.dart';
+import '../blocks/block_type.dart';
+import 'voxel_world.dart';
 
 /// Generator terenu: szum wartościowy (value noise) + kilka warstw i drzewa.
 ///

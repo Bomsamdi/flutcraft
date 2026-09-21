@@ -1,10 +1,10 @@
 import 'dart:ui' as ui;
 
-import 'package:flutcraft/src/core/furnace.dart';
 import 'package:flutcraft/src/game/flutcraft_game.dart';
 import 'package:flutcraft/src/game/hud_state.dart';
 import 'package:flutcraft/src/ui/recipe_book.dart';
 import 'package:flutcraft/src/ui/slots.dart';
+import 'package:flutcraft_domain/flutcraft_domain.dart';
 import 'package:flutter/material.dart';
 
 /// Na niskim ekranie (telefon w poziomie) sloty muszą być mniejsze,

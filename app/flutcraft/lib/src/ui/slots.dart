@@ -1,7 +1,7 @@
 import 'dart:ui' as ui;
 
-import 'package:flutcraft/src/core/item.dart';
 import 'package:flutcraft/src/ui/widgets.dart';
+import 'package:flutcraft_domain/flutcraft_domain.dart';
 import 'package:flutter/material.dart';
 
 /// Pojedynczy slot ekwipunku: ikona, licznik sztuk i ramka zaznaczenia.

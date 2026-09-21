@@ -1,4 +1,4 @@
-import 'package:flutcraft/src/core/item.dart';
+import '../items/item_type.dart';
 
 /// Ekwipunek gracza: 9 slotów paska + 27 slotów plecaka.
 ///

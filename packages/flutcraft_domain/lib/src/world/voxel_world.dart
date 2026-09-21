@@ -1,7 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:vector_math/vector_math.dart';
-import 'package:flutcraft/src/core/block.dart';
+import '../blocks/block_type.dart';
 
 /// Trafienie promienia w blok.
 class RayHit {

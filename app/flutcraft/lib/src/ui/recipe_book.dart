@@ -1,10 +1,7 @@
 import 'dart:ui' as ui;
 
-import 'package:flutcraft/src/core/furnace.dart';
-import 'package:flutcraft/src/core/inventory.dart';
-import 'package:flutcraft/src/core/item.dart';
-import 'package:flutcraft/src/core/recipes.dart';
 import 'package:flutcraft/src/ui/widgets.dart';
+import 'package:flutcraft_domain/flutcraft_domain.dart';
 import 'package:flutter/material.dart';
 
 /// Mała komórka siatki przepisu - bez licznika i bez klikania.

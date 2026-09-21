@@ -1,11 +1,9 @@
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
-import 'package:flutcraft/src/core/block.dart';
-import 'package:flutcraft/src/core/item.dart';
 import 'package:flutcraft/src/game/hud_state.dart';
-import 'package:flutcraft/src/core/tiles.dart';
 import 'package:flutcraft/src/render/atlas.dart';
+import 'package:flutcraft_domain/flutcraft_domain.dart';
 import 'package:flutter/material.dart';
 
 /// Rysuje kafelek z atlasu tekstur - ta sama grafika co w świecie 3D.

@@ -1,10 +1,6 @@
 import 'package:vector_math/vector_math.dart';
-import 'package:flutcraft/src/core/block.dart';
-import 'package:flutcraft/src/core/item.dart';
-import 'package:flutcraft/src/game/aiming.dart';
-import 'package:flutcraft/src/game/mob.dart';
-import 'package:flutcraft/src/world/voxel_world.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:flutcraft_domain/flutcraft_domain.dart';
+import 'package:test/test.dart';
 
 VoxelWorld emptyWorld() {
   final world = VoxelWorld(sizeX: 32, sizeY: 16, sizeZ: 32);

@@ -1,6 +1,6 @@
 import 'package:vector_math/vector_math.dart';
-import 'package:flutcraft/src/game/mob.dart';
-import 'package:flutcraft/src/world/voxel_world.dart';
+import '../actors/mob.dart';
+import '../world/voxel_world.dart';
 
 /// Co znalazł promień z oka gracza: blok, potwór albo nic.
 class AimResult {

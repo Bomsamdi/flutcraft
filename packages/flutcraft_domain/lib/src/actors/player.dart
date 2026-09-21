@@ -1,7 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:vector_math/vector_math.dart';
-import 'package:flutcraft/src/world/voxel_body.dart';
+import '../physics/voxel_body.dart';
 
 /// Stan wejścia przekazywany do gracza w każdej klatce.
 class MoveInput {

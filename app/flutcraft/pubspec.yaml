@@ -31,10 +31,12 @@ resolution: workspace
 # the latest version available on pub.dev. To see which dependencies have newer
 # versions available, run `flutter pub outdated`.
 dependencies:
+  flame: ^1.38.0
+  flame_3d: ^0.3.0
+  flutcraft_domain:
+    path: ../../packages/flutcraft_domain
   flutter:
     sdk: flutter
-  flame_3d: ^0.3.0
-  flame: ^1.38.0
   vector_math: ^2.1.4
 
 dev_dependencies:
