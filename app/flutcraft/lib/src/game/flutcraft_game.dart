@@ -44,23 +44,25 @@ class VoxelCamera extends CameraComponent3D {
 /// Prototyp Minecrafta: woksele, crafting, piec i potwory.
 class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
     with KeyboardEvents {
-  factory FlutcraftGame({int seed = 1337}) {
+  factory FlutcraftGame({required LoopGameSession session}) {
     // Kamera i gra muszą wskazywać na ten sam World3D.
     final world = World3D();
     return FlutcraftGame._(
-      seed: seed,
+      session: session,
       world: world,
       camera: VoxelCamera(world: world),
     );
   }
 
   FlutcraftGame._({
-    required this.seed,
+    required this.session,
     required World3D world,
     required VoxelCamera camera,
   }) : super(world: world, camera: camera);
 
-  final int seed;
+  /// Symulacja zbudowana przez composition root. Silnik jej nie tworzy -
+  /// tylko ją napędza i rysuje.
+  final LoopGameSession session;
 
   /// Które bloki reagują na użycie i w jaki sposób.
   static const BlockRegistry blocks = BlockRegistry.standard;
@@ -75,7 +77,6 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
   late final HeldItem heldItem;
   late final ItemMeshes itemMeshes;
   late final MobModels mobModels;
-  late final MobSpawner spawner;
 
   /// Atlas jako `ui.Image` - HUD rysuje z niego ikonki przedmiotów.
   ui.Image? atlasImage;
@@ -83,10 +84,6 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
   final ValueNotifier<HudSnapshot?> hud = ValueNotifier(null);
 
   // --- ekwipunek i crafting -------------------------------------------------
-
-  /// Cały stan symulacji. Klasa gry nim steruje, ale go nie posiada -
-  /// systemy domenowe operują na tym samym obiekcie.
-  late final GameState state;
 
   Inventory get inventory => state.inventory;
   CraftingGrid get smallGrid => state.smallGrid;
@@ -132,12 +129,9 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
   /// Czy gracz trzyma przycisk kopania/ataku.
   bool _isMining = false;
 
-  /// Symulacja: wykonuje komendy i tyka systemy. Silnik tylko ją
-  /// napędza i rysuje wynik.
-  late final GameLoop loop;
+  GameLoop get loop => session.loop;
 
-  /// To, co widzi warstwa UI. Silnik nie wystawia niczego więcej.
-  late final LoopGameSession session;
+  GameState get state => loop.state;
   bool _placing = false;
 
   // --- stan gry -------------------------------------------------------------
@@ -162,18 +156,6 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
     atlas = TextureAtlas.generate();
     atlasImage = await atlas.toImage();
 
-    final voxelWorld = VoxelWorld();
-    TerrainGenerator(seed: seed).generate(voxelWorld);
-    voxelWorld.markAllDirty();
-
-    final spawnedPlayer = Player(world: voxelWorld, spawn: Vector3.zero())
-      ..respawn()
-      ..pitch = -0.25;
-    state = GameState(
-      world: voxelWorld,
-      player: spawnedPlayer,
-      inventory: Inventory(),
-    );
 
     final terrainMaterial = UnlitMaterial(albedoTexture: atlas.texture)
       ..cullMode = CullMode.backFace;
@@ -190,17 +172,11 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
     // Okolica spawnu musi być gotowa zanim gracz zobaczy pierwszą klatkę.
     chunkManager.prebuild(20);
 
-    // Kolejność ma znaczenie: pętla dostaje spawner, więc ten musi już istnieć.
-    spawner = MobSpawner(world: voxels, seed: seed);
-    loop = GameLoop(state: state, spawner: spawner, random: spawner.rng);
-    session = LoopGameSession(loop);
-
     itemMeshes = ItemMeshes(atlas);
     mobModels = MobModels(atlas);
     selection = SelectionBox.create(atlas)..visible = false;
     heldItem = HeldItem();
 
-    _giveStartingItems();
 
     await add(chunkManager);
     await world.addAll(chunkComponents);
@@ -219,13 +195,6 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
     super.onRemove();
   }
 
-  /// Startowy zestaw: kilka bloków na rozruch, resztę trzeba wykopać.
-  void _giveStartingItems() {
-    inventory.add(ItemType.log, 8);
-    inventory.add(ItemType.planks, 8);
-    inventory.add(ItemType.cobblestone, 16);
-    _syncHeldMesh();
-  }
 
   @override
   void update(double dt) {
