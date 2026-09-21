@@ -242,6 +242,105 @@ void main() {
     });
   });
 
+  group('Loot goes to whoever earned it', () {
+    Mob zombieNear(Participant it) => Mob(
+      kind: MobKind.zombie,
+      world: world,
+      spawn: Vector3(it.player.position.x + 1, 2, it.player.position.z),
+    );
+
+    test('the killer collects, not the bystander', () {
+      // Bob stands next to Alice's fight. Under the old rule — nearest player
+      // wins — he could walk past and collect her bones.
+      final mob = zombieNear(of(alice))..health = 1;
+      state.mobs.add(mob);
+      of(bob).player.position.setFrom(mob.position);
+
+      final mining = MiningSystem(random: Random(1));
+      of(alice).inventory.add(ItemType.ironSword);
+      of(alice).aim = MobTarget(mob, 1);
+      mining.update(state, of(alice), 1 / 60, active: true);
+      loop.tick(1 / 60, const {});
+
+      expect(mob.lastHitBy, alice);
+      expect(state.mobs, isEmpty, reason: 'the zombie died');
+    });
+
+    test('a mob that nobody hit leaves its drops to the nearest player', () {
+      final mob = zombieNear(of(bob))..health = 0;
+      state.mobs.add(mob);
+
+      loop.tick(1 / 60, const {});
+
+      expect(mob.lastHitBy, isNull, reason: 'a creeper or a fall killed it');
+      expect(state.mobs, isEmpty);
+    });
+
+    test('a killer who has left does not take the loot with them', () {
+      final mob = zombieNear(of(bob))
+        ..health = 0
+        ..lastHitBy = alice;
+      state.mobs.add(mob);
+      state.leave(alice);
+
+      expect(() => loop.tick(1 / 60, const {}), returnsNormally);
+      expect(state.mobs, isEmpty);
+    });
+  });
+
+  group('Rules that changed meaning with company', () {
+    test('one player respawning does not clear everyone\'s mobs', () {
+      state.mobs.add(
+        Mob(kind: MobKind.zombie, world: world, spawn: Vector3(45, 2, 45)),
+      );
+      of(alice).player.damage(Player.maxHealth);
+
+      loop.dispatch(alice, const Respawn());
+
+      // Alone, respawning wipes the world clean. With company, the mobs are
+      // everybody's problem and Bob is still fighting them.
+      expect(state.mobs, hasLength(1));
+      expect(of(alice).player.isDead, isFalse);
+    });
+
+    test('the autosave still refuses when everyone is dead', () {
+      final sink = RecordingSaveSink();
+      final saving = GameLoop(
+        state: state,
+        spawner: MobSpawner(world: world, seed: 1, maxMobs: 0),
+        random: Random(1),
+        saveSink: sink,
+        autosaveInterval: 1,
+      );
+      for (final it in state.participants.values) {
+        it.player.damage(Player.maxHealth);
+      }
+
+      for (var i = 0; i < 120; i++) {
+        saving.tick(1 / 60, const {});
+      }
+
+      expect(sink.saves, isEmpty);
+    });
+  });
+
+  group('Debt this stage is leaving behind', () {
+    test('the save format still holds exactly one player', () {
+      // Landmine, not a feature: AutosaveSystem.saveNow calls capture(state),
+      // which reads GameState.solo — `participants.values.single`. A server
+      // with a save sink attached throws inside the tick loop a minute after
+      // the second player joins.
+      //
+      // Stage 5 of the plan replaces SaveData with a world plus a roster and
+      // deletes this test in the same commit.
+      expect(
+        () => const GamePersistence().capture(state),
+        throwsStateError,
+        reason: 'if this stops throwing, the roster landed — delete this test',
+      );
+    });
+  });
+
   group('Joining and leaving', () {
     test('a player can join a world that is already running', () {
       for (var i = 0; i < 60; i++) {

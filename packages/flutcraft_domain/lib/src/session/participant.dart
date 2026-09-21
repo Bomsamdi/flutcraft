@@ -1,17 +1,11 @@
 import '../actors/player.dart';
+import '../actors/player_id.dart';
 import '../aiming/aim_result.dart';
 import '../blocks/block_pos.dart';
 import '../crafting/recipes.dart';
 import '../inventory/inventory.dart';
 import '../items/item_type.dart';
 import 'ui_route.dart';
-
-/// Who a piece of state belongs to.
-///
-/// An extension type rather than a bare `String`: it costs nothing at run
-/// time and makes it impossible to pass a block name, a save slot or any
-/// other string where a player was meant.
-extension type const PlayerId(String value) {}
 
 /// One player and everything that is theirs alone.
 ///
