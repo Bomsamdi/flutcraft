@@ -1,7 +1,11 @@
 import 'package:flame/game.dart';
+import 'package:flutcraft/src/bootstrap/game_bootstrap.dart';
 import 'package:flutcraft/src/game/flutcraft_game.dart';
 import 'package:flutcraft/src/game/hud_state.dart';
 import 'package:flutcraft/src/ui/hud.dart';
+import 'package:flutcraft/src/ui/providers/session_providers.dart';
+import 'package:flutcraft_domain/flutcraft_domain.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -48,7 +52,8 @@ class GameScreen extends StatefulWidget {
 }
 
 class _GameScreenState extends State<GameScreen> {
-  final FlutcraftGame _game = FlutcraftGame();
+  late final LoopGameSession _session = createSession();
+  late final FlutcraftGame _game = FlutcraftGame(session: _session);
   final FocusNode _focusNode = FocusNode();
 
   /// Po przekroczeniu tego dystansu gest traktujemy jako rozglądanie
@@ -119,8 +124,10 @@ class _GameScreenState extends State<GameScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Stack(
+    return ProviderScope(
+      overrides: [gameSessionProvider.overrideWithValue(_session)],
+      child: Scaffold(
+        body: Stack(
         children: [
           Positioned.fill(
             child: GameWidget(
@@ -166,7 +173,8 @@ class _GameScreenState extends State<GameScreen> {
               },
             ),
           ),
-        ],
+          ],
+        ),
       ),
     );
   }
