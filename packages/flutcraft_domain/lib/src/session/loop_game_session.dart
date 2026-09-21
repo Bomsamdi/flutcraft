@@ -1,12 +1,15 @@
 import 'dart:async';
 
+import '../actors/player_id.dart';
 import '../input/input_frame.dart';
 import 'addressed_event.dart';
 import 'game_command.dart';
 import 'game_event.dart';
 import 'game_loop.dart';
 import 'game_session.dart';
+import 'game_state.dart';
 import 'game_snapshot.dart';
+import 'simulated_session.dart';
 import 'tick_clock.dart';
 
 /// A [GameSession] driven by a [GameLoop], for one player.
@@ -19,7 +22,7 @@ import 'tick_clock.dart';
 /// UI would rebuild sixty times a second for changes nobody can see; 20 Hz
 /// is indistinguishable to the player and keeps the widget tree cheap.
 /// Player actions publish immediately, because those must feel instant.
-class LoopGameSession implements GameSession {
+class LoopGameSession implements GameSession, SimulatedSession {
   LoopGameSession(this.loop, {this.snapshotHz = 20, TickClock? clock})
     : _clock = clock ?? TickClock(),
       _snapshot = GameSnapshot.of(loop.state);
@@ -49,8 +52,16 @@ class LoopGameSession implements GameSession {
   @override
   Stream<GameEvent> get events => _events.stream;
 
+  @override
+  GameState get state => loop.state;
+
+  /// The only player, because this session drives a single-player game.
+  @override
+  PlayerId get viewerId => loop.state.solo.id;
+
   /// Advances the simulation. Call once per rendered frame with the real
   /// time that frame took; the clock decides how many steps that is worth.
+  @override
   void tick(double dt, InputFrame input) {
     final steps = _clock.stepsFor(dt);
     for (var i = 0; i < steps; i++) {
