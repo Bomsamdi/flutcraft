@@ -6,7 +6,9 @@ import 'package:flutcraft_engine/flutcraft_engine.dart';
 import 'package:flutcraft_ui/flutcraft_ui.dart';
 import 'package:flutcraft_atlas/flutcraft_atlas.dart';
 import 'package:flutcraft/src/save/file_save_storage.dart';
+import 'package:flutcraft/src/net/web_socket_channel.dart';
 import 'package:flutcraft/src/save/repository_save_sink.dart';
+import 'package:flutcraft_protocol/flutcraft_protocol.dart';
 import 'package:flutcraft_domain/flutcraft_domain.dart';
 import 'package:flutcraft_l10n/flutcraft_l10n.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -43,8 +45,37 @@ Future<void> main() async {
   );
 }
 
+/// Where to play: a server if one was named, otherwise this machine.
+///
+/// A compile-time define rather than a setting, because the season has not
+/// built a server browser yet and a hidden knob is more honest than a menu
+/// with one entry in it:
+///
+/// ```
+/// flutter run --dart-define=FLUTCRAFT_SERVER=ws://192.168.1.10:8787
+/// ```
+const _serverAddress = String.fromEnvironment('FLUTCRAFT_SERVER');
+
+/// Who this client says it is.
+///
+/// Fixed for now. It belongs on disk beside the save, so that reconnecting
+/// finds the same inventory rather than a new player standing beside the old
+/// one's belongings.
+const _playerId = PlayerId('player');
+
+/// Opens a game: on a server if one was named, otherwise on this machine.
+Future<PlayableSession> _openSession() async {
+  if (_serverAddress.isNotEmpty) {
+    return RemoteGameSession.join(
+      await WebSocketChannel.connect(Uri.parse(_serverAddress)),
+      _playerId,
+    );
+  }
+  return _openLocalSession();
+}
+
 /// Continues the last game if there is one, and starts a new world if not.
-Future<LoopGameSession> _openSession() async {
+Future<LoopGameSession> _openLocalSession() async {
   final repository = SaveRepository(storage: await _openStorage());
   final sink = RepositorySaveSink(repository: repository);
   final saved = await _loadWorld(repository);
@@ -91,7 +122,7 @@ class FlutcraftApp extends StatelessWidget {
     super.key,
   });
 
-  final LoopGameSession session;
+  final PlayableSession session;
   final TextureAtlas atlas;
   final ui.Image atlasImage;
 
@@ -116,7 +147,7 @@ class GameScreen extends StatefulWidget {
     super.key,
   });
 
-  final LoopGameSession session;
+  final PlayableSession session;
   final TextureAtlas atlas;
   final ui.Image atlasImage;
 
@@ -125,7 +156,7 @@ class GameScreen extends StatefulWidget {
 }
 
 class _GameScreenState extends State<GameScreen> {
-  LoopGameSession get _session => widget.session;
+  PlayableSession get _session => widget.session;
 
   /// Every input source pushes into this one router; the game reads the
   /// finished frame. Created here because touch and pointer live in Flutter,

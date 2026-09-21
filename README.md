@@ -176,9 +176,16 @@ dart compile exe packages/flutcraft_server/bin/server.dart -o flutcraft-server
 ./flutcraft-server
 ```
 
-One world, many players, no dependencies beyond `dart:io`. The client is not
-wired up to it yet — that is the next few chapters — but two clients can
-already join, move around and see each other.
+One world, many players, no dependencies beyond `dart:io`. To play on it:
+
+```bash
+cd app/flutcraft
+flutter run -d macos --dart-define=FLUTCRAFT_SERVER=ws://127.0.0.1:8787
+```
+
+The client simulates its own player straight away and corrects itself against
+the server; everything else in the world — mobs, arrows, other people — is
+mirrored and interpolated. Nothing above `GameSession` knows the difference.
 
 ## Known limits
 

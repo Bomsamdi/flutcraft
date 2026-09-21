@@ -22,7 +22,7 @@ import 'tick_clock.dart';
 /// UI would rebuild sixty times a second for changes nobody can see; 20 Hz
 /// is indistinguishable to the player and keeps the widget tree cheap.
 /// Player actions publish immediately, because those must feel instant.
-class LoopGameSession implements GameSession, SimulatedSession {
+class LoopGameSession implements PlayableSession {
   LoopGameSession(this.loop, {this.snapshotHz = 20, TickClock? clock})
     : _clock = clock ?? TickClock(),
       _snapshot = GameSnapshot.of(loop.state);

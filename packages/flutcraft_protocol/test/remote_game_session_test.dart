@@ -179,6 +179,25 @@ void main() {
       await session.close();
     });
 
+    test('the view is never overruled, however stale the server is', () async {
+      final (session, channel) = await joined();
+      session.tick(kStep * 5, const InputFrame(lookYaw: 0.5));
+      final looking = session.viewer.player.yaw;
+
+      // The server answers with the yaw it had before that turn arrived.
+      await serverSays(
+        channel,
+        correction(
+          ackTick: session.currentTick,
+          position: session.viewer.player.position.clone(),
+        ),
+      );
+
+      // A mouse in somebody's hand is not the server's to correct.
+      expect(session.viewer.player.yaw, closeTo(looking, 1e-9));
+      await session.close();
+    });
+
     test('a large error snaps, because hiding it would be a lie', () async {
       final (session, channel) = await joined();
       session.tick(kStep * 10, walking);

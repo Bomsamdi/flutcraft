@@ -71,6 +71,8 @@ const _kString = 0xE4E4E4;
 const _kPowder = 0x9A9A9A;
 const _kZombie = 0x4C8B49;
 const _kSkeleton = 0xC9C9C2;
+const _kPlayerShirt = 0x2F6DB5;
+const _kPlayerFace = 0xC98E63;
 const _kSpider = 0x3A2C26;
 const _kCreeper = 0x5AAE4B;
 const _kFire = 0xF08A20;
@@ -291,6 +293,15 @@ int _pixel(Tile tile, int x, int y) {
       if (_eyes(x, y, 0x1B2B1B)) return 0xFF1B2B1B;
       if (y >= 11 && y <= 12 && x >= 5 && x <= 10) return 0xFF20301F;
       return _vary(_kZombie, (n - 0.5) * 18);
+
+    case Tile.playerSkin:
+      return _vary(_kPlayerShirt, (n - 0.5) * 20);
+
+    case Tile.playerFace:
+      if (_eyes(x, y, 0x2A2A38)) return 0xFF2A2A38;
+      // A mouth, so the front of a person is obvious at a glance.
+      if (y == 12 && x >= 6 && x <= 9) return 0xFF7A4A34;
+      return _vary(_kPlayerFace, (n - 0.5) * 14);
 
     case Tile.skeletonSkin:
       return _vary(_kSkeleton, (n - 0.5) * 26);

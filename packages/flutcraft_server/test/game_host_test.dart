@@ -48,6 +48,15 @@ void main() {
       expect(welcome.world.edits, contains(const BlockPos(64, 30, 64)));
     });
 
+    test('somebody new arrives with something to build with', () {
+      host.join(alice, toAlice);
+
+      // A world you cannot build in on your first minute is not much of an
+      // invitation.
+      final carried = toAlice.last<InventoryState>()!.slots;
+      expect(carried.where((s) => s?.type == ItemType.planks), isNotEmpty);
+    });
+
     test('a player is told what they are carrying, once, on arrival', () {
       host.join(alice, toAlice);
 

@@ -29,6 +29,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `flutcraft_server`: an authoritative world over WebSockets that compiles to
   a 6 MB self-contained binary. Two players can join one world and see each
   other move.
+- A networked client: `RemoteGameSession` predicts its own movement, corrects
+  itself against the server and mirrors everything else. The app joins a
+  server with `--dart-define=FLUTCRAFT_SERVER=ws://host:port`.
 - `tool/check_layering.dart`, `tool/check_english.dart` and
   `tool/check_platform_config.dart`, all wired into CI.
 

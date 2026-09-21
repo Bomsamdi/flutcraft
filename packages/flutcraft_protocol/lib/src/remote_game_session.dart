@@ -20,7 +20,7 @@ import 'messages.dart';
 /// and correct it when the server disagrees. Waiting a round trip to walk is
 /// unshippable; so is having two machines with different opinions about
 /// where a zombie is. The split between those two is the whole design.
-class RemoteGameSession implements GameSession, SimulatedSession {
+class RemoteGameSession implements PlayableSession {
   RemoteGameSession._({
     required this.channel,
     required this.viewerId,
@@ -206,11 +206,14 @@ class RemoteGameSession implements GameSession, SimulatedSession {
     final player = viewer.player;
     final predicted = player.position.clone();
 
+    // Where the player is, the server decides. Where they are *looking* it
+    // does not: that is a mouse in somebody's hand, and taking the server's
+    // slightly older answer for it would drag the view backwards a little on
+    // every packet. The server learns the look from the input anyway, so the
+    // two converge without anybody being overruled.
     player
       ..position.setFrom(corrected.position)
       ..velocity.setFrom(corrected.velocity)
-      ..yaw = corrected.yaw
-      ..pitch = corrected.pitch
       ..onGround = corrected.onGround
       ..flying = corrected.flying
       ..health = corrected.health;
