@@ -7,6 +7,7 @@
 library;
 
 export 'src/actors/mob.dart';
+export 'src/actors/mob_behavior.dart';
 export 'src/actors/player.dart';
 export 'src/aiming/aim_result.dart';
 export 'src/aiming/target_picker.dart';

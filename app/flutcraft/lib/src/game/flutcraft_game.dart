@@ -43,7 +43,7 @@ class VoxelCamera extends CameraComponent3D {
 /// Prototyp Minecrafta: woksele, crafting, piec i potwory.
 class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
     with KeyboardEvents
-    implements MobContext {
+    implements MobTickContext {
   factory FlutcraftGame({int seed = 1337}) {
     // Kamera i gra muszą wskazywać na ten sam World3D.
     final world = World3D();
@@ -73,6 +73,7 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
   late final VoxelWorld voxels;
   late final TextureAtlas atlas;
   late final ChunkManager chunkManager;
+  @override
   late final Player player;
   late final SelectionBox selection;
   late final HeldItem heldItem;

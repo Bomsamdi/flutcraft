@@ -4,6 +4,7 @@ import 'package:vector_math/vector_math.dart';
 import '../blocks/block_type.dart';
 import '../items/item_type.dart';
 import '../loot/loot_table.dart';
+import 'mob_behavior.dart';
 import '../blocks/tile.dart';
 import 'player.dart';
 import '../physics/voxel_body.dart';
@@ -22,6 +23,7 @@ enum MobKind {
     weight: 40,
     skin: Tile.zombieSkin,
     face: Tile.zombieFace,
+    behavior: MeleeBehavior(),
   ),
   skeleton(
     label: 'Szkielet',
@@ -34,7 +36,7 @@ enum MobKind {
     weight: 25,
     skin: Tile.skeletonSkin,
     face: Tile.skeletonFace,
-    ranged: true,
+    behavior: RangedBehavior(),
   ),
   spider(
     label: 'Pająk',
@@ -48,6 +50,7 @@ enum MobKind {
     jumpSpeed: 9.5,
     skin: Tile.spiderSkin,
     face: Tile.spiderFace,
+    behavior: MeleeBehavior(),
   ),
   creeper(
     label: 'Creeper',
@@ -60,7 +63,12 @@ enum MobKind {
     weight: 10,
     skin: Tile.creeperSkin,
     face: Tile.creeperFace,
-    explodes: true,
+    behavior: ExplodeBehavior(
+      primeDistance: 3,
+      fuseSeconds: 1.6,
+      radius: 3.4,
+      damage: 14,
+    ),
   );
 
   const MobKind({
@@ -74,9 +82,8 @@ enum MobKind {
     required this.skin,
     required this.face,
     required this.weight,
+    required this.behavior,
     this.jumpSpeed = 8.2,
-    this.ranged = false,
-    this.explodes = false,
   });
 
   final String label;
@@ -93,11 +100,9 @@ enum MobKind {
   /// Względna szansa pojawienia się - creepery mają być rzadkie.
   final int weight;
 
-  /// Strzela zamiast bić w zwarciu.
-  final bool ranged;
-
-  /// Wybucha zamiast atakować.
-  final bool explodes;
+  /// Jak ten gatunek się zachowuje. Nowe zachowanie to nowa implementacja
+  /// MobBehavior, a nie kolejna gałąź w klasie Mob.
+  final MobBehavior behavior;
 
   /// Co upuszcza po śmierci - ten sam typ co przy blokach.
   LootTable get loot => switch (this) {
@@ -116,13 +121,6 @@ enum MobKind {
       const LootEntry(ItemType.ironIngot, chance: 0.12),
     ]),
   };
-}
-
-/// Zdarzenia, które potwór zgłasza światu gry.
-abstract class MobContext {
-  void spawnArrow(Vector3 from, Vector3 direction);
-
-  void explode(Vector3 at, double radius, int maxDamage);
 }
 
 /// Pojedynczy potwór: bryła fizyczna plus prosta maszyna stanów.
@@ -173,7 +171,7 @@ class Mob extends VoxelBody {
   Vector3 get eye =>
       Vector3(position.x, position.y + height * 0.85, position.z);
 
-  void update(double dt, Player player, MobContext context) {
+  void update(double dt, Player player, MobTickContext context) {
     // Martwy potwór czeka tylko na sprzątnięcie - bez tego creeper
     // mógłby wybuchnąć kilka razy w tej samej klatce.
     if (isDead) return;
@@ -195,7 +193,7 @@ class Mob extends VoxelBody {
       yaw = math.atan2(-toPlayer.x, -toPlayer.z);
     }
 
-    final desired = chasing ? _desiredSpeed(distance) : 0.0;
+    final desired = chasing ? kind.behavior.desiredSpeed(this, distance) : 0.0;
     if (desired != 0 && distance > 1e-3) {
       final dir = toPlayer / distance * desired;
       velocity
@@ -220,7 +218,7 @@ class Mob extends VoxelBody {
     walkPhase += walkSpeed * step * 3.2;
 
     if (chasing) {
-      _act(dt, distance, player, context);
+      kind.behavior.act(this, dt, distance, context);
     } else if (isPrimed) {
       fuse = -1;
     }
@@ -228,60 +226,8 @@ class Mob extends VoxelBody {
     if (position.y < -8) health = 0;
   }
 
-  /// Szkielet trzyma dystans, reszta prze na gracza.
-  double _desiredSpeed(double distance) {
-    if (!kind.ranged) return kind.speed;
-    if (distance > 11) return kind.speed;
-    if (distance < 5) return -kind.speed * 0.8;
-    return 0;
-  }
-
-  void _act(double dt, double distance, Player player, MobContext context) {
-    if (kind.explodes) {
-      _tickFuse(dt, distance, context);
-      return;
-    }
-
-    if (kind.ranged) {
-      if (distance < 16 && distance > 2.5 && attackTimer <= 0 && _canSee(player)) {
-        attackTimer = kind.attackCooldown;
-        final target = player.eye;
-        final dir = Vector3(
-          target.x - eye.x,
-          target.y - eye.y + distance * 0.06,
-          target.z - eye.z,
-        )..normalize();
-        context.spawnArrow(eye, dir);
-      }
-      return;
-    }
-
-    final reach = 0.8 + kind.width / 2 + player.halfWidth;
-    final verticalOverlap =
-        (player.position.y - position.y).abs() < kind.height + 0.5;
-    if (distance <= reach && verticalOverlap && attackTimer <= 0) {
-      attackTimer = kind.attackCooldown;
-      player.damage(kind.damage, source: position);
-    }
-  }
-
-  void _tickFuse(double dt, double distance, MobContext context) {
-    if (distance < 3.0) {
-      if (!isPrimed) fuse = 0;
-      fuse += dt;
-      if (fuse >= 1.6) {
-        fuse = -1;
-        health = 0;
-        context.explode(center, 3.4, 14);
-      }
-    } else if (isPrimed) {
-      // Gracz uciekł - lont gaśnie.
-      fuse = distance > 5 ? -1 : fuse;
-    }
-  }
-
   /// Czy potwór ma czystą linię strzału do gracza.
-  bool _canSee(Player player) {
+  bool hasLineOfSightTo(Player player) {
     final target = player.eye;
     final dir = Vector3(
       target.x - eye.x,
