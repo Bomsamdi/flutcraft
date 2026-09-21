@@ -170,7 +170,7 @@ void main() {
       expect(damageWith(ItemType.woodenPickaxe), greaterThan(damageWith(null)));
     });
 
-    test('celowanie w nic nie robi nic', () {
+    test('aiming at nothing does nothing', () {
       final state = stateWith();
       expect(system.update(state, 1 / 60, active: true), isEmpty);
     });

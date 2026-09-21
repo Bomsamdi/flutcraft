@@ -8,7 +8,7 @@ import '../blocks/tile.dart';
 /// An item with a [block] can be placed in the world; the rest are only
 /// good for crafting or fighting.
 enum ItemType {
-  // --- bloki ---
+  // --- blocks ---
   grass(block: BlockType.grass),
   dirt(block: BlockType.dirt),
   stone(block: BlockType.stone),

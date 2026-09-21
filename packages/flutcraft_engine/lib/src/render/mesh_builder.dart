@@ -135,7 +135,7 @@ class MeshBuilder {
   }
 
   /// A box of arbitrary size — used for the pickaxe model
-  /// i trzymanego bloku.
+  /// and the block held in hand.
   void addBox(Vector3 min, Vector3 max, Tile tile, {Tile? front}) {
     final size = max - min;
     for (final face in Face.values) {

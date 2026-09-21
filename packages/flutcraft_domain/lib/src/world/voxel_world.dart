@@ -32,7 +32,7 @@ class RayHit {
   /// The cell a block placed on that face would occupy.
   (int, int, int) get placement => (x + nx, y + ny, z + nz);
 
-  /// Pozycja trafionego bloku.
+  /// The position of the block that was hit.
   BlockPos get pos => BlockPos(x, y, z);
 
   /// Whether both hits are on the same block, face aside.

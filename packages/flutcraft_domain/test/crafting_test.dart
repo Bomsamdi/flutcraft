@@ -162,7 +162,7 @@ void main() {
       expect(furnace.isLit, isFalse);
     });
 
-    test('przedmiot bez przepisu nie zapala pieca', () {
+    test('an item with no recipe does not light the furnace', () {
       final furnace = FurnaceState()
         ..input = ItemStack(ItemType.bone, 1)
         ..fuel = ItemStack(ItemType.coal, 1);

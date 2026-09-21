@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 
 void main() {
   group('LootEntry', () {
-    test('pewny wpis zawsze daje ten sam stos', () {
+    test('a certain entry always gives the same stack', () {
       final rng = Random(1);
       final stack = const LootEntry(ItemType.coal).roll(rng);
       expect(stack?.type, ItemType.coal);
@@ -48,7 +48,7 @@ void main() {
   });
 
   group('LootTable', () {
-    test('pusta tabela nie daje nic', () {
+    test('an empty table gives nothing', () {
       expect(LootTable.empty.roll(Random(1)), isEmpty);
       expect(LootTable.empty.isEmpty, isTrue);
     });

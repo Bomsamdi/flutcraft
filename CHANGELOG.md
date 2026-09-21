@@ -1,0 +1,34 @@
+# Changelog
+
+Notable changes to Flutcraft. Episode tags (`ep-NN`) mark the state of the
+repository at the end of each recorded episode.
+
+The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
+
+## [Unreleased]
+
+### Added
+
+- Six-package monorepo: `flutcraft_domain`, `flutcraft_atlas`,
+  `flutcraft_l10n`, `flutcraft_ui`, `flutcraft_engine` and `app/flutcraft`,
+  with the dependency rules checked in CI.
+- Localisation in English and Polish, with exhaustive mapping from domain
+  enums to display names.
+- Riverpod for state and dependency injection: the whole HUD, including every
+  screen, renders in `flutter test` against a headless game loop.
+- One input pipeline: `GameAction`, a rebindable `Keymap` and an
+  `InputRouter` that blends keyboard, pointer and touch into one frame.
+- Saving: the world is stored as a seed plus the blocks that differ from it,
+  with a tolerant reader, autosave and a save when the app goes to the
+  background.
+- `tool/check_layering.dart`, `tool/check_english.dart` and
+  `tool/check_platform_config.dart`, all wired into CI.
+
+### Changed
+
+- The simulation is pure Dart and runs without Flutter, Flame or a GPU.
+- `ItemStack` is immutable, which is what makes a snapshot a snapshot and
+  removed the hand-maintained revision counter.
+- Mob behaviour is a strategy per species rather than branches inside `Mob`.
+- Mobs and arrows are synced to their components through one generic
+  `EntitySync` instead of a pair of hand-written maps each.

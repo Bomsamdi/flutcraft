@@ -72,7 +72,7 @@ void main() {
       expect(canCraft(recipeFor(ItemType.furnace), inventory), isTrue);
     });
 
-    test('pusty ekwipunek nie pozwala na nic poza niczym', () {
+    test('an empty inventory allows nothing at all', () {
       final inventory = Inventory();
       for (final recipe in kRecipes) {
         expect(
@@ -143,7 +143,7 @@ void _noSelfLoopTest() {
 
 void _missingTests() {
   group('missingFor', () {
-    test('pusta mapa gdy wszystko jest', () {
+    test('an empty map when everything is there', () {
       final inventory = Inventory()
         ..add(ItemType.cobblestone, 3)
         ..add(ItemType.stick, 2);

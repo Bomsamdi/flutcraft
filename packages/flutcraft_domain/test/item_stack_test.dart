@@ -2,7 +2,7 @@ import 'package:flutcraft_domain/flutcraft_domain.dart';
 import 'package:test/test.dart';
 
 void main() {
-  group('ItemStack jest niemutowalny', () {
+  group('ItemStack is immutable', () {
     test('plus returns a new stack and leaves the old one alone', () {
       const original = ItemStack(ItemType.planks, 8);
       final bigger = original.plus(4);

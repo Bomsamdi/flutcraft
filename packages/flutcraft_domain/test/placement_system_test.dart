@@ -162,7 +162,7 @@ void main() {
     expect(state.inventory.countOf(ItemType.planks), 8);
   });
 
-  test('puszczony przycisk nic nie stawia', () {
+  test('a released button places nothing', () {
     final state = flatState(held: ItemType.planks);
     state.aim = BlockTarget(topOf(state, 5, 1, 5));
     system.update(state, 1, active: false);

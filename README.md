@@ -1,162 +1,185 @@
 # Flutcraft
 
-Prototyp Minecrafta we Flutterze na `flame_3d` (Flutter GPU / Impeller). Wszystko
-działa lokalnie — bez serwera, bez sieci, bez assetów na dysku.
+A voxel game written in Flutter with [`flame_3d`](https://pub.dev/packages/flame_3d)
+(Flutter GPU / Impeller), built step by step in a public tutorial series.
+Everything runs locally: no server, no network, and not a single asset file —
+every texture in the game is painted in code at startup.
 
-## Orientacja ekranu
+![CI](https://github.com/OWNER/flutcraft/actions/workflows/ci.yml/badge.svg)
 
-Na telefonie i tablecie gra chodzi **wyłącznie poziomo** — pionowy kadr obcina
-pole widzenia i nie mieści sterowania dotykowego. Blokada jest ustawiona
-natywnie (`UISupportedInterfaceOrientations` w `ios/Runner/Info.plist`,
-`android:screenOrientation="sensorLandscape"` w `AndroidManifest.xml`), a
-`SystemChrome.setPreferredOrientations` w `main()` domyka sprawę po stronie
-Fluttera. Ekrany ekwipunku przełączają się w tryb kompaktowy poniżej 480 px
-wysokości, żeby zmieścić się bez przewijania. Na desktopie i w przeglądarce
-okno zachowuje się normalnie.
+> **Not affiliated with Mojang or Microsoft.** This is an independent
+> educational project. It borrows the idea of a block world, not its assets:
+> all textures are generated procedurally in Dart, and no Minecraft code,
+> art or trademark is used here.
 
-## Uruchomienie
+## Quick start
 
 ```bash
-flutter run -d macos     # albo -d <id-urządzenia>
+git clone <this repo> && cd flutcraft
+flutter pub get
+flutter run -d macos        # or -d <device-id>
 ```
 
-Wymaga Impellera, więc działa na macOS, iOS i Androidzie (Vulkan). Na Web
-`flame_3d` korzysta z WebGPU, co wymaga przeglądarki z włączonym WebGPU.
+Needs Flutter 3.44+ and Impeller, so it runs on macOS, iOS and Android
+(Vulkan). On the web, `flame_3d` uses WebGPU and needs a browser with WebGPU
+enabled.
 
-## Co jest w prototypie
+To follow the series, check out the tag for an episode and run it:
 
-| Element | Realizacja |
+```bash
+git checkout ep-07 && flutter run -d macos
+```
+
+Every tag is a working game. Generated files are committed for exactly that
+reason.
+
+## Architecture
+
+Six packages, with the dependency rules enforced by the compiler rather than
+by good intentions.
+
+```
+                  flutcraft_domain   (pure Dart — no Flutter)
+                   /      |       \
+     flutcraft_atlas      |     flutcraft_l10n
+                   \      |       /
+                    flutcraft_ui    (Flutter + Riverpod, no flame)
+                          |
+     flutcraft_engine (flame_3d) ───┐
+                          |         |
+                     app/flutcraft ─┘
+```
+
+| Package | Contains |
 |---|---|
-| Świat | 128 × 48 × 128 wokseli, generowany proceduralnie (value noise + fBm) |
-| Teren | wzgórza, plaże, warstwy ziemi i kamienia, rudy węgla i żelaza, żwir, drzewa |
-| Renderowanie | siatka budowana per chunk 16×16, odcinane są ściany między blokami |
-| Tekstury | atlas generowany w kodzie, 16×16 px na kafelek, filtrowanie `nearest` |
-| Oświetlenie | cieniowanie ścian wypalone w atlasie → jeden `UnlitMaterial` na cały świat |
-| Ruch | kolizje AABB z siatką, grawitacja, skok, sprint, tryb latania |
-| Celowanie | raycast DDA (Amanatides & Woo) na 5,5 bloku, czarna ramka na celu |
-| Niszczenie | postęp zależny od twardości bloku i poziomu narzędzia |
-| Stawianie | blok z aktywnego slotu, z blokadą stawiania w sobie i w potworze |
-| Ekwipunek | 9 slotów paska + 27 plecaka, stosy po 64, przekładanie i dzielenie stosów |
-| Crafting | siatka 2×2 w ekwipunku, 3×3 przy stole, przepisy kształtowe i bezkształtowe |
-| Piec | wsad + paliwo + wynik, pasek postępu, blok świeci gdy pali |
-| Narzędzia | kilofy i miecze w trzech poziomach (drewno, kamień, żelazo) |
-| Potwory | zombie, szkielet, pająk, creeper — AI, animacje, dropy |
-| Walka | atak na potwory tym samym przyciskiem co kopanie, życie w sercach, odrzut, nietykalność, śmierć i respawn |
+| `flutcraft_domain` | Blocks, items, inventory, crafting, world, physics, actors, the simulation systems, the input model and the save format. |
+| `flutcraft_atlas` | The procedural texture atlas: 45 tiles painted pixel by pixel, plus the UV table. |
+| `flutcraft_l10n` | ARB files for English and Polish, and the mapping from domain enums to names. |
+| `flutcraft_ui` | Every widget and every Riverpod provider. |
+| `flutcraft_engine` | Meshing, chunk streaming, mob models and the Flame game that drives the loop. |
+| `app/flutcraft` | The composition root, the platform folders and the save file adapter. |
+
+**Three rules do most of the work:**
+
+1. **`flutcraft_domain` has no Flutter in its `pubspec`**, so the compiler
+   forbids importing one. Its tests run under `dart test` in seconds.
+2. **`flutcraft_ui` has no `flame_3d`**, so no widget *can* touch a GPU
+   resource. Every screen renders in `flutter test`.
+3. **`flutcraft_engine` cannot see `flutcraft_ui` or `flutcraft_l10n`**, so the
+   engine never formats a sentence. It emits events; the interface finds the
+   words.
+
+Lints cannot see across package borders, so the rules are checked by
+`dart run tool/check_layering.dart` in CI. Break one and the build fails.
+
+## What the game has
+
+| Area | How it works |
+|---|---|
+| World | 128 × 48 × 128 voxels, generated from value noise and fBm |
+| Terrain | Hills, beaches, soil and stone layers, coal and iron ore, gravel, trees |
+| Rendering | One mesh per 16×16 chunk, faces between solid blocks culled |
+| Textures | An atlas generated in code, 16×16 px per tile, nearest filtering |
+| Lighting | Face shading baked into the atlas, so the world is one unlit material |
+| Movement | AABB collision against the grid, gravity, jumping, sprinting, flight |
+| Aiming | A DDA raycast (Amanatides & Woo) out to 5.5 blocks |
+| Mining | Progress depends on block hardness and tool tier |
+| Inventory | 9 hotbar slots and 27 backpack slots, stacks of 64, splitting |
+| Crafting | 2×2 in the inventory, 3×3 at a table, shaped and shapeless recipes |
+| Furnace | Input, fuel and output, with a progress bar and a glowing block |
+| Mobs | Zombie, skeleton, spider and creeper, each with its own behaviour |
+| Combat | Hit mobs with the mining button, hearts, knockback, death, respawn |
+| Saving | Seed plus edits, written as JSON; autosave and save on backgrounding |
 
 ### Crafting
 
-Przepisy odwzorowują oryginał, łącznie z przesuwaniem wzoru po siatce — kilof
-zrobiony w prawym dolnym rogu 3×3 też zadziała.
+The recipes follow the original, including sliding the pattern around the
+grid: a pickaxe laid out in the bottom-right corner of a 3×3 still works.
 
-| Wynik | Przepis | Gdzie |
+| Result | Recipe | Where |
 |---|---|---|
-| 4 deski | kłoda (dowolne pole) | ekwipunek |
-| 4 patyki | deski nad deskami | ekwipunek |
-| Stół rzemieślniczy | 2×2 desek | ekwipunek |
-| Piec | 8 bruku w pierścieniu 3×3 | stół |
-| Kilof | 3 materiały w rzędzie + 2 patyki pionowo | stół |
-| Miecz | 2 materiały pionowo + patyk | stół |
-| 4 strzały | sztabka + patyk + nić | stół |
+| 4 planks | a log, any cell | inventory |
+| 4 sticks | planks above planks | inventory |
+| Crafting table | 2×2 planks | inventory |
+| Furnace | 8 cobble in a 3×3 ring | table |
+| Pickaxe | 3 of the material in a row, 2 sticks below | table |
+| Sword | 2 of the material stacked, a stick below | table |
+| 4 arrows | ingot, stick, string | table |
 
-W grze jest **księga przepisów** (klawisz `B` albo ikona książki): pokazuje
-układ każdego przepisu na siatce, wynik z liczbą sztuk, wytopy w piecu oraz
-podświetla na zielono to, na co masz właśnie składniki. Da się ją otworzyć
-także z ekwipunku i ze stołu — ułożona siatka nie znika.
+The game has an in-game **recipe book** (`B`, or the book icon) that shows
+every layout, marks in green what you can make right now, and lists what the
+furnace accepts. Bricks have no recipe — they come from smelting sand.
 
-Cegły nie mają przepisu; powstają z wytopienia piasku w piecu.
+### Splitting stacks
 
-Ruda żelaza wymaga kamiennego kilofa, a surowe żelazo trzeba wytopić w piecu
-(paliwo: węgiel). Zbyt słabe narzędzie niszczy blok bez dropu — jak w oryginale.
+As in the original: with an **empty hand**, right-click (or a long press on a
+phone) takes **half a stack**, rounding up. With **something in hand**, the
+same gesture puts down **one item at a time**, so eight planks can be split
+into any portions you like.
 
-### Dzielenie stosów
+## Controls
 
-Jak w oryginale: **pustą ręką** prawy przycisk (albo przytrzymanie palcem na
-telefonie) bierze **połowę stosu** — przy nieparzystej liczbie nadwyżka idzie
-na kursor. **Z przedmiotem w ręce** ten sam gest kładzie **po jednej sztuce**,
-więc osiem desek rozsypiesz na dowolnie małe porcje. Lewy przycisk działa
-po staremu: podnosi cały stos, odkłada go albo scala z tym, co już leży.
-
-### Potwory
-
-| Gatunek | Zachowanie | Drop |
-|---|---|---|
-| Zombie | wolno prze na gracza, bije w zwarciu | czasem sztabka żelaza |
-| Szkielet | trzyma dystans, strzela z łuku, nie strzela przez ścianę | kości, strzały |
-| Pająk | szybki, wysoko skacze, osiem animowanych odnóży | nić |
-| Creeper | podchodzi, zapala lont, wybucha i niszczy teren | proch |
-
-Potwory pojawiają się 12–26 bloków od gracza, maksymalnie 6 naraz. Przeszkodę
-na drodze pokonują skokiem. Lont creepera gaśnie, gdy uciekniesz.
-
-**Atakowanie.** Wyceluj w potwora — celownik zmienia się w czerwony krzyżyk,
-a nad nim pojawia się pasek życia z nazwą gatunku. Wtedy trzymaj ten sam
-przycisk co przy kopaniu (`KOP/BIJ` albo lewy przycisk myszy); ciosy idą co
-0,42 s. Obrażenia zależą od tego, co trzymasz: ręka 1, kilofy 2–4,
-miecze 5–8. Promień celowania sięga 5,5 bloku i zatrzymuje się na ścianie,
-więc nie da się uderzyć potwora zza bloku. Po zabiciu HUD pokazuje, co wypadło.
-
-## Sterowanie
-
-| Wejście | Akcja |
+| Input | Action |
 |---|---|
-| `W` `S` `A` `D` / joystick | chodzenie |
-| przeciągnięcie myszą lub palcem | rozglądanie |
-| przytrzymanie / przycisk `KOP` | kopanie i atak na potwory |
-| prawy przycisk myszy / `R` / `UŻYJ` | stawianie bloku, otwieranie stołu i pieca |
-| `1`–`9`, kliknięcie slotu, scroll | wybór przedmiotu |
-| `E` / ikona plecaka | ekwipunek i crafting |
-| `B` / ikona książki | księga przepisów |
-| prawy przycisk / przytrzymanie slotu | podział stosu na pół, potem po jednej sztuce |
-| `Esc` | zamknięcie ekranu |
-| `Spacja` / `SKOK` | skok (w locie: w górę) |
-| `Shift` | sprint (w locie: w dół) |
-| `F` / `LOT` | tryb latania |
-| strzałki | rozglądanie klawiaturą |
+| `W` `S` `A` `D` / joystick | Walk |
+| Mouse or finger drag | Look around |
+| Hold / `MINE` button | Mine and attack |
+| Right click / `R` / `USE` | Place a block, use a table or furnace |
+| `1`–`9`, a slot, the scroll wheel | Select an item |
+| `E` / backpack icon | Inventory and crafting |
+| `B` / book icon | Recipe book |
+| Right click or long press on a slot | Split a stack |
+| `Esc` | Close a screen |
+| `Space` / `JUMP` | Jump; ascend while flying |
+| `Shift` | Sprint; descend while flying |
+| `F` / `FLY` | Toggle flight |
+| `F5` | Save now |
+| Arrow keys | Look around with the keyboard |
 
-Ikona pada w prawym górnym rogu włącza sterowanie dotykowe również na desktopie,
-ikona `?` pokazuje ściągawkę.
+Keys are bound in one table (`defaultKeymap`); nothing in the simulation
+compares a key code.
 
-## Układ kodu
+## Screen orientation
 
-```
-lib/
-  main.dart                     ekran gry, obsługa wskaźnika i focusu klawiatury
-  src/core/block.dart           typy bloków: tekstury, twardość, wymagane narzędzie
-  src/core/item.dart            przedmioty (bloki, surowce, narzędzia) i dropy
-  src/core/inventory.dart       ekwipunek, stosy, przekładanie przez kursor
-  src/core/recipes.dart         przepisy i dopasowanie wzoru do siatki
-  src/core/furnace.dart         stan i logika wytopu w piecu
-  src/core/tiles.dart           kafelki atlasu i poziomy cieniowania ścian
-  src/render/atlas.dart         proceduralny atlas tekstur (piksel po pikselu)
-  src/render/mesh_builder.dart  quady → Surface, z podziałem na limicie uint16
-  src/render/chunk_renderer.dart siatki chunków + kolejka przebudowy
-  src/render/overlay_meshes.dart ramka celu i modele przedmiotów w ręce
-  src/render/mob_renderer.dart  modele potworów z klocków i animacja kończyn
-  src/world/voxel_world.dart    tablica wokseli, zapis bloków, raycast
-  src/world/voxel_body.dart     wspólna fizyka AABB gracza i potworów
-  src/world/terrain.dart        generator terenu i drzew
-  src/game/flutcraft_game.dart  pętla gry, kamera, kopanie, stawianie, wejście
-  src/game/player.dart          sterowanie, kamera i zdrowie gracza
-  src/game/mob.dart             gatunki potworów, AI, strzały, spawner
-  src/game/held_item.dart       przedmiot trzymany przed kamerą + zamach
-  src/game/hud_state.dart       migawka stanu dla warstwy UI
-  src/ui/                       HUD, ekwipunek, piec, księga przepisów, sterowanie
+On phones and tablets the game runs **landscape only** — a portrait frame
+crops the field of view and leaves no room for the touch controls. The lock is
+set natively in `Info.plist` and `AndroidManifest.xml`, and confirmed from
+Dart in `main()`; `tool/check_platform_config.dart` fails the build if one of
+the three drifts. Inventory screens switch to a compact layout below 480 px of
+height.
+
+## Development
+
+```bash
+dart run tool/check_layering.dart     # package boundaries
+dart run tool/check_english.dart      # the source reads in English
+dart run tool/check_platform_config.dart
+melos run test                        # every package
 ```
 
-## Znane ograniczenia prototypu
+See [CONTRIBUTING.md](CONTRIBUTING.md) for how the repository is organised and
+what a change is expected to come with.
 
-- Brak przezroczystości — nie ma wody ani szkła (wymagałoby sortowania i
-  osobnego przebiegu z alpha blendingiem).
-- Narzędzia się nie zużywają i nie ma cyklu dnia — potwory chodzą non stop.
-- Zbite bloki i dropy z potworów lecą prosto do ekwipunku; nie ma
-  przedmiotów leżących na ziemi.
-- Potwory nie omijają przeszkód — pokonują je skokiem albo utykają.
-- Świat jest skończony i trzymany w całości w pamięci; nie ma streamingu chunków.
-- Siatki chunków budują się na wątku UI (2 chunki na klatkę), bez izolatów.
-- Stan gry nie jest zapisywany między uruchomieniami.
+## Known limits
+
+- No transparency, so no water and no glass — that needs sorting and a second
+  pass with alpha blending.
+- Tools never wear out, and there is no day cycle, so mobs never stop.
+- Broken blocks and mob drops go straight to the inventory; nothing lies on
+  the ground.
+- Mobs do not path around obstacles; they jump at them or get stuck.
+- The world is finite and held entirely in memory.
+- Chunk meshes are built on the UI thread, two per frame, with no isolates.
+- A save stores the seed and the edits, so changing the terrain generator
+  invalidates older saves. The format carries a `terrainVersion` for that.
 
 ## Impeller
 
-`flutter_gpu` (a przez to `flame_3d`) działa tylko na Impellerze. Na iOS i
-Androidzie jest domyślny; na macOS w Flutterze 3.44 trzeba go włączyć — w tym
-repo robi to klucz `FLTEnableImpeller` w `macos/Runner/Info.plist`.
+`flutter_gpu`, and therefore `flame_3d`, only runs on Impeller. It is the
+default on iOS and Android; on macOS with Flutter 3.44 it has to be switched
+on, which this repo does with `FLTEnableImpeller` in
+`macos/Runner/Info.plist`.
+
+## Licence
+
+MIT — see [LICENSE](LICENSE).

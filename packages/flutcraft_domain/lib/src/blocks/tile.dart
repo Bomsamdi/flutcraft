@@ -3,7 +3,7 @@
 /// The order sets the column layout in the atlas, so do not change it
 /// bez regeneracji [TextureAtlas].
 enum Tile {
-  // --- bloki ---
+  // --- blocks ---
   grassTop,
   grassSide,
   dirt,

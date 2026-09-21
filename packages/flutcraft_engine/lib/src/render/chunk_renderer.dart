@@ -84,7 +84,7 @@ class ChunkManager extends Component {
 
   final Map<int, ChunkComponent> _chunks = {};
 
-  /// Punkt odniesienia dla priorytetu przebudowy (pozycja gracza).
+  /// What rebuild priority is measured from: the player's position.
   final Vector3 focus = Vector3.zero();
 
   int get pendingChunks => world.dirtyChunks.length;
