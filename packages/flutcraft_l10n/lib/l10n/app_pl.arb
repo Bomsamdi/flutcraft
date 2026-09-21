@@ -64,6 +64,7 @@
   "msgCreeperExploded": "Creeper wybuchł!",
   "msgFlightOn": "Latanie: włączone",
   "msgFlightOff": "Latanie: wyłączone",
+  "msgGameSaved": "Gra zapisana",
   "msgRespawned": "Odrodzono w punkcie startowym",
   "msgToolTooWeak": "Potrzebujesz lepszego kilofa: {block}",
   "msgMobDefeated": "Pokonano: {mob}",

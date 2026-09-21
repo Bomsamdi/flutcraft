@@ -3,6 +3,8 @@ import 'package:flutcraft/src/bootstrap/game_bootstrap.dart';
 import 'package:flutcraft/src/game/flutcraft_game.dart';
 import 'package:flutcraft/src/game/hud_state.dart';
 import 'package:flutcraft/src/ui/hud.dart';
+import 'package:flutcraft/src/save/file_save_storage.dart';
+import 'package:flutcraft/src/save/repository_save_sink.dart';
 import 'package:flutcraft/src/ui/providers/session_providers.dart';
 import 'package:flutcraft_domain/flutcraft_domain.dart';
 import 'package:flutcraft_l10n/flutcraft_l10n.dart';
@@ -28,11 +30,53 @@ Future<void> _lockLandscape() async {
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await _lockLandscape();
-  runApp(const FlutcraftApp());
+  runApp(FlutcraftApp(session: await _openSession()));
+}
+
+/// Continues the last game if there is one, and starts a new world if not.
+Future<LoopGameSession> _openSession() async {
+  final repository = SaveRepository(storage: await _openStorage());
+  final sink = RepositorySaveSink(repository: repository);
+  final saved = await _loadWorld(repository);
+
+  return saved == null
+      ? createSession(saveSink: sink)
+      : restoreSession(saved, saveSink: sink);
+}
+
+/// Falls back to memory where there is no writable directory, so the game
+/// still starts — it just forgets.
+Future<SaveStorage> _openStorage() async {
+  try {
+    return await FileSaveStorage.open();
+  } on Object catch (error) {
+    debugPrint('No save directory available, playing without saves: $error');
+    return InMemorySaveStorage();
+  }
+}
+
+/// Reads the saved world, or `null` when there is none worth loading.
+///
+/// A save that cannot be read must not stop the game from starting: the
+/// player gets a new world, and the old file is left on disk untouched in
+/// case it can be recovered later.
+Future<SaveData?> _loadWorld(SaveRepository repository) async {
+  try {
+    final result = await repository.load(kWorldSlot);
+    for (final warning in result?.warnings ?? const <SaveWarning>[]) {
+      debugPrint('Save warning: $warning');
+    }
+    return result?.data;
+  } on Object catch (error) {
+    debugPrint('Could not read the save, starting a new world: $error');
+    return null;
+  }
 }
 
 class FlutcraftApp extends StatelessWidget {
-  const FlutcraftApp({super.key});
+  const FlutcraftApp({required this.session, super.key});
+
+  final LoopGameSession session;
 
   @override
   Widget build(BuildContext context) {
@@ -42,22 +86,28 @@ class FlutcraftApp extends StatelessWidget {
       theme: ThemeData.dark(useMaterial3: true),
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
-      home: const GameScreen(),
+      home: GameScreen(session: session),
     );
   }
 }
 
 class GameScreen extends StatefulWidget {
-  const GameScreen({super.key});
+  const GameScreen({required this.session, super.key});
+
+  final LoopGameSession session;
 
   @override
   State<GameScreen> createState() => _GameScreenState();
 }
 
 class _GameScreenState extends State<GameScreen> {
-  late final LoopGameSession _session = createSession();
+  LoopGameSession get _session => widget.session;
   late final FlutcraftGame _game = FlutcraftGame(session: _session);
   final FocusNode _focusNode = FocusNode();
+
+  /// Saves when the app goes to the background — on a phone that is how most
+  /// sessions end, and the autosave timer will not get another chance.
+  late final AppLifecycleListener _lifecycle;
 
   /// Po przekroczeniu tego dystansu gest traktujemy jako rozglądanie
   /// i przerywamy rozpoczęte kopanie.
@@ -76,7 +126,16 @@ class _GameScreenState extends State<GameScreen> {
       defaultTargetPlatform == TargetPlatform.iOS;
 
   @override
+  void initState() {
+    super.initState();
+    _lifecycle = AppLifecycleListener(onPause: _saveNow, onDetach: _saveNow);
+  }
+
+  void _saveNow() => _session.dispatch(const SaveGame());
+
+  @override
   void dispose() {
+    _lifecycle.dispose();
     _focusNode.dispose();
     super.dispose();
   }

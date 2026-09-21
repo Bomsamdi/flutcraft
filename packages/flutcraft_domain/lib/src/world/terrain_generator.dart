@@ -16,6 +16,7 @@ class TerrainGenerator {
   static const int beachLevel = 15;
 
   void generate(VoxelWorld world) {
+    world.seed = seed;
     final heights = List<int>.filled(world.sizeX * world.sizeZ, 0);
 
     for (var z = 0; z < world.sizeZ; z++) {

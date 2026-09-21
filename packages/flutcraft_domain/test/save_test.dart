@@ -14,13 +14,22 @@ GameState freshGame({int seed = 1337}) {
   return GameState(world: world, player: player, inventory: Inventory());
 }
 
+/// Encode, decode and rebuild — the full trip a save makes.
+GameState roundTrip(GameState state) => persistence.restore(
+  codec.decode(codec.encode(persistence.capture(state))).data,
+);
+
 void main() {
-  group('Świat zapisuje się jako ziarno plus zmiany', () {
-    test('świeży świat nie ma żadnych edycji', () {
+  group('A world is saved as a seed plus its edits', () {
+    test('a freshly generated world has no edits', () {
       expect(freshGame().world.edits, isEmpty);
     });
 
-    test('każdy postawiony i zbity blok zostaje zapamiętany', () {
+    test('the generator stamps its seed on the world', () {
+      expect(freshGame(seed: 4242).world.seed, 4242);
+    });
+
+    test('every block placed or broken is remembered', () {
       final state = freshGame();
       state.world
         ..setBlock(10, 20, 10, BlockType.planks)
@@ -30,31 +39,27 @@ void main() {
       expect(state.world.edits[const BlockPos(10, 20, 10)], BlockType.planks);
     });
 
-    test('zapis jest o rzędy wielkości mniejszy niż tablica wokseli', () {
+    test('the save is orders of magnitude smaller than the voxel array', () {
       final state = freshGame();
       for (var i = 0; i < 200; i++) {
         state.world.setBlock(10 + i % 50, 20, 10, BlockType.cobblestone);
       }
-      final bytes = codec.encode(persistence.capture(state, seed: 1337));
+      final bytes = codec.encode(persistence.capture(state));
 
-      // Pełna tablica to 128 * 48 * 128 = 786 432 bajty.
+      // The full array is 128 * 48 * 128 = 786,432 bytes.
       expect(bytes.length, lessThan(40000));
     });
   });
 
-  group('Round-trip', () {
-    test('odtworzony świat ma te same bloki', () {
+  group('Round trip', () {
+    test('the restored world has the same blocks', () {
       final original = freshGame();
       original.world
         ..setBlock(64, 30, 64, BlockType.brick)
         ..setBlock(64, 31, 64, BlockType.furnace)
         ..setBlock(65, 30, 64, BlockType.air);
 
-      final restored = persistence.restore(
-        codec
-            .decode(codec.encode(persistence.capture(original, seed: 1337)))
-            .data,
-      );
+      final restored = roundTrip(original);
 
       for (final pos in [
         const BlockPos(64, 30, 64),
@@ -70,7 +75,7 @@ void main() {
       }
     });
 
-    test('gracz wraca na swoje miejsce i ze swoim życiem', () {
+    test('the player comes back where they stood, with their health', () {
       final original = freshGame();
       original.player
         ..position.setValues(12.5, 34.0, 56.5)
@@ -79,11 +84,7 @@ void main() {
         ..flying = true
         ..damage(7);
 
-      final restored = persistence.restore(
-        codec
-            .decode(codec.encode(persistence.capture(original, seed: 1337)))
-            .data,
-      );
+      final restored = roundTrip(original);
 
       expect(restored.player.position.x, closeTo(12.5, 1e-6));
       expect(restored.player.position.z, closeTo(56.5, 1e-6));
@@ -92,25 +93,21 @@ void main() {
       expect(restored.player.flying, isTrue);
     });
 
-    test('ekwipunek i wybrany slot przeżywają zapis', () {
+    test('the inventory and the selected slot survive', () {
       final original = freshGame();
       original.inventory
         ..add(ItemType.ironPickaxe)
         ..add(ItemType.cobblestone, 40);
       original.selectedSlot = 1;
 
-      final restored = persistence.restore(
-        codec
-            .decode(codec.encode(persistence.capture(original, seed: 1337)))
-            .data,
-      );
+      final restored = roundTrip(original);
 
       expect(restored.inventory.countOf(ItemType.cobblestone), 40);
       expect(restored.inventory.countOf(ItemType.ironPickaxe), 1);
       expect(restored.selectedSlot, 1);
     });
 
-    test('piec zachowuje wsad, paliwo i postęp', () {
+    test('a furnace keeps its input, fuel and progress', () {
       final original = freshGame();
       original.world.setBlock(64, 30, 64, BlockType.furnace);
       original.furnaces.open(const BlockPos(64, 30, 64))
@@ -118,37 +115,45 @@ void main() {
         ..fuel = const ItemStack(ItemType.coal, 2)
         ..progress = 0.4;
 
-      final restored = persistence.restore(
-        codec
-            .decode(codec.encode(persistence.capture(original, seed: 1337)))
-            .data,
-      );
+      final furnace = roundTrip(original).furnaces[const BlockPos(64, 30, 64)];
 
-      final furnace = restored.furnaces[const BlockPos(64, 30, 64)];
       expect(furnace?.input?.count, 3);
       expect(furnace?.fuel?.count, 2);
       expect(furnace?.progress, closeTo(0.4, 1e-6));
     });
 
-    test('zawartość siatki wraca do ekwipunku, nie ginie', () {
+    test('grid and cursor contents land in the inventory, never lost', () {
       final original = freshGame();
       original.smallGrid[0] = const ItemStack(ItemType.log, 3);
       original.cursor = const ItemStack(ItemType.coal, 2);
 
-      final data = persistence.capture(original, seed: 1337);
-      final restored = persistence.restore(data);
+      final restored = roundTrip(original);
 
       expect(restored.inventory.countOf(ItemType.log), 3);
       expect(restored.inventory.countOf(ItemType.coal), 2);
       expect(restored.cursor, isNull);
     });
+
+    test('capturing leaves the running game untouched', () {
+      final original = freshGame();
+      original.smallGrid[0] = const ItemStack(ItemType.log, 3);
+      original.cursor = const ItemStack(ItemType.coal, 2);
+
+      persistence.capture(original);
+
+      // Autosave fires mid-craft; emptying the grid under the player would be
+      // worse than not saving at all.
+      expect(original.smallGrid[0], const ItemStack(ItemType.log, 3));
+      expect(original.cursor, const ItemStack(ItemType.coal, 2));
+      expect(original.inventory.countOf(ItemType.log), 0);
+    });
   });
 
-  group('Tolerancyjny czytelnik', () {
-    test('nieznany przedmiot znika, reszta zapisu ocalała', () {
+  group('A tolerant reader', () {
+    test('an unknown item disappears, the rest of the save survives', () {
       final state = freshGame();
       state.inventory.add(ItemType.coal, 5);
-      final raw = codec.toJson(persistence.capture(state, seed: 1337));
+      final raw = codec.toJson(persistence.capture(state));
 
       (raw['inventory'] as List)[0] = {'item': 'unobtanium', 'count': 1};
       final result = codec.fromJson(raw);
@@ -158,12 +163,12 @@ void main() {
       expect(result.data.seed, 1337);
     });
 
-    test('nieznany blok pomija tylko swoją edycję', () {
+    test('an unknown block only costs its own edit', () {
       final state = freshGame();
       state.world
         ..setBlock(10, 20, 10, BlockType.planks)
         ..setBlock(11, 20, 10, BlockType.brick);
-      final raw = codec.toJson(persistence.capture(state, seed: 1337));
+      final raw = codec.toJson(persistence.capture(state));
 
       (raw['edits'] as List)[0] = {
         'p': [10, 20, 10],
@@ -175,17 +180,17 @@ void main() {
       expect(result.data.edits, hasLength(1));
     });
 
-    test('zapis z przyszłej wersji jest odrzucany jasnym błędem', () {
-      final raw = codec.toJson(persistence.capture(freshGame(), seed: 1))
+    test('a save from a future version is refused with a clear error', () {
+      final raw = codec.toJson(persistence.capture(freshGame()))
         ..['version'] = SaveCodec.currentVersion + 5;
 
       expect(() => codec.fromJson(raw), throwsA(isA<SaveTooNewException>()));
     });
 
-    test('enumy zapisywane po nazwie, nie po indeksie', () {
+    test('enums are stored by name, not by index', () {
       final state = freshGame();
       state.inventory.add(ItemType.ironSword);
-      final raw = codec.toJson(persistence.capture(state, seed: 1));
+      final raw = codec.toJson(persistence.capture(state));
 
       final slot =
           (raw['inventory'] as List).firstWhere((e) => e != null)
@@ -196,12 +201,12 @@ void main() {
   });
 
   group('SaveRepository', () {
-    test('zapisuje i odczytuje slot', () async {
+    test('writes and reads back a slot', () async {
       final repository = SaveRepository(storage: InMemorySaveStorage());
-      final state = freshGame();
+      final state = freshGame(seed: 99);
       state.inventory.add(ItemType.bone, 4);
 
-      await repository.save('one', persistence.capture(state, seed: 99));
+      await repository.save('one', persistence.capture(state));
       final loaded = await repository.load('one');
 
       expect(loaded, isNotNull);
@@ -212,14 +217,14 @@ void main() {
       );
     });
 
-    test('pusty slot zwraca null', () async {
+    test('an empty slot reads as null', () async {
       final repository = SaveRepository(storage: InMemorySaveStorage());
       expect(await repository.load('missing'), isNull);
     });
 
-    test('wypisuje i kasuje sloty', () async {
+    test('lists and deletes slots', () async {
       final repository = SaveRepository(storage: InMemorySaveStorage());
-      final data = persistence.capture(freshGame(), seed: 1);
+      final data = persistence.capture(freshGame());
 
       await repository.save('a', data);
       await repository.save('b', data);
@@ -230,16 +235,85 @@ void main() {
     });
   });
 
-  group('Gra działa po wczytaniu', () {
-    test('wczytany świat da się dalej symulować', () {
+  group('Autosave', () {
+    GameLoop loopWith(RecordingSaveSink sink, {double interval = 10}) =>
+        GameLoop(
+          state: freshGame(),
+          spawner: MobSpawner(world: VoxelWorld(), seed: 1, maxMobs: 0),
+          random: Random(1),
+          saveSink: sink,
+          autosaveInterval: interval,
+        );
+
+    test('saves once the interval has passed, and reports it', () {
+      final sink = RecordingSaveSink();
+      final loop = loopWith(sink);
+
+      var events = <GameEvent>[];
+      for (var i = 0; i < 60 * 9; i++) {
+        events = loop.tick(1 / 60, InputFrame.idle);
+      }
+      expect(sink.saves, isEmpty, reason: 'nine seconds is not ten');
+
+      for (var i = 0; i < 60; i++) {
+        final tickEvents = loop.tick(1 / 60, InputFrame.idle);
+        if (tickEvents.isNotEmpty) events = tickEvents;
+      }
+      expect(sink.saves, hasLength(1));
+      expect(events.whereType<GameSaved>(), hasLength(1));
+    });
+
+    test('keeps saving while a screen is open', () {
+      final sink = RecordingSaveSink();
+      final loop = loopWith(sink)..dispatch(const OpenRoute(UiRoute.inventory));
+
+      for (var i = 0; i < 60 * 11; i++) {
+        loop.tick(1 / 60, InputFrame.idle);
+      }
+      expect(sink.saves, hasLength(1));
+    });
+
+    test('an explicit save does not wait for the timer', () {
+      final sink = RecordingSaveSink();
+      final loop = loopWith(sink);
+
+      final events = loop.dispatch(const SaveGame());
+
+      expect(sink.saves, hasLength(1));
+      expect(events.single, isA<GameSaved>());
+    });
+
+    test('an explicit save restarts the countdown', () {
+      final sink = RecordingSaveSink();
+      final loop = loopWith(sink);
+
+      for (var i = 0; i < 60 * 9; i++) {
+        loop.tick(1 / 60, InputFrame.idle);
+      }
+      loop.dispatch(const SaveGame());
+      for (var i = 0; i < 60 * 9; i++) {
+        loop.tick(1 / 60, InputFrame.idle);
+      }
+
+      expect(sink.saves, hasLength(1), reason: 'the timer restarted at zero');
+    });
+
+    test('without a sink the loop simply does not save', () {
+      final loop = GameLoop(
+        state: freshGame(),
+        spawner: MobSpawner(world: VoxelWorld(), seed: 1, maxMobs: 0),
+      );
+
+      expect(loop.dispatch(const SaveGame()), isEmpty);
+    });
+  });
+
+  group('The game still runs after loading', () {
+    test('a restored world can be simulated further', () {
       final original = freshGame();
       original.world.setBlock(64, 30, 64, BlockType.planks);
 
-      final restored = persistence.restore(
-        codec
-            .decode(codec.encode(persistence.capture(original, seed: 1337)))
-            .data,
-      );
+      final restored = roundTrip(original);
       final loop = GameLoop(
         state: restored,
         spawner: MobSpawner(world: restored.world, seed: 1, maxMobs: 0),

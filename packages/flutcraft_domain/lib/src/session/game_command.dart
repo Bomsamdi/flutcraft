@@ -95,3 +95,8 @@ final class Respawn extends GameCommand {
 final class UseOrPlace extends GameCommand {
   const UseOrPlace();
 }
+
+/// Saves the game now, without waiting for the autosave timer.
+final class SaveGame extends GameCommand {
+  const SaveGame();
+}

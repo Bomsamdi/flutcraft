@@ -74,3 +74,8 @@ final class FlightToggled extends GameEvent {
 final class PlayerRespawned extends GameEvent {
   const PlayerRespawned();
 }
+
+/// The game was written to storage, automatically or on request.
+final class GameSaved extends GameEvent {
+  const GameSaved();
+}

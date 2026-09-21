@@ -56,6 +56,12 @@ class VoxelWorld {
   /// Chunki, które wymagają przebudowy siatki.
   final Set<int> dirtyChunks = <int>{};
 
+  /// Which seed produced this terrain.
+  ///
+  /// Stored here because it is a property of *this* world: the save keeps it
+  /// instead of the block array and regenerates the terrain on load.
+  int seed = 0;
+
   /// Bloki zmienione względem wygenerowanego terenu.
   ///
   /// Zapis gry trzyma ziarno i tę mapę zamiast 786 432 bajtów tablicy:

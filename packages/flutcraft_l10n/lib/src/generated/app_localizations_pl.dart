@@ -202,6 +202,9 @@ class AppLocalizationsPl extends AppLocalizations {
   String get msgFlightOff => 'Latanie: wyłączone';
 
   @override
+  String get msgGameSaved => 'Gra zapisana';
+
+  @override
   String get msgRespawned => 'Odrodzono w punkcie startowym';
 
   @override

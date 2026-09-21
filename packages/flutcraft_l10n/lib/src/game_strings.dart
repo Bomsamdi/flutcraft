@@ -93,6 +93,7 @@ class GameStrings {
     CreeperExploded() => _t.msgCreeperExploded,
     FlightToggled(:final enabled) => enabled ? _t.msgFlightOn : _t.msgFlightOff,
     PlayerRespawned() => _t.msgRespawned,
+    GameSaved() => _t.msgGameSaved,
   };
 
   /// The title of a screen.
