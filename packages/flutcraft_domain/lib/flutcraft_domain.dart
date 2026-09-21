@@ -27,6 +27,7 @@ export 'src/physics/voxel_body.dart';
 export 'src/session/game_event.dart';
 export 'src/session/game_state.dart';
 export 'src/session/systems/mining_system.dart';
+export 'src/session/systems/placement_system.dart';
 export 'src/session/ui_route.dart';
 export 'src/world/terrain_generator.dart';
 export 'src/world/voxel_world.dart';
