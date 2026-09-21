@@ -43,8 +43,9 @@ void main() {
     expect(find.text('Crafting Table'), findsOneWidget);
   });
 
-  testWidgets('bez składników wszystko jest oznaczone jako niedostępne',
-      (tester) async {
+  testWidgets('bez składników wszystko jest oznaczone jako niedostępne', (
+    tester,
+  ) async {
     await tester.pumpWidget(book(Inventory()));
 
     expect(find.text('You have the ingredients'), findsNothing);
@@ -63,10 +64,7 @@ void main() {
     final inventory = Inventory()..add(ItemType.cobblestone, 8);
     await tester.pumpWidget(book(inventory));
 
-    expect(
-      find.text('You have the ingredients — use a table'),
-      findsOneWidget,
-    );
+    expect(find.text('You have the ingredients — use a table'), findsOneWidget);
   });
 
   testWidgets('kłoda w ekwipunku odblokowuje desk i tylko je', (tester) async {
@@ -76,8 +74,9 @@ void main() {
     expect(find.text('You have the ingredients'), findsOneWidget);
   });
 
-  testWidgets('materiały na kilof podświetlają przepisy ze stołu',
-      (tester) async {
+  testWidgets('materiały na kilof podświetlają przepisy ze stołu', (
+    tester,
+  ) async {
     final inventory = Inventory()
       ..add(ItemType.cobblestone, 8)
       ..add(ItemType.stick, 2);
@@ -116,4 +115,3 @@ void main() {
     expect(find.text('Sand → Bricks'), findsOneWidget);
   });
 }
-

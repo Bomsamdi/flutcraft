@@ -103,7 +103,11 @@ class MobModels {
   };
 
   /// Zombie i szkielet: ta sama sylwetka, inne proporcje.
-  MobModel _humanoid(MobKind kind, {bool slim = false, bool armForward = false}) {
+  MobModel _humanoid(
+    MobKind kind, {
+    bool slim = false,
+    bool armForward = false,
+  }) {
     final limb = slim ? 0.13 : 0.17;
     final torsoWidth = slim ? 0.42 : 0.5;
     final skin = kind.skin;

@@ -13,25 +13,22 @@ import 'package:flutcraft_domain/flutcraft_domain.dart';
 /// W odróżnieniu od [MeshComponent] siatka jest wymienialna - po zbiciu
 /// lub postawieniu bloku podmieniamy ją bez usuwania komponentu z drzewa.
 class ChunkComponent extends Object3D {
-  ChunkComponent({
-    required this.cx,
-    required this.cz,
-    required int worldHeight,
-  }) : _localAabb = Aabb3.minMax(
-         Vector3.zero(),
-         Vector3(
-           VoxelWorld.chunkSize.toDouble(),
-           worldHeight.toDouble(),
-           VoxelWorld.chunkSize.toDouble(),
-         ),
-       ),
-       super(
-         position: Vector3(
-           (cx * VoxelWorld.chunkSize).toDouble(),
-           0,
-           (cz * VoxelWorld.chunkSize).toDouble(),
-         ),
-       );
+  ChunkComponent({required this.cx, required this.cz, required int worldHeight})
+    : _localAabb = Aabb3.minMax(
+        Vector3.zero(),
+        Vector3(
+          VoxelWorld.chunkSize.toDouble(),
+          worldHeight.toDouble(),
+          VoxelWorld.chunkSize.toDouble(),
+        ),
+      ),
+      super(
+        position: Vector3(
+          (cx * VoxelWorld.chunkSize).toDouble(),
+          0,
+          (cz * VoxelWorld.chunkSize).toDouble(),
+        ),
+      );
 
   final int cx;
   final int cz;
@@ -106,11 +103,7 @@ class ChunkManager extends Component {
     for (var cz = 0; cz < world.chunksZ; cz++) {
       for (var cx = 0; cx < world.chunksX; cx++) {
         final key = cz * world.chunksX + cx;
-        _chunks[key] = ChunkComponent(
-          cx: cx,
-          cz: cz,
-          worldHeight: world.sizeY,
-        );
+        _chunks[key] = ChunkComponent(cx: cx, cz: cz, worldHeight: world.sizeY);
       }
     }
     return _chunks.values.toList();

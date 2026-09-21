@@ -30,11 +30,7 @@ void main() {
       final world = VoxelWorld(sizeX: 16, sizeY: 16, sizeZ: 16)
         ..setRaw(5, 2, 2, BlockType.stone);
 
-      final hit = world.raycast(
-        Vector3(0.5, 2.5, 2.5),
-        Vector3(1, 0, 0),
-        10,
-      );
+      final hit = world.raycast(Vector3(0.5, 2.5, 2.5), Vector3(1, 0, 0), 10);
 
       expect(hit, isNotNull);
       expect((hit!.x, hit.y, hit.z), (5, 2, 2));
@@ -101,8 +97,7 @@ void main() {
       for (var y = 1; y <= 3; y++) {
         world.setRaw(12, y, 8, BlockType.stone);
       }
-      final player = Player(world: world, spawn: Vector3(8.5, 1, 8.5))
-        ..yaw = 0;
+      final player = Player(world: world, spawn: Vector3(8.5, 1, 8.5))..yaw = 0;
 
       // yaw = 0 to kierunek -Z; obracamy o -90 stopni, żeby iść w +X.
       player.yaw = -1.5707963267948966;
@@ -218,10 +213,7 @@ void main() {
 
     test('liście i bedrock nie dają nic', () {
       expect(blockDrops(BlockType.leaves, null, rng), isEmpty);
-      expect(
-        blockDrops(BlockType.bedrock, ItemType.ironPickaxe, rng),
-        isEmpty,
-      );
+      expect(blockDrops(BlockType.bedrock, ItemType.ironPickaxe, rng), isEmpty);
     });
 
     test('bedrock jest niezniszczalny', () {

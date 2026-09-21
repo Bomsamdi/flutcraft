@@ -18,8 +18,7 @@ class BlockPos {
   final int z;
 
   /// The neighbour offset by the given deltas.
-  BlockPos offset(int dx, int dy, int dz) =>
-      BlockPos(x + dx, y + dy, z + dz);
+  BlockPos offset(int dx, int dy, int dz) => BlockPos(x + dx, y + dy, z + dz);
 
   /// The centre of this block in world space.
   Vector3 get center => Vector3(x + 0.5, y + 0.5, z + 0.5);

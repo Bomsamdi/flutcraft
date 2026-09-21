@@ -165,7 +165,9 @@ class CraftingScreen extends StatelessWidget {
     final preview = game.craftPreview;
 
     return ScreenFrame(
-      title: isTable ? context.t.screenCraftingTable : context.t.screenInventory,
+      title: isTable
+          ? context.t.screenCraftingTable
+          : context.t.screenInventory,
       onClose: game.closeScreen,
       onRecipes: game.openRecipes,
       child: Column(
@@ -207,10 +209,7 @@ class CraftingScreen extends StatelessWidget {
                 style: const TextStyle(color: Colors.white38, fontSize: 11),
               ),
             ),
-          Divider(
-            color: Colors.white24,
-            height: _isCompact(context) ? 14 : 22,
-          ),
+          Divider(color: Colors.white24, height: _isCompact(context) ? 14 : 22),
           InventoryPanel(game: game, image: image),
           SizedBox(height: _isCompact(context) ? 6 : 10),
           CursorBar(image: image, stack: game.cursor),
@@ -323,10 +322,7 @@ class FurnaceScreen extends StatelessWidget {
               style: const TextStyle(color: Colors.white38, fontSize: 11),
             ),
           ),
-          Divider(
-            color: Colors.white24,
-            height: _isCompact(context) ? 14 : 22,
-          ),
+          Divider(color: Colors.white24, height: _isCompact(context) ? 14 : 22),
           InventoryPanel(game: game, image: image),
           SizedBox(height: _isCompact(context) ? 6 : 10),
           CursorBar(image: image, stack: game.cursor),

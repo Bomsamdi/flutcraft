@@ -121,11 +121,7 @@ const List<Recipe> kRecipes = [
   // Cegły zdobywa się wytapiając piasek, więc nie ma dla nich przepisu.
   Recipe.shaped(
     pattern: ['I', 'S', 'F'],
-    key: {
-      'I': ItemType.ironIngot,
-      'S': ItemType.stick,
-      'F': ItemType.string,
-    },
+    key: {'I': ItemType.ironIngot, 'S': ItemType.stick, 'F': ItemType.string},
     output: ItemType.arrow,
     outputCount: 4,
   ),
@@ -171,14 +167,23 @@ bool _matchesShaped(Recipe recipe, CraftingGrid grid) {
   if (recipe.width > grid.size || recipe.height > grid.size) return false;
 
   for (var offsetRow = 0; offsetRow <= grid.size - recipe.height; offsetRow++) {
-    for (var offsetCol = 0; offsetCol <= grid.size - recipe.width; offsetCol++) {
+    for (
+      var offsetCol = 0;
+      offsetCol <= grid.size - recipe.width;
+      offsetCol++
+    ) {
       if (_matchesAt(recipe, grid, offsetRow, offsetCol)) return true;
     }
   }
   return false;
 }
 
-bool _matchesAt(Recipe recipe, CraftingGrid grid, int offsetRow, int offsetCol) {
+bool _matchesAt(
+  Recipe recipe,
+  CraftingGrid grid,
+  int offsetRow,
+  int offsetCol,
+) {
   for (var row = 0; row < grid.size; row++) {
     for (var col = 0; col < grid.size; col++) {
       final expected = recipe.at(row - offsetRow, col - offsetCol);

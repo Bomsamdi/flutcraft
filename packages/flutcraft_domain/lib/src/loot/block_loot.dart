@@ -26,15 +26,12 @@ final Map<BlockType, LootTable> kBlockLoot = {
 ///
 /// Returns an empty list when the tool is too weak — mining stone bare-handed
 /// destroys it without a drop, as in the original.
-List<ItemStack> blockDrops(
-  BlockType block,
-  ItemType? heldItem,
-  Random rng,
-) {
+List<ItemStack> blockDrops(BlockType block, ItemType? heldItem, Random rng) {
   final tier = heldItem?.tool == ToolType.pickaxe ? heldItem!.tier : 0;
   if (block.requiredTier > tier) return const [];
 
-  final table = kBlockLoot[block] ??
+  final table =
+      kBlockLoot[block] ??
       switch (ItemType.forBlock(block)) {
         final item? => LootTable.single(item),
         _ => LootTable.empty,

@@ -45,11 +45,8 @@ class RayHit {
 /// Świat jest skończony (bez streamingu chunków z dysku) - to prototyp,
 /// więc cała mapa mieści się w pamięci i generuje się raz na starcie.
 class VoxelWorld {
-  VoxelWorld({
-    this.sizeX = 128,
-    this.sizeY = 48,
-    this.sizeZ = 128,
-  }) : _blocks = Uint8List(sizeX * sizeY * sizeZ);
+  VoxelWorld({this.sizeX = 128, this.sizeY = 48, this.sizeZ = 128})
+    : _blocks = Uint8List(sizeX * sizeY * sizeZ);
 
   final int sizeX;
   final int sizeY;

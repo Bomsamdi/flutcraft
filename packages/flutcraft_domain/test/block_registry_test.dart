@@ -34,8 +34,10 @@ void main() {
         OpenCraftingTable() => 'crafting',
         OpenFurnace() => 'furnace',
       };
-      expect(describe(registry.interactionFor(BlockType.craftingTable)!),
-          'crafting');
+      expect(
+        describe(registry.interactionFor(BlockType.craftingTable)!),
+        'crafting',
+      );
       expect(describe(registry.interactionFor(BlockType.furnace)!), 'furnace');
     });
   });
@@ -52,8 +54,9 @@ void main() {
     });
 
     test('tylko piec ma dwa stany palenia', () {
-      final withVariants =
-          BlockType.values.where((b) => b.hasLitVariant).toSet();
+      final withVariants = BlockType.values
+          .where((b) => b.hasLitVariant)
+          .toSet();
       expect(withVariants, {BlockType.furnace, BlockType.furnaceLit});
     });
 

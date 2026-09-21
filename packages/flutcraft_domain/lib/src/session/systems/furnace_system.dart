@@ -15,7 +15,8 @@ class FurnaceSystem {
       if (!current.hasLitVariant) continue;
 
       final lit = state.furnaces[pos]!.isLit;
-      final wanted = (lit ? current.litVariant : current.unlitVariant) ?? current;
+      final wanted =
+          (lit ? current.litVariant : current.unlitVariant) ?? current;
       if (current != wanted) state.world.setBlock(pos.x, pos.y, pos.z, wanted);
     }
   }

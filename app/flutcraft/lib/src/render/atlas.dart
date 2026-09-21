@@ -396,8 +396,14 @@ int _pixel(Tile tile, int x, int y) {
       return _vary(_kSpider, (n - 0.5) * 20);
 
     case Tile.spiderFace:
-      for (final (cx, cy) in const [(4, 6), (7, 6), (9, 6), (12, 6),
-        (5, 9), (11, 9)]) {
+      for (final (cx, cy) in const [
+        (4, 6),
+        (7, 6),
+        (9, 6),
+        (12, 6),
+        (5, 9),
+        (11, 9),
+      ]) {
         final dx = x - cx;
         final dy = y - cy;
         if (dx * dx + dy * dy <= 1.2) return 0xFFD02020;
@@ -440,7 +446,6 @@ bool _creeperMask(int x, int y) {
   }
   return false;
 }
-
 
 /// Worley-lite: komórki bruku + ciemna fuga na granicach.
 int _cobble(int x, int y, int salt, int base) {

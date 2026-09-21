@@ -51,12 +51,7 @@ class ExplosionSystem {
     }
   }
 
-  void _hurtPlayer(
-    GameState state,
-    Vector3 at,
-    double radius,
-    int maxDamage,
-  ) {
+  void _hurtPlayer(GameState state, Vector3 at, double radius, int maxDamage) {
     final blastRadius = radius + 1;
     final distance = state.player.center.distanceTo(at);
     if (distance >= blastRadius) return;

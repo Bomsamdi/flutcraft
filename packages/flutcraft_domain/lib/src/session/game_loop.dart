@@ -25,11 +25,8 @@ import 'package:vector_math/vector_math.dart';
 
 /// What the player is holding down this frame.
 class InputFrame {
-  InputFrame({
-    MoveInput? move,
-    this.mining = false,
-    this.using = false,
-  }) : move = move ?? MoveInput();
+  InputFrame({MoveInput? move, this.mining = false, this.using = false})
+    : move = move ?? MoveInput();
 
   final MoveInput move;
 
@@ -48,12 +45,9 @@ class InputFrame {
 /// no GPU, so a test can run thousands of frames in milliseconds — which is
 /// the point of the entire refactor.
 class GameLoop implements MobTickContext {
-  GameLoop({
-    required this.state,
-    required MobSpawner spawner,
-    Random? random,
-  }) : _mobAi = MobAiSystem(spawner: spawner, random: random ?? Random()),
-       _mining = MiningSystem(random: random ?? Random());
+  GameLoop({required this.state, required MobSpawner spawner, Random? random})
+    : _mobAi = MobAiSystem(spawner: spawner, random: random ?? Random()),
+      _mining = MiningSystem(random: random ?? Random());
 
   final GameState state;
 
@@ -160,8 +154,7 @@ class GameLoop implements MobTickContext {
       _closeRoute();
       return;
     }
-    _routeBeforeRecipes =
-        state.route == UiRoute.none ? null : state.route;
+    _routeBeforeRecipes = state.route == UiRoute.none ? null : state.route;
     _openRoute(UiRoute.recipes);
   }
 
@@ -251,14 +244,13 @@ class GameLoop implements MobTickContext {
   /// What the crafting grid would produce right now.
   ItemStack? get craftPreview {
     final recipe = matchRecipe(state.activeGrid);
-    return recipe == null
-        ? null
-        : ItemStack(recipe.output, recipe.outputCount);
+    return recipe == null ? null : ItemStack(recipe.output, recipe.outputCount);
   }
 
   @override
-  void spawnArrow(Vector3 from, Vector3 direction) => state.arrows
-      .add(Arrow(world: state.world, spawn: from, direction: direction));
+  void spawnArrow(Vector3 from, Vector3 direction) => state.arrows.add(
+    Arrow(world: state.world, spawn: from, direction: direction),
+  );
 
   @override
   void explode(Vector3 at, double radius, int maxDamage) =>

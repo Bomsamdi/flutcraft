@@ -25,9 +25,7 @@ const forbiddenImports = <String, Map<String, String>>{
     'package:flutter/': 'atlas generation is pure arithmetic',
     'package:flame': 'atlas generation must not touch the GPU',
   },
-  'flutcraft_ui': {
-    'package:flame': 'every screen must render without a GPU',
-  },
+  'flutcraft_ui': {'package:flame': 'every screen must render without a GPU'},
 };
 
 void main() {
@@ -72,9 +70,10 @@ List<_Package> _findPackages(Directory root) {
       final pubspec = File('${entry.path}/pubspec.yaml');
       if (!pubspec.existsSync()) continue;
       final text = pubspec.readAsStringSync();
-      final name = RegExp(r'^name:\s*(\S+)', multiLine: true)
-          .firstMatch(text)
-          ?.group(1);
+      final name = RegExp(
+        r'^name:\s*(\S+)',
+        multiLine: true,
+      ).firstMatch(text)?.group(1);
       if (name != null) result.add(_Package(name, entry, text));
     }
   }
@@ -128,13 +127,17 @@ List<String> _checkImports(_Package package) {
   for (final file in files) {
     final lines = file.readAsLinesSync();
     for (var i = 0; i < lines.length; i++) {
-      final match = RegExp(r"""^\s*import\s+['"]([^'"]+)['"]""")
-          .firstMatch(lines[i]);
+      final match = RegExp(
+        r"""^\s*import\s+['"]([^'"]+)['"]""",
+      ).firstMatch(lines[i]);
       if (match == null) continue;
       final uri = match.group(1)!;
       for (final entry in rules.entries) {
         if (uri.startsWith(entry.key)) {
-          final relative = file.path.replaceFirst('${Directory.current.path}/', '');
+          final relative = file.path.replaceFirst(
+            '${Directory.current.path}/',
+            '',
+          );
           violations.add('$relative:${i + 1} imports "$uri" — ${entry.value}');
         }
       }

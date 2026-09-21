@@ -81,36 +81,32 @@ void main() {
     });
 
     test('kamienny kilof wymaga siatki 3x3', () {
-      final small = gridOf(['CC', 'S.'], {
-        'C': ItemType.cobblestone,
-        'S': ItemType.stick,
-      });
+      final small = gridOf(
+        ['CC', 'S.'],
+        {'C': ItemType.cobblestone, 'S': ItemType.stick},
+      );
       expect(matchRecipe(small), isNull);
 
-      final big = gridOf(['CCC', '.S.', '.S.'], {
-        'C': ItemType.cobblestone,
-        'S': ItemType.stick,
-      });
+      final big = gridOf(
+        ['CCC', '.S.', '.S.'],
+        {'C': ItemType.cobblestone, 'S': ItemType.stick},
+      );
       expect(matchRecipe(big)?.output, ItemType.stonePickaxe);
     });
 
     test('miecz da się zrobić w przesuniętym rogu siatki 3x3', () {
-      final shifted = gridOf(['..I', '..I', '..S'], {
-        'I': ItemType.ironIngot,
-        'S': ItemType.stick,
-      });
+      final shifted = gridOf(
+        ['..I', '..I', '..S'],
+        {'I': ItemType.ironIngot, 'S': ItemType.stick},
+      );
       expect(matchRecipe(shifted)?.output, ItemType.ironSword);
     });
 
     test('pierścień bruku to piec, pełny kwadrat już nie', () {
-      final ring = gridOf(['CCC', 'C.C', 'CCC'], {
-        'C': ItemType.cobblestone,
-      });
+      final ring = gridOf(['CCC', 'C.C', 'CCC'], {'C': ItemType.cobblestone});
       expect(matchRecipe(ring)?.output, ItemType.furnace);
 
-      final full = gridOf(['CCC', 'CCC', 'CCC'], {
-        'C': ItemType.cobblestone,
-      });
+      final full = gridOf(['CCC', 'CCC', 'CCC'], {'C': ItemType.cobblestone});
       expect(matchRecipe(full), isNull);
     });
 
@@ -197,10 +193,7 @@ void main() {
 
     test('kilofy mają rosnący poziom i obrażenia', () {
       expect(ItemType.woodenPickaxe.tier, lessThan(ItemType.ironPickaxe.tier));
-      expect(
-        ItemType.woodenSword.damage,
-        lessThan(ItemType.ironSword.damage),
-      );
+      expect(ItemType.woodenSword.damage, lessThan(ItemType.ironSword.damage));
     });
 
     test('tylko węgiel pali się w piecu', () {

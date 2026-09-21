@@ -1,4 +1,3 @@
-
 import 'package:flutcraft_domain/flutcraft_domain.dart';
 
 /// Migawka stanu gry dla warstwy HUD (Flutter).
@@ -60,6 +59,5 @@ class HudSnapshot {
   /// Licznik zmian stanu ekwipunku - klucz do odświeżania UI.
   final int revision;
 
-  ItemStack? get held =>
-      selected < hotbar.length ? hotbar[selected] : null;
+  ItemStack? get held => selected < hotbar.length ? hotbar[selected] : null;
 }

@@ -79,8 +79,9 @@ void main() {
       expect(find.text('3'), findsOneWidget);
     });
 
-    testWidgets('kliknięcie slotu wysyła komendę do prawdziwej gry',
-        (tester) async {
+    testWidgets('kliknięcie slotu wysyła komendę do prawdziwej gry', (
+      tester,
+    ) async {
       final game = headlessGame();
       game.loop.state.inventory
         ..add(ItemType.planks, 5)
@@ -97,8 +98,7 @@ void main() {
       expect(game.loop.state.heldItem, ItemType.coal);
     });
 
-    testWidgets('ikona plecaka otwiera ekwipunek w symulacji',
-        (tester) async {
+    testWidgets('ikona plecaka otwiera ekwipunek w symulacji', (tester) async {
       final game = await pumpHud(tester);
 
       await tester.tap(find.byIcon(Icons.backpack));
@@ -107,8 +107,9 @@ void main() {
       expect(game.loop.state.route, UiRoute.inventory);
     });
 
-    testWidgets('obrażenia gracza widać w HUD po następnej migawce',
-        (tester) async {
+    testWidgets('obrażenia gracza widać w HUD po następnej migawce', (
+      tester,
+    ) async {
       final game = await pumpHud(tester);
       expect(find.byIcon(Icons.favorite), findsNWidgets(10));
 
@@ -119,8 +120,9 @@ void main() {
       expect(find.byIcon(Icons.favorite), findsNWidgets(7));
     });
 
-    testWidgets('celownik staje się wrogi, gdy na muszce jest potwór',
-        (tester) async {
+    testWidgets('celownik staje się wrogi, gdy na muszce jest potwór', (
+      tester,
+    ) async {
       final game = headlessGame();
       final state = game.loop.state;
       state.mobs.add(

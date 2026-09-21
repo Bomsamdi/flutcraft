@@ -114,9 +114,7 @@ class GameSnapshot {
 
   static ItemStack? _previewOf(GameState state) {
     final recipe = matchRecipe(state.activeGrid);
-    return recipe == null
-        ? null
-        : ItemStack(recipe.output, recipe.outputCount);
+    return recipe == null ? null : ItemStack(recipe.output, recipe.outputCount);
   }
 
   static FurnaceView? _furnaceOf(GameState state) {

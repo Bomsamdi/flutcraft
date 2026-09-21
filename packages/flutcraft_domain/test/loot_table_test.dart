@@ -32,7 +32,10 @@ void main() {
     });
 
     test('odrzuca bezsensowne konfiguracje', () {
-      expect(() => LootEntry(ItemType.coal, min: 0), throwsA(isA<AssertionError>()));
+      expect(
+        () => LootEntry(ItemType.coal, min: 0),
+        throwsA(isA<AssertionError>()),
+      );
       expect(
         () => LootEntry(ItemType.coal, min: 3, max: 1),
         throwsA(isA<AssertionError>()),

@@ -16,11 +16,7 @@ class MobAiSystem {
   final MobSpawner spawner;
   final Random random;
 
-  List<GameEvent> update(
-    GameState state,
-    double dt,
-    MobTickContext context,
-  ) {
+  List<GameEvent> update(GameState state, double dt, MobTickContext context) {
     final events = <GameEvent>[];
 
     final spawned = spawner.maybeSpawn(dt, state.player, state.mobs.length);

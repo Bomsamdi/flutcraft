@@ -39,11 +39,14 @@ void main() {
       expect(recipeFor(ItemType.ironSword).needsTable, isTrue);
     });
 
-    test('miecz drewniany mieści się w słupku 3 pól, więc potrzebuje stołu', () {
-      // Wzór ma trzy wiersze, a siatka w ekwipunku ma tylko dwa.
-      expect(recipeFor(ItemType.woodenSword).height, 3);
-      expect(recipeFor(ItemType.woodenSword).needsTable, isTrue);
-    });
+    test(
+      'miecz drewniany mieści się w słupku 3 pól, więc potrzebuje stołu',
+      () {
+        // Wzór ma trzy wiersze, a siatka w ekwipunku ma tylko dwa.
+        expect(recipeFor(ItemType.woodenSword).height, 3);
+        expect(recipeFor(ItemType.woodenSword).needsTable, isTrue);
+      },
+    );
   });
 
   group('canCraft', () {
@@ -75,7 +78,11 @@ void main() {
     test('pusty ekwipunek nie pozwala na nic poza niczym', () {
       final inventory = Inventory();
       for (final recipe in kRecipes) {
-        expect(canCraft(recipe, inventory), isFalse, reason: recipe.output.name);
+        expect(
+          canCraft(recipe, inventory),
+          isFalse,
+          reason: recipe.output.name,
+        );
       }
     });
   });

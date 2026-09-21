@@ -36,23 +36,28 @@ void main() {
   group('breakTime', () {
     test('pasujące narzędzie kopie szybciej niż ręka', () {
       final bare = MiningSystem.breakTime(BlockType.stone, null);
-      final wooden =
-          MiningSystem.breakTime(BlockType.stone, ItemType.woodenPickaxe);
+      final wooden = MiningSystem.breakTime(
+        BlockType.stone,
+        ItemType.woodenPickaxe,
+      );
       expect(wooden, lessThan(bare));
     });
 
     test('lepszy poziom narzędzia kopie szybciej', () {
-      final wooden =
-          MiningSystem.breakTime(BlockType.stone, ItemType.woodenPickaxe);
-      final iron =
-          MiningSystem.breakTime(BlockType.stone, ItemType.ironPickaxe);
+      final wooden = MiningSystem.breakTime(
+        BlockType.stone,
+        ItemType.woodenPickaxe,
+      );
+      final iron = MiningSystem.breakTime(
+        BlockType.stone,
+        ItemType.ironPickaxe,
+      );
       expect(iron, lessThan(wooden));
     });
 
     test('niepasujące narzędzie nie pomaga', () {
       final bare = MiningSystem.breakTime(BlockType.stone, null);
-      final sword =
-          MiningSystem.breakTime(BlockType.stone, ItemType.ironSword);
+      final sword = MiningSystem.breakTime(BlockType.stone, ItemType.ironSword);
       expect(sword, bare);
     });
 
@@ -155,8 +160,10 @@ void main() {
         return MobKind.zombie.maxHealth - mob.health;
       }
 
-      expect(damageWith(ItemType.ironSword),
-          greaterThan(damageWith(ItemType.woodenPickaxe)));
+      expect(
+        damageWith(ItemType.ironSword),
+        greaterThan(damageWith(ItemType.woodenPickaxe)),
+      );
       expect(damageWith(ItemType.woodenPickaxe), greaterThan(damageWith(null)));
     });
 

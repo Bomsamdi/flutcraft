@@ -86,12 +86,12 @@ class GameStrings {
       PlacementRejection.insidePlayer => _t.msgInsidePlayer,
       PlacementRejection.insideMob => _t.msgInsideMob,
     },
-    MobKilled(:final kind, :final loot) => loot.isEmpty
-        ? _t.msgMobDefeated(mobName(kind))
-        : _t.msgMobDefeatedWithLoot(mobName(kind), _lootList(loot)),
+    MobKilled(:final kind, :final loot) =>
+      loot.isEmpty
+          ? _t.msgMobDefeated(mobName(kind))
+          : _t.msgMobDefeatedWithLoot(mobName(kind), _lootList(loot)),
     CreeperExploded() => _t.msgCreeperExploded,
-    FlightToggled(:final enabled) =>
-      enabled ? _t.msgFlightOn : _t.msgFlightOff,
+    FlightToggled(:final enabled) => enabled ? _t.msgFlightOn : _t.msgFlightOff,
     PlayerRespawned() => _t.msgRespawned,
   };
 

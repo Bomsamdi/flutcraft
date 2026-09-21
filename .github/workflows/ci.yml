@@ -1,0 +1,111 @@
+name: CI
+
+on:
+  push:
+    branches: [main, 'episode/**']
+    tags: ['ep-*']
+  pull_request:
+    branches: [main]
+
+env:
+  FLUTTER_VERSION: '3.44.8'
+
+jobs:
+  format:
+    name: Format
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+      - run: dart format --output=none --set-exit-if-changed .
+
+  analyze:
+    name: Analyze
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+      - run: flutter pub get
+      - name: Analyze every package
+        run: flutter analyze --fatal-infos --fatal-warnings
+
+  test-dart:
+    name: Test (pure Dart)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+      - run: flutter pub get
+      # The domain has no Flutter dependency, so its tests run in seconds.
+      - run: dart test
+        working-directory: packages/flutcraft_domain
+
+  test-flutter:
+    name: Test (Flutter)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+      - run: flutter pub get
+      - run: flutter test
+        working-directory: packages/flutcraft_l10n
+      - run: flutter test
+        working-directory: app/flutcraft
+
+  layering:
+    name: Architecture boundaries
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+      - run: dart run tool/check_layering.dart
+
+  platform-config:
+    name: Platform configuration
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+      - run: dart run tool/check_platform_config.dart
+
+  l10n-drift:
+    name: Generated translations are current
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+      - run: flutter pub get
+      - run: flutter gen-l10n
+        working-directory: packages/flutcraft_l10n
+      # Generated files are committed so `git checkout ep-15 && flutter run`
+      # works; this job proves they match the ARB files.
+      - run: git diff --exit-code packages/flutcraft_l10n/lib/src/generated
+
+  build:
+    name: Release builds
+    if: startsWith(github.ref, 'refs/tags/ep-')
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+      - run: flutter pub get
+      - run: flutter build macos --release
+        working-directory: app/flutcraft
+      - run: flutter build ios --release --no-codesign
+        working-directory: app/flutcraft
