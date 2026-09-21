@@ -14,6 +14,7 @@ const thresholds = <String, int>{
   'flutcraft_domain': 90,
   'flutcraft_atlas': 85,
   'flutcraft_protocol': 85,
+  'flutcraft_server': 80,
   'flutcraft_ui': 70,
 };
 

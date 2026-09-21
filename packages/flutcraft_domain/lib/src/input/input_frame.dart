@@ -40,6 +40,16 @@ final class InputFrame {
 
   bool isHeld(GameAction action) => held.contains(action);
 
+  /// The same intent, minus everything that may only happen once.
+  ///
+  /// A server keeps a client's last input for a few ticks so that one lost
+  /// packet does not freeze that player. A held key genuinely still counts
+  /// while the next packet is late; a press and a look delta do not — held
+  /// for ten ticks they would open a screen ten times and spin the view a
+  /// tenfold.
+  InputFrame get sustained =>
+      InputFrame(forward: forward, strafe: strafe, held: held);
+
   /// This frame as step [index] of [steps] equal simulation steps.
   ///
   /// A rendered frame can be worth more than one step, and the parts of a

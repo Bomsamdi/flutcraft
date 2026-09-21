@@ -24,14 +24,14 @@ final class Inventory extends SlotContainer {
       final stack = slots[i];
       if (stack == null || stack.type != type || stack.space <= 0) continue;
       final moved = left < stack.space ? left : stack.space;
-      slots[i] = stack.plus(moved);
+      this[i] = stack.plus(moved);
       left -= moved;
     }
 
     for (var i = 0; i < slots.length && left > 0; i++) {
       if (slots[i] != null) continue;
       final moved = left < type.maxStack ? left : type.maxStack;
-      slots[i] = ItemStack(type, moved);
+      this[i] = ItemStack(type, moved);
       left -= moved;
     }
 

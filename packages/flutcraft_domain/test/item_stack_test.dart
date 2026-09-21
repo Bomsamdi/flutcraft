@@ -101,6 +101,20 @@ void main() {
       expect(grid.isEmpty, isTrue);
     });
 
+    test('the revision rises with every change, and only then', () {
+      final inventory = Inventory();
+      final start = inventory.revision;
+
+      inventory.add(ItemType.coal, 3);
+      final afterAdd = inventory.revision;
+      inventory[0] = inventory[0];
+
+      // A server sends an inventory when it changes; a write that changes
+      // nothing must not make it look like news.
+      expect(afterAdd, greaterThan(start));
+      expect(inventory.revision, afterAdd);
+    });
+
     test('clear empties every slot', () {
       final inventory = Inventory()..add(ItemType.dirt, 100);
       expect(inventory.isEmpty, isFalse);

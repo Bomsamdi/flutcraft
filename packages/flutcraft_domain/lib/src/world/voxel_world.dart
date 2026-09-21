@@ -53,6 +53,23 @@ class VoxelWorld {
   final int sizeZ;
   final Uint8List _blocks;
 
+  final Set<BlockPos> _changed = {};
+
+  /// Blocks changed since the last [drainChanges].
+  ///
+  /// The renderer already tracks whole chunks, because that is the unit it
+  /// rebuilds. A server needs the blocks themselves: a chunk is 16x48x16 and
+  /// nobody wants to send it down a wire because one torch moved.
+  Set<BlockPos> get changedBlocks => _changed;
+
+  /// Takes the accumulated block changes and starts a new batch.
+  Set<BlockPos> drainChanges() {
+    if (_changed.isEmpty) return const {};
+    final taken = Set<BlockPos>.of(_changed);
+    _changed.clear();
+    return taken;
+  }
+
   /// Chunks whose mesh needs rebuilding.
   final Set<int> dirtyChunks = <int>{};
 
@@ -97,7 +114,9 @@ class VoxelWorld {
   void setBlock(int x, int y, int z, BlockType block) {
     if (!inBounds(x, y, z)) return;
     _blocks[_index(x, y, z)] = block.index;
-    edits[BlockPos(x, y, z)] = block;
+    final pos = BlockPos(x, y, z);
+    edits[pos] = block;
+    _changed.add(pos);
 
     final cx = x ~/ chunkSize;
     final cz = z ~/ chunkSize;
