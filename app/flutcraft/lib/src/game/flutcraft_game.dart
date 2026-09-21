@@ -144,6 +144,16 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
 
   /// Wybuchy: destrukcja terenu i obrażenia obszarowe.
   final ExplosionSystem _explosions = const ExplosionSystem();
+
+  /// Populacja potworów: spawn, tick, śmierć i łup.
+  late final MobAiSystem _mobAi =
+      MobAiSystem(spawner: spawner, random: spawner.rng);
+
+  /// Strzały w locie.
+  final ProjectileSystem _projectiles = const ProjectileSystem();
+
+  /// Wytop i podmiana tekstury pieca.
+  final FurnaceSystem _furnaces = const FurnaceSystem();
   bool _placing = false;
 
   // --- stan gry -------------------------------------------------------------
@@ -228,7 +238,7 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
       _fps = _fps == 0 ? instant : _fps * 0.9 + instant * 0.1;
     }
 
-    _tickFurnaces(dt);
+    _furnaces.update(state, dt);
 
     if (screen.pausesWorld) {
       // Świat zamarza, gdy gracz grzebie w ekwipunku.
@@ -312,62 +322,55 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
   // --- potwory --------------------------------------------------------------
 
   void _updateMobs(double dt) {
-    final spawned = spawner.maybeSpawn(dt, player, mobs.length);
-    if (spawned != null) _addMob(spawned);
-
-    for (final mob in List<Mob>.from(mobs)) {
-      mob.update(dt, player, this);
-      if (mob.isDead) {
-        _killMob(mob);
-      } else {
-        _mobComponents[mob]?.sync();
-      }
+    for (final event in _mobAi.update(state, dt, this)) {
+      _emit(event);
+      revision++;
     }
-  }
-
-  void _addMob(Mob mob) {
-    mobs.add(mob);
-    final component = MobComponent(
-      mob: mob,
-      model: mobModels.forKind(mob.kind),
-    )..sync();
-    _mobComponents[mob] = component;
-    world.add(component);
-  }
-
-  void _killMob(Mob mob) {
-    mobs.remove(mob);
-    _mobComponents.remove(mob)?.removeFromParent();
-
-    final drops = mob.kind.loot.roll(spawner.rng);
-    for (final drop in drops) {
-      inventory.add(drop.type, drop.count);
-    }
-
-    _emit(MobKilled(mob.kind, drops));
-    revision++;
+    _syncMobComponents();
   }
 
   void _updateArrows(double dt) {
-    for (final arrow in List<Arrow>.from(arrows)) {
-      arrow.update(dt, player);
-      if (arrow.removed) {
-        arrows.remove(arrow);
-        _arrowComponents.remove(arrow)?.removeFromParent();
-      } else {
-        _arrowComponents[arrow]?.sync();
-      }
+    _projectiles.update(state, dt);
+    _syncArrowComponents();
+  }
+
+  /// Dokłada komponenty dla nowych potworów, usuwa dla tych, których już nie
+  /// ma, i synchronizuje resztę. Jedno miejsce zamiast czterech.
+  void _syncMobComponents() {
+    for (final mob in mobs) {
+      final component = _mobComponents.putIfAbsent(mob, () {
+        final created = MobComponent(
+          mob: mob,
+          model: mobModels.forKind(mob.kind),
+        );
+        world.add(created);
+        return created;
+      });
+      component.sync();
     }
+    _mobComponents.keys.toList().where((m) => !mobs.contains(m)).forEach((m) {
+      _mobComponents.remove(m)?.removeFromParent();
+    });
+  }
+
+  void _syncArrowComponents() {
+    for (final arrow in arrows) {
+      final component = _arrowComponents.putIfAbsent(arrow, () {
+        final created = ArrowComponent(arrow: arrow, mesh: mobModels.arrow);
+        world.add(created);
+        return created;
+      });
+      component.sync();
+    }
+    _arrowComponents.keys
+        .toList()
+        .where((a) => !arrows.contains(a))
+        .forEach((a) => _arrowComponents.remove(a)?.removeFromParent());
   }
 
   @override
   void spawnArrow(Vector3 from, Vector3 direction) {
-    final arrow = Arrow(world: voxels, spawn: from, direction: direction);
-    arrows.add(arrow);
-    final component = ArrowComponent(arrow: arrow, mesh: mobModels.arrow)
-      ..sync();
-    _arrowComponents[arrow] = component;
-    world.add(component);
+    arrows.add(Arrow(world: voxels, spawn: from, direction: direction));
   }
 
   @override
@@ -463,22 +466,6 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
   }
 
   // --- piec -----------------------------------------------------------------
-
-  void _tickFurnaces(double dt) {
-    if (furnaces.isEmpty) return;
-    for (final pos in furnaces.tick(dt)) {
-      _applyFurnaceBlock(pos, furnaces[pos]!.isLit);
-    }
-  }
-
-  /// Podmienia blok pieca na wariant z płomieniem (lub z powrotem).
-  void _applyFurnaceBlock(BlockPos pos, bool lit) {
-    final current = voxels.blockAt(pos.x, pos.y, pos.z);
-    if (!current.hasLitVariant) return;
-    final wanted =
-        (lit ? current.litVariant : current.unlitVariant) ?? current;
-    if (current != wanted) voxels.setBlock(pos.x, pos.y, pos.z, wanted);
-  }
 
   // --- przedmiot w ręce -----------------------------------------------------
 
@@ -605,14 +592,10 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
 
   void respawn() {
     player.respawn();
-    for (final mob in List<Mob>.from(mobs)) {
-      mobs.remove(mob);
-      _mobComponents.remove(mob)?.removeFromParent();
-    }
-    for (final arrow in List<Arrow>.from(arrows)) {
-      arrows.remove(arrow);
-      _arrowComponents.remove(arrow)?.removeFromParent();
-    }
+    _mobAi.despawnAll(state);
+    _projectiles.clear(state);
+    _syncMobComponents();
+    _syncArrowComponents();
     screen = UiRoute.none;
     _emit(const PlayerRespawned());
     _publishHud();
