@@ -42,8 +42,7 @@ class VoxelCamera extends CameraComponent3D {
 
 /// Prototyp Minecrafta: woksele, crafting, piec i potwory.
 class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
-    with KeyboardEvents
-    implements MobTickContext {
+    with KeyboardEvents {
   factory FlutcraftGame({int seed = 1337}) {
     // Kamera i gra muszą wskazywać na ten sam World3D.
     final world = World3D();
@@ -70,7 +69,6 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
   VoxelWorld get voxels => state.world;
   late final TextureAtlas atlas;
   late final ChunkManager chunkManager;
-  @override
   Player get player => state.player;
   late final SelectionBox selection;
   late final HeldItem heldItem;
@@ -100,8 +98,6 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
   UiRoute get screen => state.route;
   set screen(UiRoute value) => state.route = value;
 
-  /// Ekran, do którego wraca księga przepisów po zamknięciu.
-  UiRoute? _screenBeforeRecipes;
 
   BlockPos? get openFurnaceKey => state.openFurnace;
   set openFurnaceKey(BlockPos? value) => state.openFurnace = value;
@@ -135,30 +131,9 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
   /// Czy gracz trzyma przycisk kopania/ataku.
   bool _isMining = false;
 
-  /// Kopanie i walka wręcz - cała logika czasu i obrażeń w domenie.
-  late final MiningSystem _mining = MiningSystem(random: spawner.rng);
-
-  /// Stawianie bloków wraz z regułami, gdzie wolno.
-  final PlacementSystem _placement = PlacementSystem();
-
-  /// Wybuchy: destrukcja terenu i obrażenia obszarowe.
-  final ExplosionSystem _explosions = const ExplosionSystem();
-
-  /// Populacja potworów: spawn, tick, śmierć i łup.
-  late final MobAiSystem _mobAi =
-      MobAiSystem(spawner: spawner, random: spawner.rng);
-
-  /// Strzały w locie.
-  final ProjectileSystem _projectiles = const ProjectileSystem();
-
-  /// Wytop i podmiana tekstury pieca.
-  final FurnaceSystem _furnaces = const FurnaceSystem();
-
-  /// Co jest pod celownikiem.
-  final AimingSystem _aiming = const AimingSystem();
-
-  /// Ruch gracza (fizyka siedzi w Player/VoxelBody).
-  final PlayerMovementSystem _movement = const PlayerMovementSystem();
+  /// Symulacja: wykonuje komendy i tyka systemy. Silnik tylko ją
+  /// napędza i rysuje wynik.
+  late final GameLoop loop;
   bool _placing = false;
 
   // --- stan gry -------------------------------------------------------------
@@ -211,6 +186,8 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
     // Okolica spawnu musi być gotowa zanim gracz zobaczy pierwszą klatkę.
     chunkManager.prebuild(20);
 
+    loop = GameLoop(state: state, spawner: spawner, random: spawner.rng);
+
     itemMeshes = ItemMeshes(atlas);
     mobModels = MobModels(atlas);
     spawner = MobSpawner(world: voxels, seed: seed);
@@ -243,34 +220,41 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
       _fps = _fps == 0 ? instant : _fps * 0.9 + instant * 0.1;
     }
 
-    _furnaces.update(state, dt);
-
-    if (screen.pausesWorld) {
-      // Świat zamarza, gdy gracz grzebie w ekwipunku.
-      _isMining = false;
-      _placing = false;
-      _updateHud(dt);
-      return;
-    }
-
     _applyKeyboardLook(dt);
-    _movement.update(state, dt, _collectInput());
+    _emitAll(loop.tick(dt, _inputFrame()));
+
     chunkManager.focus.setFrom(player.position);
-
-    if (player.isDead) {
-      _openScreen(UiRoute.dead);
-      _updateHud(dt);
-      return;
-    }
-
-    _updateMobs(dt);
-    _updateArrows(dt);
     _updateCamera();
-    _updateAim();
-    _updateMining(dt);
-    _updatePlacing(dt);
+    _updateSelection();
+    _syncMobComponents();
+    _syncArrowComponents();
     _updateHeldItem(dt);
     _updateHud(dt);
+  }
+
+  InputFrame _inputFrame() => InputFrame(
+    move: _collectInput(),
+    mining: _isMining,
+    using: _placing,
+  );
+
+  void _emitAll(List<GameEvent> events) {
+    for (final event in events) {
+      _emit(event);
+      if (event is BlockBroken || event is MobKilled) revision++;
+    }
+  }
+
+  /// Ramka zaznaczenia podąża za tym, co wybrał AimingSystem.
+  void _updateSelection() {
+    switch (_aim) {
+      case BlockTarget(:final hit):
+        selection
+          ..visible = true
+          ..target(hit.x, hit.y, hit.z);
+      case NoTarget() || MobTarget():
+        selection.visible = false;
+    }
   }
 
   void _updateHud(double dt) {
@@ -325,18 +309,7 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
 
   // --- potwory --------------------------------------------------------------
 
-  void _updateMobs(double dt) {
-    for (final event in _mobAi.update(state, dt, this)) {
-      _emit(event);
-      revision++;
-    }
-    _syncMobComponents();
-  }
 
-  void _updateArrows(double dt) {
-    _projectiles.update(state, dt);
-    _syncArrowComponents();
-  }
 
   /// Dokłada komponenty dla nowych potworów, usuwa dla tych, których już nie
   /// ma, i synchronizuje resztę. Jedno miejsce zamiast czterech.
@@ -372,91 +345,13 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
         .forEach((a) => _arrowComponents.remove(a)?.removeFromParent());
   }
 
-  @override
-  void spawnArrow(Vector3 from, Vector3 direction) {
-    arrows.add(Arrow(world: voxels, spawn: from, direction: direction));
-  }
 
-  @override
-  void explode(Vector3 at, double radius, int maxDamage) {
-    for (final event in _explosions.explode(state, at, radius, maxDamage)) {
-      _emit(event);
-    }
-  }
 
   // --- celowanie ------------------------------------------------------------
 
-  void _updateAim() {
-    _aiming.update(state);
-    switch (_aim) {
-      case BlockTarget(:final hit):
-        selection
-          ..visible = true
-          ..target(hit.x, hit.y, hit.z);
-      case NoTarget() || MobTarget():
-        selection.visible = false;
-    }
-  }
 
   // --- kopanie i walka ------------------------------------------------------
 
-  void _updateMining(double dt) {
-    for (final event in _mining.update(state, dt, active: _isMining)) {
-      _emit(event);
-      if (event is BlockBroken) {
-        selection.visible = false;
-        revision++;
-      }
-    }
-    if (_isMining && _aim is MobTarget) _swingTimer = _swingDuration;
-  }
-
-  // --- stawianie i interakcja -----------------------------------------------
-
-  void _updatePlacing(double dt) {
-    _applyPlacement(_placement.update(state, dt, active: _placing));
-  }
-
-  /// Prawy przycisk: otwiera stół/piec albo stawia blok.
-  void interactOrPlace() {
-    if (_aim case BlockTarget(:final hit)) {
-      if (blocks.isInteractive(hit.block)) {
-        _openBlock(hit);
-      } else {
-        placeBlock();
-      }
-    }
-  }
-
-  void placeBlock() => _applyPlacement(_placement.placeNow(state));
-
-  void _applyPlacement(List<GameEvent> events) {
-    for (final event in events) {
-      _emit(event);
-    }
-    if (events.isEmpty && _aim is BlockTarget) {
-      _swingTimer = _swingDuration;
-      _syncHeldMesh();
-      revision++;
-      _publishHud();
-    }
-  }
-
-  void _openBlock(RayHit hit) {
-    switch (blocks.interactionFor(hit.block)) {
-      case null:
-        return;
-      case OpenCraftingTable():
-        _openScreen(UiRoute.craftingTable);
-      case OpenFurnace():
-        final pos = hit.pos;
-        furnaces.open(pos);
-        openFurnaceKey = pos;
-        _openScreen(UiRoute.furnace);
-    }
-  }
-
-  // --- piec -----------------------------------------------------------------
 
   // --- przedmiot w ręce -----------------------------------------------------
 
@@ -482,15 +377,24 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
   }
 
   // --- API dla warstwy UI ---------------------------------------------------
+  //
+  // Każda akcja gracza to komenda. Silnik nie zawiera już logiki tych
+  // operacji - tylko przekazuje je do symulacji i odświeża widok.
+
+  void _run(GameCommand command) {
+    _emitAll(loop.dispatch(command));
+    _syncHeldMesh();
+    revision++;
+    _publishHud();
+  }
 
   void look(double dxPixels, double dyPixels) {
     if (screen.pausesWorld) return;
     player.look(-dxPixels * lookSensitivity, -dyPixels * lookSensitivity);
   }
 
-  void setMoveAxis(double strafe, double forward) {
-    _touchMove.setValues(strafe, forward);
-  }
+  void setMoveAxis(double strafe, double forward) =>
+      _touchMove.setValues(strafe, forward);
 
   void setJump(bool value) => _touchJump = value;
 
@@ -499,192 +403,51 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
     if (!_isMining) _breakProgress = 0;
   }
 
-  void setPlacing(bool value) {
-    _placing = value && !screen.pausesWorld;
-    if (_placing) _placement.resetCooldown();
-  }
+  void setPlacing(bool value) => _placing = value && !screen.pausesWorld;
 
-  void selectSlot(int index) {
-    if (index < 0 || index >= inventory.hotbarSize || index == selected) return;
-    selected = index;
-    _breakProgress = 0;
-    _syncHeldMesh();
-    _publishHud();
-  }
+  void selectSlot(int index) => _run(SelectHotbarSlot(index));
 
-  void cycleSlot(int delta) {
-    selectSlot((selected + delta) % inventory.hotbarSize);
-  }
+  void cycleSlot(int delta) => _run(CycleHotbarSlot(delta));
 
-  void toggleFly() {
-    player.flying = !player.flying;
-    if (player.flying) player.velocity.y = 0;
-    _emit(FlightToggled(player.flying));
-  }
+  void toggleFly() => _run(const ToggleFlight());
 
-  /// Otwiera księgę przepisów, zapamiętując, skąd ją wywołano.
-  ///
-  /// Dzięki temu zerknięcie na przepis w trakcie układania na stole nie
-  /// rozsypuje tego, co gracz już położył na siatce.
-  void openRecipes() {
-    if (screen == UiRoute.recipes) {
-      closeScreen();
-      return;
-    }
-    _screenBeforeRecipes = screen == UiRoute.none ? null : screen;
-    _openScreen(UiRoute.recipes);
-  }
+  void respawn() => _run(const Respawn());
 
-  void toggleInventory() {
-    if (screen == UiRoute.none) {
-      _openScreen(UiRoute.inventory);
-    } else if (screen != UiRoute.dead) {
-      closeScreen();
-    }
-  }
+  void closeScreen() => _run(const CloseRoute());
 
-  void _openScreen(UiRoute value) {
-    screen = value;
-    _isMining = false;
-    _placing = false;
-    _touchMove.setZero();
-    _publishHud();
-  }
+  void openRecipes() => _run(const OpenRecipes());
 
-  /// Zamyka ekran, oddając graczowi to, co zostało w siatce i na kursorze.
-  void closeScreen() {
-    // Z księgi wracamy tam, skąd ją otwarto - siatka zostaje nietknięta.
-    if (screen == UiRoute.recipes) {
-      final previous = _screenBeforeRecipes;
-      _screenBeforeRecipes = null;
-      screen = previous ?? UiRoute.none;
-      _publishHud();
-      return;
-    }
+  void interactOrPlace() => _run(const UseOrPlace());
 
-    final grid = activeGrid;
-    for (var i = 0; i < grid.slots.length; i++) {
-      final stack = grid[i];
-      if (stack == null) continue;
-      inventory.add(stack.type, stack.count);
-      grid[i] = null;
-    }
-    final held = cursor;
-    if (held != null) {
-      inventory.add(held.type, held.count);
-      cursor = null;
-    }
-    openFurnaceKey = null;
-    screen = UiRoute.none;
-    _syncHeldMesh();
-    revision++;
-    _publishHud();
-  }
+  void placeBlock() => _run(const UseOrPlace());
 
-  void respawn() {
-    player.respawn();
-    _mobAi.despawnAll(state);
-    _projectiles.clear(state);
-    _syncMobComponents();
-    _syncArrowComponents();
-    screen = UiRoute.none;
-    _emit(const PlayerRespawned());
-    _publishHud();
-  }
-
-  // --- przekładanie przedmiotów w UI ----------------------------------------
-
-  /// Kliknięcie w slot: podnosi, odkłada albo scala stosy.
-  void clickSlot(ItemStack? Function() get, void Function(ItemStack?) set) {
-    final result = transferSlot(get(), cursor);
-    set(result.slot);
-    cursor = result.cursor;
-
-    _syncHeldMesh();
-    revision++;
-    _publishHud();
-  }
-
-  /// Kliknięcie pomocnicze: dzieli stos albo dokłada po jednej sztuce.
-  void splitSlotAt(
-    ItemStack? Function() get,
-    void Function(ItemStack?) set,
-  ) {
-    final result = splitSlot(get(), cursor);
-    set(result.slot);
-    cursor = result.cursor;
-
-    _syncHeldMesh();
-    revision++;
-    _publishHud();
-  }
+  void toggleInventory() => _run(
+    screen == UiRoute.none
+        ? const OpenRoute(UiRoute.inventory)
+        : const CloseRoute(),
+  );
 
   void clickInventorySlot(int index) =>
-      clickSlot(() => inventory[index], (s) => inventory[index] = s);
+      _run(ClickSlot(InventorySlotRef(index)));
 
   void splitInventorySlot(int index) =>
-      splitSlotAt(() => inventory[index], (s) => inventory[index] = s);
+      _run(ClickSlot(InventorySlotRef(index), kind: ClickKind.split));
 
-  void clickGridSlot(int index) {
-    final grid = activeGrid;
-    clickSlot(() => grid[index], (s) => grid[index] = s);
-  }
+  void clickGridSlot(int index) => _run(ClickSlot(GridSlotRef(index)));
 
-  void splitGridSlot(int index) {
-    final grid = activeGrid;
-    splitSlotAt(() => grid[index], (s) => grid[index] = s);
-  }
+  void splitGridSlot(int index) =>
+      _run(ClickSlot(GridSlotRef(index), kind: ClickKind.split));
 
-  /// Slot wyniku craftingu: wyjmuje gotowy przedmiot i zużywa składniki.
-  void takeCraftResult() {
-    final grid = activeGrid;
-    final recipe = matchRecipe(grid);
-    if (recipe == null) return;
-    if (!cursorAccepts(cursor, recipe.output, recipe.outputCount)) return;
+  void takeCraftResult() => _run(const ClickSlot(CraftResultRef()));
 
-    final held = cursor;
-    cursor = held == null
-        ? ItemStack(recipe.output, recipe.outputCount)
-        : held.plus(recipe.outputCount);
+  void clickFurnaceSlot(int index, {bool split = false}) => _run(
+    ClickSlot(
+      FurnaceSlotRef(FurnaceSlot.values[index]),
+      kind: split ? ClickKind.split : ClickKind.primary,
+    ),
+  );
 
-    consumeGrid(grid);
-    revision++;
-    _publishHud();
-  }
-
-  ItemStack? get craftPreview {
-    final recipe = matchRecipe(activeGrid);
-    return recipe == null
-        ? null
-        : ItemStack(recipe.output, recipe.outputCount);
-  }
-
-  void clickFurnaceSlot(int index, {bool split = false}) {
-    final state = openFurnace;
-    if (state == null) return;
-
-    switch (index) {
-      case 0:
-        if (split) {
-          splitSlotAt(() => state.input, (s) => state.input = s);
-        } else {
-          clickSlot(() => state.input, (s) => state.input = s);
-        }
-      case 1:
-        if (split) {
-          splitSlotAt(() => state.fuel, (s) => state.fuel = s);
-        } else {
-          clickSlot(() => state.fuel, (s) => state.fuel = s);
-        }
-      default:
-        // Ze slotu wyniku można tylko zabierać.
-        final result = takeOutput(state.output, cursor);
-        state.output = result.slot;
-        cursor = result.cursor;
-        revision++;
-        _publishHud();
-    }
-  }
+  ItemStack? get craftPreview => loop.craftPreview;
 
   // --- klawiatura -----------------------------------------------------------
 
