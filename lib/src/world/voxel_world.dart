@@ -1,6 +1,6 @@
 import 'dart:typed_data';
 
-import 'package:flame_3d/core.dart';
+import 'package:vector_math/vector_math.dart';
 import 'package:flutcraft/src/core/block.dart';
 
 /// Trafienie promienia w blok.

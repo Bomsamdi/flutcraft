@@ -1,4 +1,4 @@
-import 'package:flame_3d/core.dart';
+import 'package:vector_math/vector_math.dart';
 import 'package:flutcraft/src/core/block.dart';
 import 'package:flutcraft/src/core/item.dart';
 import 'package:flutcraft/src/game/aiming.dart';
