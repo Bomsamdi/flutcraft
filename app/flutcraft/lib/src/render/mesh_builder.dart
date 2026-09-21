@@ -112,11 +112,7 @@ class MeshBuilder {
     const us = [0, 1, 1, 0];
     const vs = [1, 1, 0, 0];
 
-    _n.setValues(
-      face.dx.toDouble(),
-      face.dy.toDouble(),
-      face.dz.toDouble(),
-    );
+    _n.setValues(face.dx.toDouble(), face.dy.toDouble(), face.dz.toDouble());
 
     for (var i = 0; i < 4; i++) {
       final c = face.corners[i];
@@ -149,11 +145,7 @@ class MeshBuilder {
       const us = [0, 1, 1, 0];
       const vs = [1, 1, 0, 0];
 
-      _n.setValues(
-        face.dx.toDouble(),
-        face.dy.toDouble(),
-        face.dz.toDouble(),
-      );
+      _n.setValues(face.dx.toDouble(), face.dy.toDouble(), face.dz.toDouble());
 
       for (var i = 0; i < 4; i++) {
         final c = face.corners[i];

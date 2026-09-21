@@ -6,7 +6,10 @@ void main() {
   group('BlockPos', () {
     test('equal coordinates mean equal keys', () {
       expect(const BlockPos(1, 2, 3), const BlockPos(1, 2, 3));
-      expect(const BlockPos(1, 2, 3).hashCode, const BlockPos(1, 2, 3).hashCode);
+      expect(
+        const BlockPos(1, 2, 3).hashCode,
+        const BlockPos(1, 2, 3).hashCode,
+      );
     });
 
     test('order of coordinates matters', () {
@@ -61,8 +64,10 @@ void main() {
 
     test('remove returns contents so the player can get them back', () {
       final registry = FurnaceRegistry();
-      registry.open(const BlockPos(0, 0, 0)).input =
-          ItemStack(ItemType.rawIron, 3);
+      registry.open(const BlockPos(0, 0, 0)).input = ItemStack(
+        ItemType.rawIron,
+        3,
+      );
 
       final removed = registry.remove(const BlockPos(0, 0, 0));
       expect(removed?.input?.count, 3);

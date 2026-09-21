@@ -113,11 +113,7 @@ class ItemMeshes {
       Vector3(-0.070, 0.145, 0.015),
       head,
     );
-    b.addBox(
-      Vector3(0.070, 0.085, -0.015),
-      Vector3(0.105, 0.145, 0.015),
-      head,
-    );
+    b.addBox(Vector3(0.070, 0.085, -0.015), Vector3(0.105, 0.145, 0.015), head);
     return b.build()!;
   }
 
@@ -147,11 +143,7 @@ class ItemMeshes {
   /// Płaska tafla z ikoną - tak jak surowce wyglądają w oryginale.
   Mesh _buildFlat(Tile icon) {
     final b = MeshBuilder(atlas, _material);
-    b.addBox(
-      Vector3(-0.13, -0.13, -0.008),
-      Vector3(0.13, 0.13, 0.008),
-      icon,
-    );
+    b.addBox(Vector3(-0.13, -0.13, -0.008), Vector3(0.13, 0.13, 0.008), icon);
     return b.build()!;
   }
 

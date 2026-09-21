@@ -77,8 +77,10 @@ void main() {
         )..health = 0,
       );
 
-      final killed =
-          system.update(state, 1 / 60, context).whereType<MobKilled>().single;
+      final killed = system
+          .update(state, 1 / 60, context)
+          .whereType<MobKilled>()
+          .single;
 
       expect(killed.kind, MobKind.spider);
       expect(killed.loot.map((d) => d.type), contains(ItemType.string));
@@ -98,8 +100,16 @@ void main() {
 
     test('despawnAll czyści świat', () {
       state.mobs.addAll([
-        Mob(kind: MobKind.zombie, world: state.world, spawn: Vector3(48.5, 2, 46)),
-        Mob(kind: MobKind.spider, world: state.world, spawn: Vector3(48.5, 2, 45)),
+        Mob(
+          kind: MobKind.zombie,
+          world: state.world,
+          spawn: Vector3(48.5, 2, 46),
+        ),
+        Mob(
+          kind: MobKind.spider,
+          world: state.world,
+          spawn: Vector3(48.5, 2, 45),
+        ),
       ]);
       system.despawnAll(state);
       expect(state.mobs, isEmpty);

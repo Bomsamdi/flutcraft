@@ -52,9 +52,15 @@ class HeldItem extends Object3D {
 
     final basis = Quaternion.fromRotation(
       Matrix3(
-        right.x, right.y, right.z, //
-        up.x, up.y, up.z, //
-        back.x, back.y, back.z,
+        right.x,
+        right.y,
+        right.z, //
+        up.x,
+        up.y,
+        up.z, //
+        back.x,
+        back.y,
+        back.z,
       ),
     );
 

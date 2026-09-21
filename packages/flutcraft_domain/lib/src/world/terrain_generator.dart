@@ -118,7 +118,8 @@ class TerrainGenerator {
   // --- szum ------------------------------------------------------------------
 
   int _hash(int x, int y, int salt) {
-    var h = (x * 374761393 + y * 668265263 + (seed + salt) * 2246822519) &
+    var h =
+        (x * 374761393 + y * 668265263 + (seed + salt) * 2246822519) &
         0xFFFFFFFF;
     h = ((h ^ (h >> 13)) * 1274126177) & 0xFFFFFFFF;
     return (h ^ (h >> 16)) & 0xFFFFFFFF;

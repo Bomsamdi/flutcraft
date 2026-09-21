@@ -119,17 +119,9 @@ enum MobKind {
 /// Pojedynczy potwór: bryła fizyczna plus prosta maszyna stanów.
 class Mob extends VoxelBody {
   // ignore: use_super_parameters
-  Mob({
-    required this.kind,
-    required VoxelWorld world,
-    required Vector3 spawn,
-  }) : health = kind.maxHealth.toDouble(),
-       super(
-         world: world,
-         spawn: spawn,
-         width: kind.width,
-         height: kind.height,
-       );
+  Mob({required this.kind, required VoxelWorld world, required Vector3 spawn})
+    : health = kind.maxHealth.toDouble(),
+      super(world: world, spawn: spawn, width: kind.width, height: kind.height);
 
   final MobKind kind;
 
@@ -205,9 +197,7 @@ class Mob extends VoxelBody {
       velocity.y = kind.jumpSpeed;
     }
 
-    walkSpeed = math.sqrt(
-      velocity.x * velocity.x + velocity.z * velocity.z,
-    );
+    walkSpeed = math.sqrt(velocity.x * velocity.x + velocity.z * velocity.z);
     walkPhase += walkSpeed * step * 3.2;
 
     if (chasing) {
@@ -222,11 +212,7 @@ class Mob extends VoxelBody {
   /// Czy potwór ma czystą linię strzału do gracza.
   bool hasLineOfSightTo(Player player) {
     final target = player.eye;
-    final dir = Vector3(
-      target.x - eye.x,
-      target.y - eye.y,
-      target.z - eye.z,
-    );
+    final dir = Vector3(target.x - eye.x, target.y - eye.y, target.z - eye.z);
     final distance = dir.length;
     if (distance < 1e-3) return true;
     dir.normalize();

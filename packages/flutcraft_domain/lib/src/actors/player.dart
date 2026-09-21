@@ -73,11 +73,8 @@ class Player extends VoxelBody {
   /// Kierunek patrzenia (znormalizowany).
   Vector3 get lookDirection {
     final cp = math.cos(pitch);
-    return Vector3(
-      -math.sin(yaw) * cp,
-      math.sin(pitch),
-      -math.cos(yaw) * cp,
-    )..normalize();
+    return Vector3(-math.sin(yaw) * cp, math.sin(pitch), -math.cos(yaw) * cp)
+      ..normalize();
   }
 
   /// Kierunek "w prawo" w płaszczyźnie poziomej.
@@ -97,9 +94,7 @@ class Player extends VoxelBody {
     if (hurtFlash > 0) hurtFlash -= dt;
     _regenerate(dt);
 
-    final speed = flying
-        ? flySpeed
-        : (input.sprint ? sprintSpeed : walkSpeed);
+    final speed = flying ? flySpeed : (input.sprint ? sprintSpeed : walkSpeed);
 
     final forward = Vector3(-math.sin(yaw), 0, -math.cos(yaw));
     final wish = forward * input.forward + rightDirection * input.strafe;

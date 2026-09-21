@@ -54,7 +54,6 @@ final class Inventory extends SlotContainer {
     }
     return total;
   }
-
 }
 
 /// Zawartość slotu i kursora po przełożeniu.
@@ -110,18 +109,12 @@ SlotSwap splitSlot(ItemStack? slot, ItemStack? cursor) {
     if (slot == null) return (slot: null, cursor: null);
     final taken = (slot.count + 1) ~/ 2;
     final rest = slot.plus(-taken);
-    return (
-      slot: rest.isEmpty ? null : rest,
-      cursor: slot.withCount(taken),
-    );
+    return (slot: rest.isEmpty ? null : rest, cursor: slot.withCount(taken));
   }
 
   if (slot == null) {
     final left = cursor.plus(-1);
-    return (
-      slot: cursor.withCount(1),
-      cursor: left.isEmpty ? null : left,
-    );
+    return (slot: cursor.withCount(1), cursor: left.isEmpty ? null : left);
   }
 
   // Na obcy przedmiot albo pełny stos nic nie da się dołożyć.

@@ -26,7 +26,11 @@ void main() {
     system.explode(state, Vector3(16.5, 5.5, 16.5), 3, 10);
 
     expect(state.world.blockAt(16, 5, 16), BlockType.air, reason: 'środek');
-    expect(state.world.blockAt(18, 5, 16), BlockType.air, reason: 'w promieniu');
+    expect(
+      state.world.blockAt(18, 5, 16),
+      BlockType.air,
+      reason: 'w promieniu',
+    );
     expect(
       state.world.blockAt(16 + 5, 5, 16),
       BlockType.stone,

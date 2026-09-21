@@ -7,12 +7,7 @@ enum ToolType { none, pickaxe, axe, shovel, sword }
 /// Wszystkie bloki prototypu. `air` jest blokiem "pustym" i nigdy nie
 /// trafia do siatki.
 enum BlockType {
-  air(
-    solid: false,
-    hardness: 0,
-    tool: ToolType.none,
-    top: Tile.stone,
-  ),
+  air(solid: false, hardness: 0, tool: ToolType.none, top: Tile.stone),
   grass(
     hardness: 0.6,
     tool: ToolType.shovel,
@@ -20,11 +15,7 @@ enum BlockType {
     side: Tile.grassSide,
     bottom: Tile.dirt,
   ),
-  dirt(
-    hardness: 0.5,
-    tool: ToolType.shovel,
-    top: Tile.dirt,
-  ),
+  dirt(hardness: 0.5, tool: ToolType.shovel, top: Tile.dirt),
   stone(
     hardness: 1.5,
     tool: ToolType.pickaxe,
@@ -37,38 +28,12 @@ enum BlockType {
     requiredTier: 1,
     top: Tile.cobblestone,
   ),
-  sand(
-    hardness: 0.5,
-    tool: ToolType.shovel,
-    top: Tile.sand,
-  ),
-  gravel(
-    hardness: 0.6,
-    tool: ToolType.shovel,
-    top: Tile.gravel,
-  ),
-  log(
-    hardness: 2,
-    tool: ToolType.axe,
-    top: Tile.logTop,
-    side: Tile.logSide,
-  ),
-  leaves(
-    hardness: 0.2,
-    tool: ToolType.none,
-    top: Tile.leaves,
-  ),
-  planks(
-    hardness: 2,
-    tool: ToolType.axe,
-    top: Tile.planks,
-  ),
-  brick(
-    hardness: 2,
-    tool: ToolType.pickaxe,
-    requiredTier: 1,
-    top: Tile.brick,
-  ),
+  sand(hardness: 0.5, tool: ToolType.shovel, top: Tile.sand),
+  gravel(hardness: 0.6, tool: ToolType.shovel, top: Tile.gravel),
+  log(hardness: 2, tool: ToolType.axe, top: Tile.logTop, side: Tile.logSide),
+  leaves(hardness: 0.2, tool: ToolType.none, top: Tile.leaves),
+  planks(hardness: 2, tool: ToolType.axe, top: Tile.planks),
+  brick(hardness: 2, tool: ToolType.pickaxe, requiredTier: 1, top: Tile.brick),
   coalOre(
     hardness: 3,
     tool: ToolType.pickaxe,
@@ -106,11 +71,7 @@ enum BlockType {
     front: Tile.furnaceFrontLit,
     unlitVariantName: 'furnace',
   ),
-  bedrock(
-    hardness: -1,
-    tool: ToolType.none,
-    top: Tile.bedrock,
-  );
+  bedrock(hardness: -1, tool: ToolType.none, top: Tile.bedrock);
 
   const BlockType({
     required this.hardness,
@@ -174,9 +135,8 @@ enum BlockType {
   bool get hasLitVariant =>
       _litVariantName != null || _unlitVariantName != null;
 
-  static BlockType? _byName(String? name) => name == null
-      ? null
-      : BlockType.values.firstWhere((b) => b.name == name);
+  static BlockType? _byName(String? name) =>
+      name == null ? null : BlockType.values.firstWhere((b) => b.name == name);
 
   static final List<BlockType> byId = BlockType.values;
 }

@@ -90,9 +90,7 @@ class RecipeRow extends StatelessWidget {
                 Text(
                   _hint(context),
                   style: TextStyle(
-                    color: available
-                        ? Colors.lightGreenAccent
-                        : Colors.white38,
+                    color: available ? Colors.lightGreenAccent : Colors.white38,
                     fontSize: 10,
                   ),
                 ),
@@ -116,8 +114,9 @@ class RecipeRow extends StatelessWidget {
         .take(2)
         .map((e) => strings.stack(ItemStack(e.key, e.value)))
         .join(', ');
-    final more =
-        missing.length > 2 ? ' ${context.t.andMore(missing.length - 2)}' : '';
+    final more = missing.length > 2
+        ? ' ${context.t.andMore(missing.length - 2)}'
+        : '';
     return context.t.missingIngredients('$parts$more');
   }
 
@@ -195,11 +194,7 @@ class SmeltRow extends StatelessWidget {
 
 /// Zawartość księgi przepisów.
 class RecipeBook extends StatelessWidget {
-  const RecipeBook({
-    required this.image,
-    required this.inventory,
-    super.key,
-  });
+  const RecipeBook({required this.image, required this.inventory, super.key});
 
   final ui.Image image;
   final Inventory inventory;
@@ -231,11 +226,8 @@ class RecipeBook extends StatelessWidget {
               missing: missingFor(recipe, inventory),
             ),
           const SizedBox(height: 10),
-          _SectionTitle(
-            context.t.smeltSeconds(FurnaceState.smeltTime.round()),
-          ),
-          for (final input in kSmeltable)
-            SmeltRow(image: image, input: input),
+          _SectionTitle(context.t.smeltSeconds(FurnaceState.smeltTime.round())),
+          for (final input in kSmeltable) SmeltRow(image: image, input: input),
         ],
       ),
     );

@@ -17,11 +17,7 @@ LoopGameSession createSession({int seed = 1337}) {
     ..respawn()
     ..pitch = -0.25;
 
-  final state = GameState(
-    world: world,
-    player: player,
-    inventory: Inventory(),
-  );
+  final state = GameState(world: world, player: player, inventory: Inventory());
   _giveStartingItems(state.inventory);
 
   return LoopGameSession(

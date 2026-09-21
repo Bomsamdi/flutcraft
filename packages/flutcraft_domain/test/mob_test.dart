@@ -375,8 +375,11 @@ void _balanceTests() {
         if (player.isDead) break;
       }
 
-      expect(player.isDead, isTrue,
-          reason: 'stanie bezczynnie przy zombie ma boleć');
+      expect(
+        player.isDead,
+        isTrue,
+        reason: 'stanie bezczynnie przy zombie ma boleć',
+      );
       expect(mob.position.distanceTo(player.position), lessThan(6));
     });
   });

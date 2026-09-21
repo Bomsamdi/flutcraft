@@ -131,53 +131,53 @@ class _GameScreenState extends State<GameScreen> {
       overrides: [gameSessionProvider.overrideWithValue(_session)],
       child: Scaffold(
         body: Stack(
-        children: [
-          Positioned.fill(
-            child: GameWidget(
-              game: _game,
-              focusNode: _focusNode,
-              autofocus: true,
+          children: [
+            Positioned.fill(
+              child: GameWidget(
+                game: _game,
+                focusNode: _focusNode,
+                autofocus: true,
+              ),
             ),
-          ),
-          Positioned.fill(
-            child: Listener(
-              behavior: HitTestBehavior.opaque,
-              onPointerDown: _onPointerDown,
-              onPointerMove: _onPointerMove,
-              onPointerUp: (e) => _endPointer(e.pointer),
-              onPointerCancel: (e) => _endPointer(e.pointer),
-              onPointerSignal: _onSignal,
+            Positioned.fill(
+              child: Listener(
+                behavior: HitTestBehavior.opaque,
+                onPointerDown: _onPointerDown,
+                onPointerMove: _onPointerMove,
+                onPointerUp: (e) => _endPointer(e.pointer),
+                onPointerCancel: (e) => _endPointer(e.pointer),
+                onPointerSignal: _onSignal,
+              ),
             ),
-          ),
-          Positioned.fill(
-            child: ValueListenableBuilder<HudSnapshot?>(
-              valueListenable: _game.hud,
-              builder: (context, snapshot, _) {
-                if (snapshot == null) {
-                  return ColoredBox(
-                    color: const Color(0xFF88BBEE),
-                    child: Center(
-                      child: Builder(
-                        builder: (context) => Text(
-                          context.t.loadingWorld,
-                          style: const TextStyle(color: Colors.white),
+            Positioned.fill(
+              child: ValueListenableBuilder<HudSnapshot?>(
+                valueListenable: _game.hud,
+                builder: (context, snapshot, _) {
+                  if (snapshot == null) {
+                    return ColoredBox(
+                      color: const Color(0xFF88BBEE),
+                      child: Center(
+                        child: Builder(
+                          builder: (context) => Text(
+                            context.t.loadingWorld,
+                            style: const TextStyle(color: Colors.white),
+                          ),
                         ),
                       ),
-                    ),
+                    );
+                  }
+                  return Hud(
+                    game: _game,
+                    snapshot: snapshot,
+                    showTouchControls: _touchControls,
+                    helpVisible: _help,
+                    onToggleTouchControls: () =>
+                        setState(() => _touchControls = !_touchControls),
+                    onToggleHelp: () => setState(() => _help = !_help),
                   );
-                }
-                return Hud(
-                  game: _game,
-                  snapshot: snapshot,
-                  showTouchControls: _touchControls,
-                  helpVisible: _help,
-                  onToggleTouchControls: () =>
-                      setState(() => _touchControls = !_touchControls),
-                  onToggleHelp: () => setState(() => _help = !_help),
-                );
-              },
+                },
+              ),
             ),
-          ),
           ],
         ),
       ),

@@ -8,7 +8,11 @@ import 'package:flutter/material.dart';
 
 /// Rysuje kafelek z atlasu tekstur - ta sama grafika co w świecie 3D.
 class TilePainter extends CustomPainter {
-  TilePainter({required this.image, required this.tile, this.shade = Shade.top});
+  TilePainter({
+    required this.image,
+    required this.tile,
+    this.shade = Shade.top,
+  });
 
   final ui.Image image;
   final Tile tile;
@@ -86,11 +90,7 @@ class ItemIcon extends StatelessWidget {
 
 /// Pasek zdrowia w serduszkach - każde serce to 2 punkty życia.
 class HeartsBar extends StatelessWidget {
-  const HeartsBar({
-    required this.health,
-    required this.maxHealth,
-    super.key,
-  });
+  const HeartsBar({required this.health, required this.maxHealth, super.key});
 
   final int health;
   final int maxHealth;
@@ -111,9 +111,7 @@ class HeartsBar extends StatelessWidget {
                   ? Icons.heart_broken
                   : Icons.favorite_border,
               size: 18,
-              color: health >= i * 2 + 1
-                  ? Colors.redAccent
-                  : Colors.white24,
+              color: health >= i * 2 + 1 ? Colors.redAccent : Colors.white24,
               shadows: const [Shadow(blurRadius: 3, color: Colors.black)],
             ),
           ),

@@ -37,7 +37,11 @@ void main() {
       session.loop.state.inventory.add(ItemType.planks, 10);
       session.dispatch(const SelectHotbarSlot(1));
 
-      expect(before.hotbar.first?.count, 5, reason: 'stara migawka trzyma stan');
+      expect(
+        before.hotbar.first?.count,
+        5,
+        reason: 'stara migawka trzyma stan',
+      );
       expect(before.selectedSlot, 0);
       expect(session.snapshot.hotbar.first?.count, 15);
       expect(session.snapshot.selectedSlot, 1);
@@ -45,10 +49,7 @@ void main() {
 
     test('lista paska jest niemodyfikowalna', () {
       final session = newSession();
-      expect(
-        () => session.snapshot.hotbar.add(null),
-        throwsUnsupportedError,
-      );
+      expect(() => session.snapshot.hotbar.add(null), throwsUnsupportedError);
     });
 
     test('celowanie zamienia się w widok dla UI', () {

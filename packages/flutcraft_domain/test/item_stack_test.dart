@@ -21,7 +21,10 @@ void main() {
     });
 
     test('równość po wartości, nie po tożsamości', () {
-      expect(const ItemStack(ItemType.coal, 3), const ItemStack(ItemType.coal, 3));
+      expect(
+        const ItemStack(ItemType.coal, 3),
+        const ItemStack(ItemType.coal, 3),
+      );
       expect(
         const ItemStack(ItemType.coal, 3).hashCode,
         const ItemStack(ItemType.coal, 3).hashCode,

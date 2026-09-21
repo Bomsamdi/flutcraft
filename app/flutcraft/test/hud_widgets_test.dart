@@ -25,8 +25,9 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('pierścień postępu nie wywraca się na skrajnych wartościach',
-        (tester) async {
+    testWidgets('pierścień postępu nie wywraca się na skrajnych wartościach', (
+      tester,
+    ) async {
       for (final progress in [0.0, 0.5, 1.0, 1.5]) {
         await tester.pumpWidget(
           wrap(Crosshair(progress: progress, hasTarget: true)),
@@ -39,22 +40,14 @@ void main() {
   group('Pasek życia potwora', () {
     testWidgets('pokazuje nazwę potwora', (tester) async {
       await tester.pumpWidget(
-        wrap(
-          const TargetHealthBar(
-            target: MobAimView(MobKind.creeper, 9, 18),
-          ),
-        ),
+        wrap(const TargetHealthBar(target: MobAimView(MobKind.creeper, 9, 18))),
       );
       expect(find.text('Creeper'), findsOneWidget);
     });
 
     testWidgets('szerokość paska odpowiada ułamkowi życia', (tester) async {
       await tester.pumpWidget(
-        wrap(
-          const TargetHealthBar(
-            target: MobAimView(MobKind.zombie, 5, 20),
-          ),
-        ),
+        wrap(const TargetHealthBar(target: MobAimView(MobKind.zombie, 5, 20))),
       );
 
       final box = tester.widget<FractionallySizedBox>(
@@ -65,11 +58,7 @@ void main() {
 
     testWidgets('ujemne życie nie daje ujemnej szerokości', (tester) async {
       await tester.pumpWidget(
-        wrap(
-          const TargetHealthBar(
-            target: MobAimView(MobKind.spider, -3, 14),
-          ),
-        ),
+        wrap(const TargetHealthBar(target: MobAimView(MobKind.spider, -3, 14))),
       );
       final box = tester.widget<FractionallySizedBox>(
         find.byType(FractionallySizedBox),
@@ -80,26 +69,21 @@ void main() {
   });
 
   group('Serca', () {
-    testWidgets('rysuje dziesięć ikon dla dwudziestu punktów życia',
-        (tester) async {
-      await tester.pumpWidget(
-        wrap(const HeartsBar(health: 20, maxHealth: 20)),
-      );
+    testWidgets('rysuje dziesięć ikon dla dwudziestu punktów życia', (
+      tester,
+    ) async {
+      await tester.pumpWidget(wrap(const HeartsBar(health: 20, maxHealth: 20)));
       expect(find.byIcon(Icons.favorite), findsNWidgets(10));
     });
 
     testWidgets('połowa życia to pięć pełnych serc', (tester) async {
-      await tester.pumpWidget(
-        wrap(const HeartsBar(health: 10, maxHealth: 20)),
-      );
+      await tester.pumpWidget(wrap(const HeartsBar(health: 10, maxHealth: 20)));
       expect(find.byIcon(Icons.favorite), findsNWidgets(5));
       expect(find.byIcon(Icons.favorite_border), findsNWidgets(5));
     });
 
     testWidgets('nieparzyste życie pokazuje pęknięte serce', (tester) async {
-      await tester.pumpWidget(
-        wrap(const HeartsBar(health: 9, maxHealth: 20)),
-      );
+      await tester.pumpWidget(wrap(const HeartsBar(health: 9, maxHealth: 20)));
       expect(find.byIcon(Icons.favorite), findsNWidgets(4));
       expect(find.byIcon(Icons.heart_broken), findsOneWidget);
     });

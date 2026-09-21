@@ -95,7 +95,6 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
   UiRoute get screen => state.route;
   set screen(UiRoute value) => state.route = value;
 
-
   BlockPos? get openFurnaceKey => state.openFurnace;
   set openFurnaceKey(BlockPos? value) => state.openFurnace = value;
 
@@ -125,6 +124,7 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
   final Set<LogicalKeyboardKey> _keys = {};
   final Vector2 _touchMove = Vector2.zero();
   bool _touchJump = false;
+
   /// Czy gracz trzyma przycisk kopania/ataku.
   bool _isMining = false;
 
@@ -155,7 +155,6 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
     atlas = TextureAtlas.generate();
     atlasImage = await atlas.toImage();
 
-
     final terrainMaterial = UnlitMaterial(albedoTexture: atlas.texture)
       ..cullMode = CullMode.backFace;
 
@@ -179,7 +178,6 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
     heldItem = HeldItem();
     _syncHeldMesh();
 
-
     await add(chunkManager);
     await world.addAll(chunkComponents);
     await world.add(selection);
@@ -196,7 +194,6 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
     _messages?.cancel();
     super.onRemove();
   }
-
 
   @override
   void update(double dt) {
@@ -218,12 +215,8 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
     _updateHud(dt);
   }
 
-  InputFrame _inputFrame() => InputFrame(
-    move: _collectInput(),
-    mining: _isMining,
-    using: _placing,
-  );
-
+  InputFrame _inputFrame() =>
+      InputFrame(move: _collectInput(), mining: _isMining, using: _placing);
 
   /// Ramka zaznaczenia podąża za tym, co wybrał AimingSystem.
   void _updateSelection() {
@@ -289,8 +282,6 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
 
   // --- potwory --------------------------------------------------------------
 
-
-
   /// Dokłada komponenty dla nowych potworów, usuwa dla tych, których już nie
   /// ma, i synchronizuje resztę. Jedno miejsce zamiast czterech.
   void _syncMobComponents() {
@@ -325,13 +316,9 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
         .forEach((a) => _arrowComponents.remove(a)?.removeFromParent());
   }
 
-
-
   // --- celowanie ------------------------------------------------------------
 
-
   // --- kopanie i walka ------------------------------------------------------
-
 
   // --- przedmiot w ręce -----------------------------------------------------
 
@@ -493,7 +480,10 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
   }
 
   void _publishHud() {
-    final mob = switch (_aim) { MobTarget(:final mob) => mob, _ => null };
+    final mob = switch (_aim) {
+      MobTarget(:final mob) => mob,
+      _ => null,
+    };
     hud.value = HudSnapshot(
       targetMob: mob == null
           ? null

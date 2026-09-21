@@ -52,8 +52,11 @@ void main() {
 
         test('każde zdarzenie da się opisać', () {
           for (final event in sampleEvents) {
-            expect(() => strings.event(event), returnsNormally,
-                reason: event.runtimeType.toString());
+            expect(
+              () => strings.event(event),
+              returnsNormally,
+              reason: event.runtimeType.toString(),
+            );
           }
         });
 
@@ -80,9 +83,9 @@ void main() {
   });
 
   group('Higiena plików ARB', () {
-    Map<String, dynamic> arb(String lang) => json.decode(
-      File('lib/l10n/app_$lang.arb').readAsStringSync(),
-    ) as Map<String, dynamic>;
+    Map<String, dynamic> arb(String lang) =>
+        json.decode(File('lib/l10n/app_$lang.arb').readAsStringSync())
+            as Map<String, dynamic>;
 
     Set<String> keysOf(Map<String, dynamic> data) =>
         data.keys.where((k) => !k.startsWith('@')).toSet();

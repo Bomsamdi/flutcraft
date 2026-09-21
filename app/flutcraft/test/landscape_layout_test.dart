@@ -30,8 +30,7 @@ void main() {
         .resetPhysicalSize();
   });
 
-  testWidgets('pasek 9 slotów mieści się w szerokości ekranu',
-      (tester) async {
+  testWidgets('pasek 9 slotów mieści się w szerokości ekranu', (tester) async {
     final inventory = Inventory()..add(ItemType.planks, 5);
 
     await tester.pumpWidget(
@@ -58,8 +57,9 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('księga przepisów przewija się zamiast przepełniać',
-      (tester) async {
+  testWidgets('księga przepisów przewija się zamiast przepełniać', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,

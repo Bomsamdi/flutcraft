@@ -88,14 +88,8 @@ class Hud extends StatelessWidget {
             Align(
               alignment: Alignment.bottomCenter,
               child: Padding(
-                padding: EdgeInsets.only(
-                  bottom: showTouchControls ? 116 : 18,
-                ),
-                child: _BottomBar(
-                  game: game,
-                  image: image,
-                  snapshot: snapshot,
-                ),
+                padding: EdgeInsets.only(bottom: showTouchControls ? 116 : 18),
+                child: _BottomBar(game: game, image: image, snapshot: snapshot),
               ),
             ),
           if (showTouchControls) _TouchControls(game: game),

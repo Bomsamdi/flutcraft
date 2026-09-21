@@ -50,9 +50,7 @@ class ItemSlot extends StatelessWidget {
           color: Colors.white10,
           borderRadius: BorderRadius.circular(6),
           border: Border.all(
-            color: selected
-                ? Colors.white
-                : (highlight ?? Colors.white24),
+            color: selected ? Colors.white : (highlight ?? Colors.white24),
             width: selected ? 2.5 : 1,
           ),
         ),
