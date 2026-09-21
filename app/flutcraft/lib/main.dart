@@ -76,7 +76,7 @@ class _GameScreenState extends State<GameScreen> {
   void _onPointerDown(PointerDownEvent event) {
     _focusNode.requestFocus();
     // Gdy otwarty jest ekwipunek, świat nie reaguje na wskaźnik.
-    if (_game.screen.pausesInput) return;
+    if (_game.screen.pausesWorld) return;
 
     if (event.buttons & kSecondaryMouseButton != 0) {
       _game.interactOrPlace();
@@ -113,7 +113,7 @@ class _GameScreenState extends State<GameScreen> {
   }
 
   void _onSignal(PointerSignalEvent event) {
-    if (event is! PointerScrollEvent || _game.screen.pausesInput) return;
+    if (event is! PointerScrollEvent || _game.screen.pausesWorld) return;
     _game.cycleSlot(event.scrollDelta.dy > 0 ? 1 : -1);
   }
 

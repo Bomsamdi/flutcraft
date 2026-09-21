@@ -1,7 +1,6 @@
 import 'dart:ui' as ui;
 
 import 'package:flutcraft/src/game/flutcraft_game.dart';
-import 'package:flutcraft/src/game/hud_state.dart';
 import 'package:flutcraft/src/ui/recipe_book.dart';
 import 'package:flutcraft/src/ui/slots.dart';
 import 'package:flutcraft_domain/flutcraft_domain.dart';
@@ -391,22 +390,22 @@ class RecipeScreen extends StatelessWidget {
 }
 
 /// Wybiera ekran pasujący do stanu gry.
-Widget? buildScreen(FlutcraftGame game, ui.Image image, UiScreen screen) {
+Widget? buildScreen(FlutcraftGame game, ui.Image image, UiRoute screen) {
   return switch (screen) {
-    UiScreen.none => null,
-    UiScreen.dead => DeathScreen(game: game),
-    UiScreen.inventory => CraftingScreen(
+    UiRoute.none => null,
+    UiRoute.dead => DeathScreen(game: game),
+    UiRoute.inventory => CraftingScreen(
       game: game,
       image: image,
       isTable: false,
     ),
-    UiScreen.craftingTable => CraftingScreen(
+    UiRoute.craftingTable => CraftingScreen(
       game: game,
       image: image,
       isTable: true,
     ),
-    UiScreen.recipes => RecipeScreen(game: game, image: image),
-    UiScreen.furnace => switch (game.openFurnace) {
+    UiRoute.recipes => RecipeScreen(game: game, image: image),
+    UiRoute.furnace => switch (game.openFurnace) {
       final state? => FurnaceScreen(game: game, image: image, state: state),
       _ => null,
     },
