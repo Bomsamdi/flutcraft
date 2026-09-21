@@ -8,10 +8,12 @@ import '../blocks/block_interaction.dart';
 import '../crafting/recipes.dart';
 import '../inventory/inventory.dart';
 import '../items/item_type.dart';
+import '../save/save_sink.dart';
 import 'game_command.dart';
 import 'game_event.dart';
 import 'game_state.dart';
 import 'systems/aiming_system.dart';
+import 'systems/autosave_system.dart';
 import 'systems/explosion_system.dart';
 import 'systems/furnace_system.dart';
 import 'systems/mining_system.dart';
@@ -45,9 +47,17 @@ class InputFrame {
 /// no GPU, so a test can run thousands of frames in milliseconds — which is
 /// the point of the entire refactor.
 class GameLoop implements MobTickContext {
-  GameLoop({required this.state, required MobSpawner spawner, Random? random})
-    : _mobAi = MobAiSystem(spawner: spawner, random: random ?? Random()),
-      _mining = MiningSystem(random: random ?? Random());
+  GameLoop({
+    required this.state,
+    required MobSpawner spawner,
+    Random? random,
+    SaveSink? saveSink,
+    double autosaveInterval = 60,
+  }) : _mobAi = MobAiSystem(spawner: spawner, random: random ?? Random()),
+       _mining = MiningSystem(random: random ?? Random()),
+       _autosave = saveSink == null
+           ? null
+           : AutosaveSystem(sink: saveSink, interval: autosaveInterval);
 
   final GameState state;
 
@@ -59,6 +69,9 @@ class GameLoop implements MobTickContext {
   final FurnaceSystem _furnaces = const FurnaceSystem();
   final AimingSystem _aiming = const AimingSystem();
   final PlayerMovementSystem _movement = const PlayerMovementSystem();
+
+  /// `null` when nothing is listening for saves — tests, mostly.
+  final AutosaveSystem? _autosave;
 
   final BlockRegistry _blocks = BlockRegistry.standard;
 
@@ -74,8 +87,9 @@ class GameLoop implements MobTickContext {
   List<GameEvent> tick(double dt, InputFrame input) {
     _events.clear();
 
-    // Furnaces keep going even while a screen is open.
+    // Furnaces and autosave keep going even while a screen is open.
     _furnaces.update(state, dt);
+    if (_autosave?.update(state, dt) ?? false) _events.add(const GameSaved());
 
     if (state.player.isDead && state.route != UiRoute.dead) {
       state.route = UiRoute.dead;
@@ -125,6 +139,12 @@ class GameLoop implements MobTickContext {
         _events.add(const PlayerRespawned());
       case UseOrPlace():
         _useOrPlace();
+      case SaveGame():
+        final autosave = _autosave;
+        if (autosave != null) {
+          autosave.saveNow(state);
+          _events.add(const GameSaved());
+        }
     }
     return _events.sublist(before);
   }

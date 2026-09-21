@@ -485,6 +485,12 @@ abstract class AppLocalizations {
   /// UI text
   ///
   /// In en, this message translates to:
+  /// **'Game saved'**
+  String get msgGameSaved;
+
+  /// UI text
+  ///
+  /// In en, this message translates to:
   /// **'Respawned at the starting point'**
   String get msgRespawned;
 

@@ -256,6 +256,10 @@
   "@msgFlightOff": {
     "description": "UI text"
   },
+  "msgGameSaved": "Game saved",
+  "@msgGameSaved": {
+    "description": "UI text"
+  },
   "msgRespawned": "Respawned at the starting point",
   "@msgRespawned": {
     "description": "UI text"

@@ -202,6 +202,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get msgFlightOff => 'Flight: off';
 
   @override
+  String get msgGameSaved => 'Game saved';
+
+  @override
   String get msgRespawned => 'Respawned at the starting point';
 
   @override
