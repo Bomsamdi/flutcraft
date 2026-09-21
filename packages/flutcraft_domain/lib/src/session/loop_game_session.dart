@@ -6,6 +6,7 @@ import 'game_event.dart';
 import 'game_loop.dart';
 import 'game_session.dart';
 import 'game_snapshot.dart';
+import 'tick_clock.dart';
 
 /// A [GameSession] driven by a [GameLoop], for one player.
 ///
@@ -18,10 +19,14 @@ import 'game_snapshot.dart';
 /// is indistinguishable to the player and keeps the widget tree cheap.
 /// Player actions publish immediately, because those must feel instant.
 class LoopGameSession implements GameSession {
-  LoopGameSession(this.loop, {this.snapshotHz = 20})
-    : _snapshot = GameSnapshot.of(loop.state);
+  LoopGameSession(this.loop, {this.snapshotHz = 20, TickClock? clock})
+    : _clock = clock ?? TickClock(),
+      _snapshot = GameSnapshot.of(loop.state);
 
   final GameLoop loop;
+
+  /// Turns rendered frames into whole simulation steps.
+  final TickClock _clock;
 
   /// How many snapshots per second reach the interface.
   final int snapshotHz;
@@ -32,7 +37,7 @@ class LoopGameSession implements GameSession {
       StreamController<GameEvent>.broadcast();
 
   GameSnapshot _snapshot;
-  double _sinceSnapshot = 0;
+  int _stepsSinceSnapshot = 0;
 
   @override
   GameSnapshot get snapshot => _snapshot;
@@ -43,13 +48,19 @@ class LoopGameSession implements GameSession {
   @override
   Stream<GameEvent> get events => _events.stream;
 
-  /// Advances the simulation. Call once per rendered frame.
+  /// Advances the simulation. Call once per rendered frame with the real
+  /// time that frame took; the clock decides how many steps that is worth.
   void tick(double dt, InputFrame input) {
-    _publishEvents(loop.tickSolo(dt, input));
+    final steps = _clock.stepsFor(dt);
+    for (var i = 0; i < steps; i++) {
+      _publishEvents(loop.tickSolo(_clock.step, input.asStep(i, steps)));
+    }
 
-    _sinceSnapshot += dt;
-    if (_sinceSnapshot < 1 / snapshotHz) return;
-    _sinceSnapshot = 0;
+    // Counted in steps rather than seconds, so the rate a widget rebuilds at
+    // does not drift with the frame rate.
+    _stepsSinceSnapshot += steps;
+    if (_stepsSinceSnapshot < kTicksPerSecond / snapshotHz) return;
+    _stepsSinceSnapshot = 0;
     _publishSnapshot();
   }
 

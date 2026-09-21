@@ -40,6 +40,28 @@ final class InputFrame {
 
   bool isHeld(GameAction action) => held.contains(action);
 
+  /// This frame as step [index] of [steps] equal simulation steps.
+  ///
+  /// A rendered frame can be worth more than one step, and the parts of a
+  /// frame do not all divide the same way:
+  ///
+  /// * Axes and held buttons are *states*. They are the same in every step.
+  /// * A press is an *edge*. It belongs to the first step alone — otherwise
+  ///   one tap of the inventory key would open and immediately close it.
+  /// * Look deltas are *amounts already accumulated*. They are shared out,
+  ///   or a 30 fps frame would turn twice as far as a 60 fps one.
+  InputFrame asStep(int index, int steps) {
+    if (steps <= 1) return this;
+    return InputFrame(
+      forward: forward,
+      strafe: strafe,
+      lookYaw: lookYaw / steps,
+      lookPitch: lookPitch / steps,
+      held: held,
+      pressed: index == 0 ? pressed : const [],
+    );
+  }
+
   /// Movement as the player physics wants it.
   ///
   /// Sprint doubles as descend while flying — one button, two meanings,

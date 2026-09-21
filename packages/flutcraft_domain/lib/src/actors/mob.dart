@@ -162,8 +162,6 @@ class Mob extends VoxelBody {
     // could explode several times in one frame.
     if (isDead) return;
 
-    final step = math.min(dt, 1 / 30);
-
     if (attackTimer > 0) attackTimer -= dt;
     if (hurtFlash > 0) hurtFlash -= dt;
 
@@ -193,7 +191,7 @@ class Mob extends VoxelBody {
         ..z = 0;
     }
 
-    stepPhysics(step);
+    stepPhysics(dt);
 
     // Pathfinding, such as it is: something in the way means jump.
     if (blockedHorizontally && onGround && chasing) {
@@ -201,7 +199,7 @@ class Mob extends VoxelBody {
     }
 
     walkSpeed = math.sqrt(velocity.x * velocity.x + velocity.z * velocity.z);
-    walkPhase += walkSpeed * step * 3.2;
+    walkPhase += walkSpeed * dt * 3.2;
 
     if (chasing) {
       kind.behavior.act(this, dt, distance, player, context);
