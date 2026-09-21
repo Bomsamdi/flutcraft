@@ -17,6 +17,42 @@ void main() {
 
   tearDown(() => directory.deleteSync(recursive: true));
 
+  group('A disk that will not take a save', () {
+    /// A directory nobody may write into — a read-only mount, a volume owned
+    /// by another user, a full disk. All of them arrive as an exception from
+    /// the same two lines.
+    Directory readOnly() {
+      final locked = Directory.systemTemp.createTempSync('flutcraft_locked');
+      Process.runSync('chmod', ['500', locked.path]);
+      addTearDown(() {
+        Process.runSync('chmod', ['700', locked.path]);
+        locked.deleteSync(recursive: true);
+      });
+      return locked;
+    }
+
+    test('says so instead of taking the server down with it', () {
+      final store = WorldStore(readOnly());
+      final host = GameHost.newWorld(seed: 1);
+
+      // This runs inside a tick and inside the handler for somebody leaving.
+      // Thrown from there, it is an unhandled exception in a process that
+      // everybody else is still playing on.
+      expect(
+        store.saveWorld(const GamePersistence().captureWorld(host.state)),
+        isFalse,
+      );
+    });
+
+    test('a player who cannot be written down does not end the session', () {
+      final store = WorldStore(readOnly());
+      final host = GameHost.newWorld(seed: 1)..join(alice, RecordingLink());
+      final leaving = host.leave(alice)!;
+
+      expect(store.savePlayer(leaving), isFalse);
+    });
+  });
+
   group('A world outlives the process that ran it', () {
     test('an empty directory is not an error, it is a new world', () {
       expect(store.loadWorld(), isNull);

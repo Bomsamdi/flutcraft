@@ -58,10 +58,20 @@ const _serverAddress = String.fromEnvironment('FLUTCRAFT_SERVER');
 
 /// Who this client says it is.
 ///
-/// Fixed for now. It belongs on disk beside the save, so that reconnecting
-/// finds the same inventory rather than a new player standing beside the old
-/// one's belongings.
-const _playerId = PlayerId('player');
+/// A define for the same reason as [_serverAddress], and with a second use:
+/// two clients on one machine have to be two people, or the server takes the
+/// second for the first reconnecting and closes the first one's socket.
+///
+/// ```
+/// flutter run --dart-define=FLUTCRAFT_PLAYER=alice
+/// ```
+///
+/// It belongs on disk beside the save, so that reconnecting finds the same
+/// inventory rather than a new player standing beside the old one's
+/// belongings. Until it does, this is the knob.
+const _playerId = PlayerId(
+  String.fromEnvironment('FLUTCRAFT_PLAYER', defaultValue: 'player'),
+);
 
 /// Opens a game: on a server if one was named, otherwise on this machine.
 Future<PlayableSession> _openSession() async {

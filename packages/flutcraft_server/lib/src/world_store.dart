@@ -63,9 +63,11 @@ class WorldStore {
     return saved;
   }
 
-  void saveWorld(WorldSave world) => _write(_world, codec.worldToJson(world));
+  /// Writes the world down. False means it could not be written.
+  bool saveWorld(WorldSave world) => _write(_world, codec.worldToJson(world));
 
-  void savePlayer(PlayerSave player) => _write(
+  /// Writes one player down. False means they could not be written.
+  bool savePlayer(PlayerSave player) => _write(
     File('${_players.path}/${_fileNameFor(player.id)}.json'),
     codec.playerToJson(player),
   );
@@ -74,11 +76,24 @@ class WorldStore {
   ///
   /// A rename is atomic, so a server killed mid-save leaves the previous
   /// world intact rather than half of a new one that will not parse.
-  void _write(File file, Map<String, Object?> document) {
-    file.parent.createSync(recursive: true);
-    final temporary = File('${file.path}.tmp')
-      ..writeAsStringSync(json.encode(document), flush: true);
-    temporary.renameSync(file.path);
+  ///
+  /// A failure is reported and swallowed, as on the reading side. The disk is
+  /// where a server meets everything it does not control — a full volume, a
+  /// read-only mount, a directory owned by somebody else — and a save runs
+  /// inside a tick and inside the handler for somebody leaving. Letting it
+  /// throw takes down a process that everybody else is still playing on.
+  /// Losing one save is bad; it is not as bad as losing the server.
+  bool _write(File file, Map<String, Object?> document) {
+    try {
+      file.parent.createSync(recursive: true);
+      final temporary = File('${file.path}.tmp')
+        ..writeAsStringSync(json.encode(document), flush: true);
+      temporary.renameSync(file.path);
+      return true;
+    } on Object catch (error) {
+      stderr.writeln('Could not write ${file.path}: $error');
+      return false;
+    }
   }
 
   /// A player id, made safe to use as a file name.

@@ -33,6 +33,13 @@ FROM debian:stable-slim
 
 # A server that runs as root is a server that hands out root.
 RUN useradd --system --create-home --uid 10001 flutcraft
+
+# The world directory has to exist, and belong to that user, before the
+# VOLUME below. Docker seeds a fresh named volume from what is at that path in
+# the image, ownership included; with no directory there it makes one owned by
+# root, and the server cannot write a single save into its own volume.
+RUN install --directory --owner flutcraft --group flutcraft /world
+
 USER flutcraft
 
 COPY --from=build /app/server /usr/local/bin/flutcraft-server
