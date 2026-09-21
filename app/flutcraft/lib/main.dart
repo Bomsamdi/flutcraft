@@ -2,13 +2,11 @@ import 'dart:ui' as ui;
 
 import 'package:flame/game.dart';
 import 'package:flutcraft/src/bootstrap/game_bootstrap.dart';
-import 'package:flutcraft/src/game/flutcraft_game.dart';
-import 'package:flutcraft/src/ui/hud.dart';
-import 'package:flutcraft/src/render/atlas.dart';
+import 'package:flutcraft_engine/flutcraft_engine.dart';
+import 'package:flutcraft_ui/flutcraft_ui.dart';
+import 'package:flutcraft_atlas/flutcraft_atlas.dart';
 import 'package:flutcraft/src/save/file_save_storage.dart';
 import 'package:flutcraft/src/save/repository_save_sink.dart';
-import 'package:flutcraft/src/ui/providers/engine_providers.dart';
-import 'package:flutcraft/src/ui/providers/session_providers.dart';
 import 'package:flutcraft_domain/flutcraft_domain.dart';
 import 'package:flutcraft_l10n/flutcraft_l10n.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -40,7 +38,7 @@ Future<void> main() async {
     FlutcraftApp(
       session: await _openSession(),
       atlas: atlas,
-      atlasImage: await atlas.toImage(),
+      atlasImage: await decodeAtlasImage(atlas),
     ),
   );
 }
@@ -133,10 +131,13 @@ class _GameScreenState extends State<GameScreen> {
   /// finished frame. Created here because touch and pointer live in Flutter,
   /// not in the engine.
   final InputRouter _input = InputRouter();
+  late final KeyboardInputSource _keyboard = KeyboardInputSource(
+    router: _input,
+  );
   late final FlutcraftGame _game = FlutcraftGame(
     session: _session,
     input: _input,
-    atlas: widget.atlas,
+    atlas: EngineAtlas(widget.atlas),
   );
   final FocusNode _focusNode = FocusNode();
 
@@ -236,11 +237,17 @@ class _GameScreenState extends State<GameScreen> {
       child: Scaffold(
         body: Stack(
           children: [
+            Positioned.fill(child: GameWidget(game: _game)),
+            // Keys are read here rather than inside the engine: the engine
+            // must not know what a keyboard is, only what an action is.
             Positioned.fill(
-              child: GameWidget(
-                game: _game,
+              child: KeyboardListener(
                 focusNode: _focusNode,
                 autofocus: true,
+                onKeyEvent: (_) => _keyboard.onKeysChanged(
+                  HardwareKeyboard.instance.logicalKeysPressed,
+                ),
+                child: const SizedBox.expand(),
               ),
             ),
             Positioned.fill(

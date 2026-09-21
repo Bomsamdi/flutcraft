@@ -42,9 +42,11 @@ jobs:
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
       - run: flutter pub get
-      # The domain has no Flutter dependency, so its tests run in seconds.
+      # Neither package depends on Flutter, so these run in seconds.
       - run: dart test
         working-directory: packages/flutcraft_domain
+      - run: dart test
+        working-directory: packages/flutcraft_atlas
 
   test-flutter:
     name: Test (Flutter)
@@ -57,6 +59,10 @@ jobs:
       - run: flutter pub get
       - run: flutter test
         working-directory: packages/flutcraft_l10n
+      # Every screen renders here without a GPU — that is the whole point of
+      # keeping flame out of flutcraft_ui.
+      - run: flutter test
+        working-directory: packages/flutcraft_ui
       - run: flutter test
         working-directory: app/flutcraft
 

@@ -9,5 +9,8 @@ environment:
 
 workspace:
   - app/flutcraft
+  - packages/flutcraft_atlas
   - packages/flutcraft_domain
+  - packages/flutcraft_engine
   - packages/flutcraft_l10n
+  - packages/flutcraft_ui
