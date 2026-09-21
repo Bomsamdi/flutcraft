@@ -58,7 +58,13 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera> {
   late final EntitySync<Mob, MobComponent> _mobs;
   late final EntitySync<Arrow, ArrowComponent> _arrows;
 
-  Player get player => state.player;
+  /// The player this client is looking through.
+  ///
+  /// The simulation can hold several; a renderer draws exactly one point of
+  /// view, and for now that is the only one there is.
+  Participant get viewer => state.solo;
+
+  Player get player => viewer.player;
 
   /// What the renderer reports about itself: frame rate and chunk progress.
   final ValueNotifier<FrameStats> frameStats = ValueNotifier(
@@ -135,15 +141,15 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera> {
 
     chunkManager.focus.setFrom(player.position);
     camera.followPlayer(player);
-    selection.showFor(state.aim);
+    selection.showFor(viewer.aim);
     _mobs.refresh();
     _arrows.refresh();
     heldItem.syncTo(
-      item: state.heldItem,
+      item: viewer.heldItem,
       meshes: itemMeshes,
       eye: player.eye,
       forward: player.lookDirection,
-      swinging: input.isHeld(GameAction.primary) && state.aim is BlockTarget,
+      swinging: input.isHeld(GameAction.primary) && viewer.aim is BlockTarget,
       dt: dt,
     );
     _publishFrameStats();

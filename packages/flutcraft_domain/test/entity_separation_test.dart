@@ -17,7 +17,7 @@ VoxelWorld flatWorld({int size = 64}) {
   return world;
 }
 
-GameState gameOn(VoxelWorld world, {Vector3? spawn}) => GameState(
+GameState gameOn(VoxelWorld world, {Vector3? spawn}) => GameState.solo(
   world: world,
   player: Player(world: world, spawn: spawn ?? Vector3(32.5, 2, 32.5)),
   inventory: Inventory(),
@@ -53,18 +53,18 @@ void main() {
 
       separation.update(state);
 
-      expect(gapBetween(mob, state.player), greaterThan(-tolerance));
+      expect(gapBetween(mob, state.solo.player), greaterThan(-tolerance));
     });
 
     test('the mob gives way more than the player does', () {
       final mob = zombieAt(world, 32.7, 32.5);
       state.mobs.add(mob);
-      final playerBefore = state.player.position.clone();
+      final playerBefore = state.solo.player.position.clone();
       final mobBefore = mob.position.clone();
 
       separation.update(state);
 
-      final playerMoved = state.player.position.distanceTo(playerBefore);
+      final playerMoved = state.solo.player.position.distanceTo(playerBefore);
       final mobMoved = mob.position.distanceTo(mobBefore);
       expect(mobMoved, greaterThan(playerMoved));
       expect(playerMoved, greaterThan(0), reason: 'a shove is still felt');
@@ -96,7 +96,7 @@ void main() {
 
       separation.update(state);
 
-      expect(gapBetween(mob, state.player), greaterThan(-tolerance));
+      expect(gapBetween(mob, state.solo.player), greaterThan(-tolerance));
     });
 
     test('a dead mob is not pushed about', () {
@@ -129,7 +129,7 @@ void main() {
 
       separation.update(state);
 
-      expect(gapBetween(mob, state.player), greaterThan(-tolerance));
+      expect(gapBetween(mob, state.solo.player), greaterThan(-tolerance));
     });
   });
 
@@ -230,12 +230,12 @@ void main() {
       final mob = zombieAt(world, 32.6, 32.5);
       state.mobs.add(mob);
       mob.onGround = true;
-      state.player.onGround = true;
+      state.solo.player.onGround = true;
 
       separation.update(state);
 
       expect(mob.onGround, isTrue);
-      expect(state.player.onGround, isTrue);
+      expect(state.solo.player.onGround, isTrue);
       expect(mob.position.y, closeTo(2, 1e-6));
     });
   });
@@ -253,7 +253,7 @@ void main() {
       }
 
       expect(
-        state.player.collides(),
+        state.solo.player.collides(),
         isFalse,
         reason: 'the player was pushed into the wall',
       );
@@ -283,15 +283,15 @@ void _combatFeel() {
 
     void play(double seconds) {
       for (var i = 0; i < seconds * 60; i++) {
-        loop.tick(1 / 60, InputFrame.idle);
+        loop.tickSolo(1 / 60, InputFrame.idle);
       }
     }
 
     test('it never gets inside the player', () {
       var closest = double.infinity;
       for (var i = 0; i < 60 * 6; i++) {
-        loop.tick(1 / 60, InputFrame.idle);
-        closest = min(closest, gapBetween(zombie, loop.state.player));
+        loop.tickSolo(1 / 60, InputFrame.idle);
+        closest = min(closest, gapBetween(zombie, loop.state.solo.player));
       }
 
       // It used to walk straight through, which is what made it so hard to
@@ -302,22 +302,22 @@ void _combatFeel() {
     test('it does still come close enough to be worth swinging at', () {
       play(6);
 
-      expect(gapBetween(zombie, loop.state.player), lessThan(0.4));
+      expect(gapBetween(zombie, loop.state.solo.player), lessThan(0.4));
     });
 
     test('it still lands hits from where it stops', () {
       play(6);
 
-      expect(loop.state.player.health, lessThan(Player.maxHealth));
+      expect(loop.state.solo.player.health, lessThan(Player.maxHealth));
     });
 
     test('it does not bulldoze a player who stands their ground', () {
-      final start = loop.state.player.position.clone();
+      final start = loop.state.solo.player.position.clone();
 
       play(6);
 
       // A shove is fine; being pushed across the room is not.
-      expect(loop.state.player.position.distanceTo(start), lessThan(1.0));
+      expect(loop.state.solo.player.position.distanceTo(start), lessThan(1.0));
     });
 
     test('it comes to rest instead of shuddering against you', () {

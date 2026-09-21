@@ -11,7 +11,7 @@ GameState solidState() {
       }
     }
   }
-  return GameState(
+  return GameState.solo(
     world: world,
     player: Player(world: world, spawn: Vector3(16.5, 8, 16.5)),
     inventory: Inventory(),
@@ -59,7 +59,7 @@ void main() {
       final state = solidState();
       final at = Vector3(16.5 + distance, 8.5, 16.5);
       system.explode(state, at, 3, 14);
-      return Player.maxHealth - state.player.health;
+      return Player.maxHealth - state.solo.player.health;
     }
 
     final close = damageAt(0.5);
@@ -71,7 +71,7 @@ void main() {
   test('out of range the player is untouched', () {
     final state = solidState();
     system.explode(state, Vector3(16.5 + 12, 8.5, 16.5), 3, 14);
-    expect(state.player.health, Player.maxHealth);
+    expect(state.solo.player.health, Player.maxHealth);
   });
 
   test('it hurts other mobs as well', () {
@@ -105,6 +105,6 @@ void main() {
     final state = solidState();
     // Right at the edge of the radius the falloff is nearly zero.
     system.explode(state, Vector3(16.5 + 3.9, 8.5, 16.5), 3, 14);
-    expect(state.player.health, lessThan(Player.maxHealth));
+    expect(state.solo.player.health, lessThan(Player.maxHealth));
   });
 }

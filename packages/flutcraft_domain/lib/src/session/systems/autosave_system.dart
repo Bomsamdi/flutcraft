@@ -39,7 +39,9 @@ class AutosaveSystem {
   /// the death screen, with the world's last living moment overwritten.
   bool saveNow(GameState state) {
     _sinceLastSave = 0;
-    if (state.player.isDead) return false;
+    // Nobody left alive is the same reason not to save as a dead solo
+    // player: the next launch would open straight onto a death screen.
+    if (state.participants.values.every((p) => p.player.isDead)) return false;
     sink.persist(persistence.capture(state));
     return true;
   }

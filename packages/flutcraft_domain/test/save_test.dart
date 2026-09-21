@@ -11,7 +11,7 @@ GameState freshGame({int seed = 1337}) {
   final world = VoxelWorld();
   TerrainGenerator(seed: seed).generate(world);
   final player = Player(world: world, spawn: Vector3.zero())..respawn();
-  return GameState(world: world, player: player, inventory: Inventory());
+  return GameState.solo(world: world, player: player, inventory: Inventory());
 }
 
 /// Encode, decode and rebuild — the full trip a save makes.
@@ -77,7 +77,7 @@ void main() {
 
     test('the player comes back where they stood, with their health', () {
       final original = freshGame();
-      original.player
+      original.solo.player
         ..position.setValues(12.5, 34.0, 56.5)
         ..yaw = 1.2
         ..pitch = -0.4
@@ -86,25 +86,25 @@ void main() {
 
       final restored = roundTrip(original);
 
-      expect(restored.player.position.x, closeTo(12.5, 1e-6));
-      expect(restored.player.position.z, closeTo(56.5, 1e-6));
-      expect(restored.player.yaw, closeTo(1.2, 1e-6));
-      expect(restored.player.health, Player.maxHealth - 7);
-      expect(restored.player.flying, isTrue);
+      expect(restored.solo.player.position.x, closeTo(12.5, 1e-6));
+      expect(restored.solo.player.position.z, closeTo(56.5, 1e-6));
+      expect(restored.solo.player.yaw, closeTo(1.2, 1e-6));
+      expect(restored.solo.player.health, Player.maxHealth - 7);
+      expect(restored.solo.player.flying, isTrue);
     });
 
     test('the inventory and the selected slot survive', () {
       final original = freshGame();
-      original.inventory
+      original.solo.inventory
         ..add(ItemType.ironPickaxe)
         ..add(ItemType.cobblestone, 40);
-      original.selectedSlot = 1;
+      original.solo.selectedSlot = 1;
 
       final restored = roundTrip(original);
 
-      expect(restored.inventory.countOf(ItemType.cobblestone), 40);
-      expect(restored.inventory.countOf(ItemType.ironPickaxe), 1);
-      expect(restored.selectedSlot, 1);
+      expect(restored.solo.inventory.countOf(ItemType.cobblestone), 40);
+      expect(restored.solo.inventory.countOf(ItemType.ironPickaxe), 1);
+      expect(restored.solo.selectedSlot, 1);
     });
 
     test('a furnace keeps its input, fuel and progress', () {
@@ -124,19 +124,19 @@ void main() {
 
     test('grid and cursor contents land in the inventory, never lost', () {
       final original = freshGame();
-      original.smallGrid[0] = const ItemStack(ItemType.log, 3);
-      original.cursor = const ItemStack(ItemType.coal, 2);
+      original.solo.smallGrid[0] = const ItemStack(ItemType.log, 3);
+      original.solo.cursor = const ItemStack(ItemType.coal, 2);
 
       final restored = roundTrip(original);
 
-      expect(restored.inventory.countOf(ItemType.log), 3);
-      expect(restored.inventory.countOf(ItemType.coal), 2);
-      expect(restored.cursor, isNull);
+      expect(restored.solo.inventory.countOf(ItemType.log), 3);
+      expect(restored.solo.inventory.countOf(ItemType.coal), 2);
+      expect(restored.solo.cursor, isNull);
     });
 
     test('a save that says the player is dead restores them alive', () {
       final original = freshGame();
-      original.player.damage(Player.maxHealth);
+      original.solo.player.damage(Player.maxHealth);
 
       // Only an older version could write this, but loading it must not
       // leave the player stuck on the death screen.
@@ -144,28 +144,28 @@ void main() {
         codec.decode(codec.encode(persistence.capture(original))).data,
       );
 
-      expect(restored.player.isDead, isFalse);
+      expect(restored.solo.player.isDead, isFalse);
     });
 
     test('capturing leaves the running game untouched', () {
       final original = freshGame();
-      original.smallGrid[0] = const ItemStack(ItemType.log, 3);
-      original.cursor = const ItemStack(ItemType.coal, 2);
+      original.solo.smallGrid[0] = const ItemStack(ItemType.log, 3);
+      original.solo.cursor = const ItemStack(ItemType.coal, 2);
 
       persistence.capture(original);
 
       // Autosave fires mid-craft; emptying the grid under the player would be
       // worse than not saving at all.
-      expect(original.smallGrid[0], const ItemStack(ItemType.log, 3));
-      expect(original.cursor, const ItemStack(ItemType.coal, 2));
-      expect(original.inventory.countOf(ItemType.log), 0);
+      expect(original.solo.smallGrid[0], const ItemStack(ItemType.log, 3));
+      expect(original.solo.cursor, const ItemStack(ItemType.coal, 2));
+      expect(original.solo.inventory.countOf(ItemType.log), 0);
     });
   });
 
   group('A tolerant reader', () {
     test('an unknown item disappears, the rest of the save survives', () {
       final state = freshGame();
-      state.inventory.add(ItemType.coal, 5);
+      state.solo.inventory.add(ItemType.coal, 5);
       final raw = codec.toJson(persistence.capture(state));
 
       (raw['inventory'] as List)[0] = {'item': 'unobtanium', 'count': 1};
@@ -202,7 +202,7 @@ void main() {
 
     test('enums are stored by name, not by index', () {
       final state = freshGame();
-      state.inventory.add(ItemType.ironSword);
+      state.solo.inventory.add(ItemType.ironSword);
       final raw = codec.toJson(persistence.capture(state));
 
       final slot =
@@ -217,7 +217,7 @@ void main() {
     test('writes and reads back a slot', () async {
       final repository = SaveRepository(storage: InMemorySaveStorage());
       final state = freshGame(seed: 99);
-      state.inventory.add(ItemType.bone, 4);
+      state.solo.inventory.add(ItemType.bone, 4);
 
       await repository.save('one', persistence.capture(state));
       final loaded = await repository.load('one');
@@ -225,7 +225,7 @@ void main() {
       expect(loaded, isNotNull);
       expect(loaded!.data.seed, 99);
       expect(
-        persistence.restore(loaded.data).inventory.countOf(ItemType.bone),
+        persistence.restore(loaded.data).solo.inventory.countOf(ItemType.bone),
         4,
       );
     });
@@ -264,12 +264,12 @@ void main() {
 
       var events = <GameEvent>[];
       for (var i = 0; i < 60 * 9; i++) {
-        events = loop.tick(1 / 60, InputFrame.idle);
+        events = loop.tickSolo(1 / 60, InputFrame.idle);
       }
       expect(sink.saves, isEmpty, reason: 'nine seconds is not ten');
 
       for (var i = 0; i < 60; i++) {
-        final tickEvents = loop.tick(1 / 60, InputFrame.idle);
+        final tickEvents = loop.tickSolo(1 / 60, InputFrame.idle);
         if (tickEvents.isNotEmpty) events = tickEvents;
       }
       expect(sink.saves, hasLength(1));
@@ -278,10 +278,11 @@ void main() {
 
     test('keeps saving while a screen is open', () {
       final sink = RecordingSaveSink();
-      final loop = loopWith(sink)..dispatch(const OpenRoute(UiRoute.inventory));
+      final loop = loopWith(sink)
+        ..dispatchSolo(const OpenRoute(UiRoute.inventory));
 
       for (var i = 0; i < 60 * 11; i++) {
-        loop.tick(1 / 60, InputFrame.idle);
+        loop.tickSolo(1 / 60, InputFrame.idle);
       }
       expect(sink.saves, hasLength(1));
     });
@@ -290,7 +291,7 @@ void main() {
       final sink = RecordingSaveSink();
       final loop = loopWith(sink);
 
-      final events = loop.dispatch(const SaveGame());
+      final events = loop.dispatchSolo(const SaveGame());
 
       expect(sink.saves, hasLength(1));
       expect(events.single, isA<GameSaved>());
@@ -301,11 +302,11 @@ void main() {
       final loop = loopWith(sink);
 
       for (var i = 0; i < 60 * 9; i++) {
-        loop.tick(1 / 60, InputFrame.idle);
+        loop.tickSolo(1 / 60, InputFrame.idle);
       }
-      loop.dispatch(const SaveGame());
+      loop.dispatchSolo(const SaveGame());
       for (var i = 0; i < 60 * 9; i++) {
-        loop.tick(1 / 60, InputFrame.idle);
+        loop.tickSolo(1 / 60, InputFrame.idle);
       }
 
       expect(sink.saves, hasLength(1), reason: 'the timer restarted at zero');
@@ -314,10 +315,10 @@ void main() {
     test('a dead player is never autosaved', () {
       final sink = RecordingSaveSink();
       final loop = loopWith(sink);
-      loop.state.player.damage(Player.maxHealth);
+      loop.state.solo.player.damage(Player.maxHealth);
 
       for (var i = 0; i < 60 * 11; i++) {
-        loop.tick(1 / 60, InputFrame.idle);
+        loop.tickSolo(1 / 60, InputFrame.idle);
       }
 
       // Otherwise the next launch opens on the death screen, with the last
@@ -328,9 +329,9 @@ void main() {
     test('an explicit save of a dead player is refused too', () {
       final sink = RecordingSaveSink();
       final loop = loopWith(sink);
-      loop.state.player.damage(Player.maxHealth);
+      loop.state.solo.player.damage(Player.maxHealth);
 
-      expect(loop.dispatch(const SaveGame()), isEmpty);
+      expect(loop.dispatchSolo(const SaveGame()), isEmpty);
       expect(sink.saves, isEmpty);
     });
 
@@ -340,7 +341,7 @@ void main() {
         spawner: MobSpawner(world: VoxelWorld(), seed: 1, maxMobs: 0),
       );
 
-      expect(loop.dispatch(const SaveGame()), isEmpty);
+      expect(loop.dispatchSolo(const SaveGame()), isEmpty);
     });
   });
 
@@ -357,9 +358,9 @@ void main() {
       );
 
       for (var i = 0; i < 300; i++) {
-        loop.tick(1 / 60, InputFrame.idle);
+        loop.tickSolo(1 / 60, InputFrame.idle);
       }
-      expect(restored.player.position.y, greaterThan(0));
+      expect(restored.solo.player.position.y, greaterThan(0));
     });
   });
 }

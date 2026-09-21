@@ -2,7 +2,6 @@ import 'dart:math';
 
 import '../actors/mob.dart';
 import '../actors/mob_behavior.dart';
-import '../actors/player.dart';
 import '../aiming/aim_result.dart';
 import '../blocks/block_interaction.dart';
 import '../crafting/recipes.dart';
@@ -15,6 +14,7 @@ import '../save/save_sink.dart';
 import 'game_command.dart';
 import 'game_event.dart';
 import 'game_state.dart';
+import 'participant.dart';
 import 'systems/aiming_system.dart';
 import 'systems/autosave_system.dart';
 import 'systems/entity_separation_system.dart';
@@ -64,88 +64,120 @@ class GameLoop implements MobTickContext {
 
   final BlockRegistry _blocks = BlockRegistry.standard;
 
-  /// Where the recipe book should return to when closed.
-  UiRoute? _routeBeforeRecipes;
+  /// Where each player's recipe book should return to when closed.
+  final Map<PlayerId, UiRoute?> _routeBeforeRecipes = {};
 
   final List<GameEvent> _events = [];
 
-  @override
-  Player get player => state.player;
-
   /// Advances the world by [dt] seconds and returns what happened.
-  List<GameEvent> tick(double dt, InputFrame input) {
+  ///
+  /// Takes one frame of input per player. A player with nothing in [inputs]
+  /// is still simulated — they simply asked for nothing this tick, which is
+  /// what a disconnected client looks like from here.
+  List<GameEvent> tick(double dt, Map<PlayerId, InputFrame> inputs) {
     _events.clear();
 
-    // Furnaces and autosave keep going even while a screen is open.
+    // Furnaces and autosave belong to the world, and keep going even while
+    // somebody has a screen open.
     _furnaces.update(state, dt);
     if (_autosave?.update(state, dt) ?? false) _events.add(const GameSaved());
 
-    if (state.player.isDead && state.route != UiRoute.dead) {
-      state.route = UiRoute.dead;
+    for (final participant in state.participants.values) {
+      _tickPlayer(participant, dt, inputs[participant.id] ?? InputFrame.idle);
     }
 
-    // Buttons that were tapped this tick become commands. What each one means
-    // depends on where the player is, which is why it is decided in one
-    // place rather than in whichever source happened to see the key.
-    for (final action in input.pressed) {
-      final command = commandFor(action, state.route);
-      if (command != null) dispatch(command);
+    // The world itself only stops when everyone has stepped away from it.
+    if (state.participants.values.every((it) => it.route.pausesWorld)) {
+      return List.of(_events);
     }
 
-    if (state.route.pausesWorld) return List.of(_events);
-
-    if (input.lookYaw != 0 || input.lookPitch != 0) {
-      state.player.look(input.lookYaw, input.lookPitch);
-    }
-    _movement.update(state, dt, input.moveFor(flying: state.player.flying));
     _events.addAll(_mobAi.update(state, dt, this));
     // Everyone has moved by now, so this is the moment to untangle them.
     _separation.update(state);
     _projectiles.update(state, dt);
-    _aiming.update(state);
-    _events.addAll(
-      _mining.update(state, dt, active: input.isHeld(GameAction.primary)),
-    );
-    _events.addAll(
-      _placement.update(state, dt, active: input.isHeld(GameAction.secondary)),
-    );
 
     return List.of(_events);
   }
 
-  /// Applies a single player action and returns what it caused.
-  List<GameEvent> dispatch(GameCommand command) {
+  /// One player's half of a tick: their input, their aim, their swing.
+  void _tickPlayer(Participant it, double dt, InputFrame input) {
+    if (it.player.isDead && it.route != UiRoute.dead) {
+      it.route = UiRoute.dead;
+    }
+
+    // Buttons that were tapped this tick become commands. What each one means
+    // depends on where that player is, which is why it is decided in one
+    // place rather than in whichever source happened to see the key.
+    for (final action in input.pressed) {
+      final command = commandFor(action, it.route);
+      if (command != null) dispatch(it.id, command);
+    }
+
+    if (it.route.pausesWorld) return;
+
+    if (input.lookYaw != 0 || input.lookPitch != 0) {
+      it.player.look(input.lookYaw, input.lookPitch);
+    }
+    _movement.update(it, dt, input.moveFor(flying: it.player.flying));
+    _aiming.update(state, it);
+    _events.addAll(
+      _mining.update(state, it, dt, active: input.isHeld(GameAction.primary)),
+    );
+    _events.addAll(
+      _placement.update(
+        state,
+        it,
+        dt,
+        active: input.isHeld(GameAction.secondary),
+      ),
+    );
+  }
+
+  /// Advances a single-player game.
+  List<GameEvent> tickSolo(double dt, InputFrame input) =>
+      tick(dt, {state.solo.id: input});
+
+  /// Applies one player's action and returns what it caused.
+  List<GameEvent> dispatch(PlayerId who, GameCommand command) {
+    final it = state.participants[who];
+    // A command from somebody who has left is not an error, it is late.
+    if (it == null) return const [];
+
     final before = _events.length;
     switch (command) {
       case SelectHotbarSlot(:final index):
-        if (index >= 0 && index < state.inventory.hotbarSize) {
-          state.selectedSlot = index;
-          state.breakProgress = 0;
+        if (index >= 0 && index < it.inventory.hotbarSize) {
+          it.selectedSlot = index;
+          it.breakProgress = 0;
         }
       case CycleHotbarSlot(:final delta):
-        final size = state.inventory.hotbarSize;
-        state.selectedSlot = (state.selectedSlot + delta) % size;
-        state.breakProgress = 0;
+        final size = it.inventory.hotbarSize;
+        it.selectedSlot = (it.selectedSlot + delta) % size;
+        it.breakProgress = 0;
       case ClickSlot(:final ref, :final kind):
-        _clickSlot(ref, kind);
+        _clickSlot(it, ref, kind);
       case OpenRoute(:final route):
-        _openRoute(route);
+        _openRoute(it, route);
       case CloseRoute():
-        _closeRoute();
+        _closeRoute(it);
       case OpenRecipes():
-        _openRecipes();
+        _openRecipes(it);
       case ToggleFlight():
-        state.player.flying = !state.player.flying;
-        if (state.player.flying) state.player.velocity.y = 0;
-        _events.add(FlightToggled(state.player.flying));
+        it.player.flying = !it.player.flying;
+        if (it.player.flying) it.player.velocity.y = 0;
+        _events.add(FlightToggled(it.player.flying));
       case Respawn():
-        state.player.respawn();
-        _mobAi.despawnAll(state);
-        _projectiles.clear(state);
-        state.route = UiRoute.none;
+        it.player.respawn();
+        // Only a solo game may clear the world on one player's death; with
+        // company, the mobs are everybody's problem.
+        if (state.participants.length == 1) {
+          _mobAi.despawnAll(state);
+          _projectiles.clear(state);
+        }
+        it.route = UiRoute.none;
         _events.add(const PlayerRespawned());
       case UseOrPlace():
-        _useOrPlace();
+        _useOrPlace(it);
       case SaveGame():
         if (_autosave?.saveNow(state) ?? false) {
           _events.add(const GameSaved());
@@ -154,124 +186,132 @@ class GameLoop implements MobTickContext {
     return _events.sublist(before);
   }
 
-  void _useOrPlace() {
-    if (state.aim case BlockTarget(:final hit)) {
+  /// Applies an action in a single-player game.
+  List<GameEvent> dispatchSolo(GameCommand command) =>
+      dispatch(state.solo.id, command);
+
+  void _useOrPlace(Participant it) {
+    if (it.aim case BlockTarget(:final hit)) {
       switch (_blocks.interactionFor(hit.block)) {
         case OpenCraftingTable():
-          _openRoute(UiRoute.craftingTable);
+          _openRoute(it, UiRoute.craftingTable);
         case OpenFurnace():
           state.furnaces.open(hit.pos);
-          state.openFurnace = hit.pos;
-          _openRoute(UiRoute.furnace);
+          it.openFurnace = hit.pos;
+          _openRoute(it, UiRoute.furnace);
         case null:
-          _events.addAll(_placement.placeNow(state));
+          _events.addAll(_placement.placeNow(state, it));
       }
     }
   }
 
-  void _openRoute(UiRoute route) {
-    state.route = route;
-    state.breakProgress = 0;
-    _placement.resetCooldown();
+  void _openRoute(Participant it, UiRoute route) {
+    it.route = route;
+    it.breakProgress = 0;
+    _placement.resetCooldown(it);
   }
 
-  void _openRecipes() {
-    if (state.route == UiRoute.recipes) {
-      _closeRoute();
+  void _openRecipes(Participant it) {
+    if (it.route == UiRoute.recipes) {
+      _closeRoute(it);
       return;
     }
-    _routeBeforeRecipes = state.route == UiRoute.none ? null : state.route;
-    _openRoute(UiRoute.recipes);
+    _routeBeforeRecipes[it.id] = it.route == UiRoute.none ? null : it.route;
+    _openRoute(it, UiRoute.recipes);
   }
 
   /// Closing gives back whatever sat in the crafting grid or on the cursor,
   /// so a player cannot lose items by pressing Escape.
-  void _closeRoute() {
-    if (state.route == UiRoute.recipes) {
-      final previous = _routeBeforeRecipes;
-      _routeBeforeRecipes = null;
-      state.route = previous ?? UiRoute.none;
+  void _closeRoute(Participant it) {
+    if (it.route == UiRoute.recipes) {
+      it.route = _routeBeforeRecipes.remove(it.id) ?? UiRoute.none;
       return;
     }
 
-    final grid = state.activeGrid;
+    final grid = it.activeGrid;
     for (var i = 0; i < grid.length; i++) {
       final stack = grid[i];
       if (stack == null) continue;
-      state.inventory.add(stack.type, stack.count);
+      it.inventory.add(stack.type, stack.count);
       grid[i] = null;
     }
-    final held = state.cursor;
+    final held = it.cursor;
     if (held != null) {
-      state.inventory.add(held.type, held.count);
-      state.cursor = null;
+      it.inventory.add(held.type, held.count);
+      it.cursor = null;
     }
-    state.openFurnace = null;
-    state.route = UiRoute.none;
+    it.openFurnace = null;
+    it.route = UiRoute.none;
   }
 
-  void _clickSlot(SlotRef ref, ClickKind kind) {
+  void _clickSlot(Participant it, SlotRef ref, ClickKind kind) {
     switch (ref) {
       case InventorySlotRef(:final index):
         _swap(
-          () => state.inventory[index],
-          (value) => state.inventory[index] = value,
+          it,
+          () => it.inventory[index],
+          (value) => it.inventory[index] = value,
           kind,
         );
       case GridSlotRef(:final index):
-        final grid = state.activeGrid;
-        _swap(() => grid[index], (value) => grid[index] = value, kind);
+        final grid = it.activeGrid;
+        _swap(it, () => grid[index], (value) => grid[index] = value, kind);
       case FurnaceSlotRef(:final slot):
-        final furnace = state.openFurnace == null
+        final furnace = it.openFurnace == null
             ? null
-            : state.furnaces[state.openFurnace!];
+            : state.furnaces[it.openFurnace!];
         if (furnace == null) return;
         if (slot == FurnaceSlot.output) {
-          final result = takeOutput(furnace.output, state.cursor);
+          final result = takeOutput(furnace.output, it.cursor);
           furnace.output = result.slot;
-          state.cursor = result.cursor;
+          it.cursor = result.cursor;
           return;
         }
         _swap(
+          it,
           () => furnace.slot(slot),
           (value) => furnace.setSlot(slot, value),
           kind,
         );
       case CraftResultRef():
-        _takeCraftResult();
+        _takeCraftResult(it);
     }
   }
 
   void _swap(
+    Participant it,
     ItemStack? Function() get,
     void Function(ItemStack?) set,
     ClickKind kind,
   ) {
     final result = kind == ClickKind.primary
-        ? transferSlot(get(), state.cursor)
-        : splitSlot(get(), state.cursor);
+        ? transferSlot(get(), it.cursor)
+        : splitSlot(get(), it.cursor);
     set(result.slot);
-    state.cursor = result.cursor;
+    it.cursor = result.cursor;
   }
 
-  void _takeCraftResult() {
-    final grid = state.activeGrid;
+  void _takeCraftResult(Participant it) {
+    final grid = it.activeGrid;
     final recipe = matchRecipe(grid);
     if (recipe == null) return;
-    if (!cursorAccepts(state.cursor, recipe.output, recipe.outputCount)) return;
+    if (!cursorAccepts(it.cursor, recipe.output, recipe.outputCount)) return;
 
-    final held = state.cursor;
-    state.cursor = held == null
+    final held = it.cursor;
+    it.cursor = held == null
         ? ItemStack(recipe.output, recipe.outputCount)
         : held.plus(recipe.outputCount);
     consumeGrid(grid);
   }
 
-  /// What the crafting grid would produce right now.
-  ItemStack? get craftPreview {
-    final recipe = matchRecipe(state.activeGrid);
+  /// What a player's crafting grid would produce right now.
+  ItemStack? craftPreviewFor(Participant it) {
+    final recipe = matchRecipe(it.activeGrid);
     return recipe == null ? null : ItemStack(recipe.output, recipe.outputCount);
   }
+
+  /// What the only player's grid would produce, in a single-player game.
+  ItemStack? get craftPreview => craftPreviewFor(state.solo);
 
   @override
   void spawnArrow(Vector3 from, Vector3 direction) => state.arrows.add(

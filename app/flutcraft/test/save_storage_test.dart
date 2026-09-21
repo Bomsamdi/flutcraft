@@ -10,7 +10,7 @@ import 'package:vector_math/vector_math.dart';
 SaveData sampleSave({int seed = 7}) {
   final world = VoxelWorld();
   TerrainGenerator(seed: seed).generate(world);
-  final state = GameState(
+  final state = GameState.solo(
     world: world,
     player: Player(world: world, spawn: Vector3.zero())..respawn(),
     inventory: Inventory(),
