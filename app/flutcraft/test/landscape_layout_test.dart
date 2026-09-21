@@ -2,6 +2,7 @@ import 'dart:ui' as ui;
 
 import 'package:flutcraft/src/render/atlas.dart';
 import 'package:flutcraft/src/ui/recipe_book.dart';
+import 'package:flutcraft_l10n/flutcraft_l10n.dart';
 import 'package:flutcraft/src/ui/slots.dart';
 import 'package:flutcraft_domain/flutcraft_domain.dart';
 import 'package:flutter/material.dart';
@@ -35,6 +36,8 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(
           body: Center(
             child: SlotGrid(
@@ -59,6 +62,8 @@ void main() {
       (tester) async {
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(
           body: SingleChildScrollView(
             child: RecipeBook(image: atlasImage, inventory: Inventory()),
@@ -80,6 +85,8 @@ void main() {
   testWidgets('księga jest węższa niż poziomy kadr telefonu', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(
           body: SingleChildScrollView(
             child: RecipeBook(image: atlasImage, inventory: Inventory()),

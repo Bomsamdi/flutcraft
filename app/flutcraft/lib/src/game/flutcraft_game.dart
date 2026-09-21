@@ -9,7 +9,6 @@ import 'package:flame_3d/resources.dart';
 import 'package:flutcraft/src/game/held_item.dart';
 import 'package:flutcraft/src/game/hud_state.dart';
 import 'package:flutcraft/src/render/atlas.dart';
-import 'package:flutcraft/src/ui/messages/event_messages.dart';
 import 'package:flutcraft/src/render/chunk_renderer.dart';
 import 'package:flutcraft/src/render/mob_renderer.dart';
 import 'package:flutcraft/src/render/overlay_meshes.dart';
@@ -143,7 +142,7 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
   double _swingTimer = 0;
   double _hudTimer = 0;
   double _fps = 0;
-  String _message = '';
+  GameEvent? _lastEvent;
   double _messageTimer = 0;
 
   static const double _swingDuration = 0.28;
@@ -241,7 +240,7 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
   void _updateHud(double dt) {
     if (_messageTimer > 0) {
       _messageTimer -= dt;
-      if (_messageTimer <= 0) _message = '';
+      if (_messageTimer <= 0) _lastEvent = null;
     }
     _hudTimer += dt;
     if (_hudTimer >= 0.05) {
@@ -485,12 +484,10 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
 
   // --- HUD ------------------------------------------------------------------
 
-  /// Zgłasza zdarzenie graczowi. Silnik nie zna tekstu - tłumaczy go
-  /// [describeEvent] w warstwie prezentacji.
+  /// Silnik nie zna tekstu - przekazuje zdarzenie dalej, a słowa dobiera
+  /// warstwa prezentacji przez GameStrings.
   void _emit(GameEvent event) {
-    final text = describeEvent(event);
-    if (text.isEmpty) return;
-    _message = text;
+    _lastEvent = event;
     _messageTimer = 2.4;
     _publishHud();
   }
@@ -504,10 +501,14 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
       hotbar: inventory.hotbar.toList(),
       selected: selected,
       breakProgress: _breakProgress.clamp(0, 1),
-      targetLabel: switch (_aim) {
-        NoTarget() => '',
-        BlockTarget(:final hit) => hit.block.label,
-        MobTarget(:final mob) => mob.kind.label,
+      aim: switch (_aim) {
+        NoTarget() => const NoAimView(),
+        BlockTarget(:final hit) => BlockAimView(hit.block),
+        MobTarget(:final mob) => MobAimView(
+          mob.kind,
+          mob.health,
+          mob.kind.maxHealth,
+        ),
       },
       position: (
         player.position.x.floor(),
@@ -518,7 +519,7 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
       flying: player.flying,
       chunksPending: chunkManager.pendingChunks,
       chunksTotal: chunkManager.totalChunks,
-      message: _message,
+      event: _lastEvent,
       health: player.health,
       maxHealth: Player.maxHealth,
       hurtFlash: player.hurtFlash,

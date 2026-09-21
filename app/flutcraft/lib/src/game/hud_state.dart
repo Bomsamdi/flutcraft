@@ -11,13 +11,13 @@ class HudSnapshot {
     required this.hotbar,
     required this.selected,
     required this.breakProgress,
-    required this.targetLabel,
+    required this.aim,
     required this.position,
     required this.fps,
     required this.flying,
     required this.chunksPending,
     required this.chunksTotal,
-    required this.message,
+    required this.event,
     required this.health,
     required this.maxHealth,
     required this.hurtFlash,
@@ -33,8 +33,8 @@ class HudSnapshot {
   /// 0..1 - postęp rozbijania aktualnego bloku.
   final double breakProgress;
 
-  /// Nazwa bloku lub potwora pod celownikiem.
-  final String targetLabel;
+  /// Co jest pod celownikiem; tekst dobiera UI.
+  final AimView aim;
 
   final (int, int, int) position;
   final double fps;
@@ -42,8 +42,8 @@ class HudSnapshot {
   final int chunksPending;
   final int chunksTotal;
 
-  /// Krótki komunikat (np. "Potrzebujesz lepszego kilofa").
-  final String message;
+  /// Ostatnie zdarzenie warte pokazania; tekst dobiera UI.
+  final GameEvent? event;
 
   final int health;
   final int maxHealth;

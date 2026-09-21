@@ -2,6 +2,7 @@ import 'dart:ui' as ui;
 
 import 'package:flutcraft/src/ui/widgets.dart';
 import 'package:flutcraft_domain/flutcraft_domain.dart';
+import 'package:flutcraft_l10n/flutcraft_l10n.dart';
 import 'package:flutter/material.dart';
 
 /// Mała komórka siatki przepisu - bez licznika i bez klikania.
@@ -76,8 +77,10 @@ class RecipeRow extends StatelessWidget {
               children: [
                 Text(
                   recipe.outputCount > 1
-                      ? '${recipe.output.label} x${recipe.outputCount}'
-                      : recipe.output.label,
+                      ? context.strings.stack(
+                          ItemStack(recipe.output, recipe.outputCount),
+                        )
+                      : context.strings.itemName(recipe.output),
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 13,
@@ -85,7 +88,7 @@ class RecipeRow extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  _hint(),
+                  _hint(context),
                   style: TextStyle(
                     color: available
                         ? Colors.lightGreenAccent
@@ -101,17 +104,21 @@ class RecipeRow extends StatelessWidget {
     );
   }
 
-  String _hint() {
+  String _hint(BuildContext context) {
+    final strings = context.strings;
     if (available) {
-      return recipe.needsTable ? 'Masz składniki - ułóż na stole' : 'Masz składniki';
+      return recipe.needsTable
+          ? context.t.haveIngredientsTable
+          : context.t.haveIngredients;
     }
     // Konkret jest bardziej użyteczny niż samo "nie da się".
     final parts = missing.entries
         .take(2)
-        .map((e) => '${e.key.label} x${e.value}')
+        .map((e) => strings.stack(ItemStack(e.key, e.value)))
         .join(', ');
-    final more = missing.length > 2 ? ' i ${missing.length - 2} więcej' : '';
-    return 'Brakuje: $parts$more';
+    final more =
+        missing.length > 2 ? ' ${context.t.andMore(missing.length - 2)}' : '';
+    return context.t.missingIngredients('$parts$more');
   }
 
   Widget _pattern() {
@@ -175,7 +182,8 @@ class SmeltRow extends StatelessWidget {
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              '${input.label} → ${output.label}',
+              '${context.strings.itemName(input)} → '
+              '${context.strings.itemName(output)}',
               style: const TextStyle(color: Colors.white, fontSize: 13),
             ),
           ),
@@ -207,7 +215,7 @@ class RecipeBook extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const _SectionTitle('W ekwipunku (siatka 2x2)'),
+          _SectionTitle(context.t.recipesInInventory),
           for (final recipe in handheld)
             RecipeRow(
               image: image,
@@ -215,7 +223,7 @@ class RecipeBook extends StatelessWidget {
               missing: missingFor(recipe, inventory),
             ),
           const SizedBox(height: 10),
-          const _SectionTitle('Na stole rzemieślniczym (3x3)'),
+          _SectionTitle(context.t.recipesAtTable),
           for (final recipe in tableOnly)
             RecipeRow(
               image: image,
@@ -224,8 +232,7 @@ class RecipeBook extends StatelessWidget {
             ),
           const SizedBox(height: 10),
           _SectionTitle(
-            'W piecu (paliwo: węgiel, '
-            '${FurnaceState.smeltTime.toStringAsFixed(0)} s na sztukę)',
+            context.t.smeltSeconds(FurnaceState.smeltTime.round()),
           ),
           for (final input in kSmeltable)
             SmeltRow(image: image, input: input),

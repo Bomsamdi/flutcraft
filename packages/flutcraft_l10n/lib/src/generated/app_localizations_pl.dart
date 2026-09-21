@@ -280,4 +280,13 @@ class AppLocalizationsPl extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get cursorEmptyHint =>
+      'Stuknij, aby podnieść. Przytrzymaj lub kliknij prawym, aby wziąć połowę stosu.';
+
+  @override
+  String cursorHolding(String stack) {
+    return 'Trzymasz: $stack (przytrzymaj slot, aby położyć jedną sztukę)';
+  }
 }

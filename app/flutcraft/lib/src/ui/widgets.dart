@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:flutcraft_domain/flutcraft_domain.dart';
+import 'package:flutcraft_l10n/flutcraft_l10n.dart';
 import 'package:flutcraft/src/render/atlas.dart';
 import 'package:flutter/material.dart';
 
@@ -227,7 +228,7 @@ class TargetHealthBar extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            target.kind.label,
+            context.strings.mobName(target.kind),
             style: const TextStyle(
               color: Colors.white,
               fontSize: 13,

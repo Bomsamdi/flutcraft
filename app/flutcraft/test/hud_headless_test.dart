@@ -5,6 +5,7 @@ import 'package:flutcraft/src/render/atlas.dart';
 import 'package:flutcraft/src/ui/hud/hud_overlay.dart';
 import 'package:flutcraft/src/ui/providers/session_providers.dart';
 import 'package:flutcraft_domain/flutcraft_domain.dart';
+import 'package:flutcraft_l10n/flutcraft_l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -49,6 +50,8 @@ void main() {
       ProviderScope(
         overrides: [gameSessionProvider.overrideWithValue(game)],
         child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(body: HudOverlay(atlas: atlas)),
         ),
       ),
@@ -133,7 +136,7 @@ void main() {
 
       await pumpHud(tester, session: game);
 
-      expect(find.text(MobKind.zombie.label), findsOneWidget);
+      expect(find.text('Zombie'), findsOneWidget);
     });
 
     testWidgets('gra tyka pod HUD bez wyjątków', (tester) async {

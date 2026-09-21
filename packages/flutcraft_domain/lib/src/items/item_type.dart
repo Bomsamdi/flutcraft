@@ -25,18 +25,17 @@ enum ItemType {
   furnace(block: BlockType.furnace),
 
   // --- surowce ---
-  stick(label: 'Patyk', icon: Tile.stickIcon),
-  coal(label: 'Węgiel', icon: Tile.coalIcon, burnTime: 8),
-  rawIron(label: 'Surowe żelazo', icon: Tile.rawIronIcon),
-  ironIngot(label: 'Sztabka żelaza', icon: Tile.ironIngotIcon),
-  bone(label: 'Kość', icon: Tile.boneIcon),
-  string(label: 'Nić', icon: Tile.stringIcon),
-  gunpowder(label: 'Proch', icon: Tile.gunpowderIcon),
-  arrow(label: 'Strzała', icon: Tile.arrowIcon),
+  stick(icon: Tile.stickIcon),
+  coal(icon: Tile.coalIcon, burnTime: 8),
+  rawIron(icon: Tile.rawIronIcon),
+  ironIngot(icon: Tile.ironIngotIcon),
+  bone(icon: Tile.boneIcon),
+  string(icon: Tile.stringIcon),
+  gunpowder(icon: Tile.gunpowderIcon),
+  arrow(icon: Tile.arrowIcon),
 
   // --- narzędzia ---
   woodenPickaxe(
-    label: 'Drewniany kilof',
     icon: Tile.woodPickIcon,
     tool: ToolType.pickaxe,
     tier: 1,
@@ -44,7 +43,6 @@ enum ItemType {
     maxStack: 1,
   ),
   stonePickaxe(
-    label: 'Kamienny kilof',
     icon: Tile.stonePickIcon,
     tool: ToolType.pickaxe,
     tier: 2,
@@ -52,7 +50,6 @@ enum ItemType {
     maxStack: 1,
   ),
   ironPickaxe(
-    label: 'Żelazny kilof',
     icon: Tile.ironPickIcon,
     tool: ToolType.pickaxe,
     tier: 3,
@@ -60,7 +57,6 @@ enum ItemType {
     maxStack: 1,
   ),
   woodenSword(
-    label: 'Drewniany miecz',
     icon: Tile.woodSwordIcon,
     tool: ToolType.sword,
     tier: 1,
@@ -68,7 +64,6 @@ enum ItemType {
     maxStack: 1,
   ),
   stoneSword(
-    label: 'Kamienny miecz',
     icon: Tile.stoneSwordIcon,
     tool: ToolType.sword,
     tier: 2,
@@ -76,7 +71,6 @@ enum ItemType {
     maxStack: 1,
   ),
   ironSword(
-    label: 'Żelazny miecz',
     icon: Tile.ironSwordIcon,
     tool: ToolType.sword,
     tier: 3,
@@ -86,20 +80,16 @@ enum ItemType {
 
   const ItemType({
     this.block,
-    String? label,
     Tile? icon,
     this.tool = ToolType.none,
     this.tier = 0,
     this.damage = 1,
     this.maxStack = 64,
     this.burnTime = 0,
-  }) : _label = label,
-       _icon = icon;
+  }) : _icon = icon;
 
   /// Blok, który ten przedmiot stawia; `null` dla surowców i narzędzi.
   final BlockType? block;
-
-  final String? _label;
   final Tile? _icon;
 
   /// Narzędzie, jakim ten przedmiot jest (kilof, miecz...).
@@ -115,8 +105,6 @@ enum ItemType {
 
   /// Ile sekund wytopu daje ten przedmiot jako paliwo (0 = nie pali się).
   final double burnTime;
-
-  String get label => _label ?? block!.label;
 
   /// Kafelek używany jako ikona w ekwipunku.
   Tile get icon => _icon ?? block!.sideTile;

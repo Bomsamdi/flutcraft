@@ -5,6 +5,7 @@ import 'package:flutcraft/src/game/hud_state.dart';
 import 'package:flutcraft/src/ui/hud.dart';
 import 'package:flutcraft/src/ui/providers/session_providers.dart';
 import 'package:flutcraft_domain/flutcraft_domain.dart';
+import 'package:flutcraft_l10n/flutcraft_l10n.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
@@ -36,9 +37,11 @@ class FlutcraftApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutcraft',
+      onGenerateTitle: (context) => context.t.appTitle,
       debugShowCheckedModeBanner: false,
       theme: ThemeData.dark(useMaterial3: true),
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       home: const GameScreen(),
     );
   }

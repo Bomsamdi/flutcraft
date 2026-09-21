@@ -1,6 +1,7 @@
 import 'dart:ui' as ui;
 
 import 'package:flutcraft/src/ui/widgets.dart';
+import 'package:flutcraft_l10n/flutcraft_l10n.dart';
 import 'package:flutcraft_domain/flutcraft_domain.dart';
 import 'package:flutter/material.dart';
 
@@ -169,10 +170,8 @@ class CursorBar extends StatelessWidget {
           Flexible(
             child: Text(
               held == null
-                  ? 'Stuknij, aby podnieść. Przytrzymaj lub kliknij prawym, '
-                        'aby wziąć połowę stosu.'
-                  : 'Trzymasz: ${held.type.label} x${held.count}  '
-                        '(przytrzymaj slot, aby położyć jedną sztukę)',
+                  ? context.t.cursorEmptyHint
+                  : context.t.cursorHolding(context.strings.stack(held)),
               style: const TextStyle(color: Colors.white70, fontSize: 12),
             ),
           ),

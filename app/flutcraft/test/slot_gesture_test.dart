@@ -2,6 +2,7 @@ import 'dart:ui' as ui;
 
 import 'package:flutcraft/src/render/atlas.dart';
 import 'package:flutcraft/src/ui/slots.dart';
+import 'package:flutcraft_l10n/flutcraft_l10n.dart';
 import 'package:flutcraft_domain/flutcraft_domain.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';

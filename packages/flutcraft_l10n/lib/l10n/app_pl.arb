@@ -75,5 +75,7 @@
   "missingIngredients": "Brakuje: {list}",
   "hudMobs": "{count, plural, =0{Brak potworów} =1{1 potwór} few{{count} potwory} other{{count} potworów}}",
   "andMore": "{count, plural, =1{i jeszcze 1} few{i jeszcze {count}} other{i jeszcze {count}}}",
-  "smeltSeconds": "{count, plural, =1{1 sekunda za sztukę} few{{count} sekundy za sztukę} other{{count} sekund za sztukę}}"
+  "smeltSeconds": "{count, plural, =1{1 sekunda za sztukę} few{{count} sekundy za sztukę} other{{count} sekund za sztukę}}",
+  "cursorEmptyHint": "Stuknij, aby podnieść. Przytrzymaj lub kliknij prawym, aby wziąć połowę stosu.",
+  "cursorHolding": "Trzymasz: {stack} (przytrzymaj slot, aby położyć jedną sztukę)"
 }

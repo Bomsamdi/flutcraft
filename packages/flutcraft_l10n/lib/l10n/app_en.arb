@@ -367,5 +367,18 @@
         "type": "int"
       }
     }
+  },
+  "cursorEmptyHint": "Tap to pick up. Hold or right-click to take half a stack.",
+  "@cursorEmptyHint": {
+    "description": "UI text"
+  },
+  "cursorHolding": "Holding: {stack} (hold a slot to place one)",
+  "@cursorHolding": {
+    "description": "UI text",
+    "placeholders": {
+      "stack": {
+        "type": "String"
+      }
+    }
   }
 }
