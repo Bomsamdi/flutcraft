@@ -128,7 +128,7 @@ void main() {
       expect(state.inventory.countOf(ItemType.cobblestone), 1);
     });
 
-    test('cios w potwora respektuje cooldown', () {
+    test('a hit on a mob respects the cooldown', () {
       final state = stateWith(held: ItemType.ironSword);
       final mob = Mob(
         kind: MobKind.zombie,
@@ -142,7 +142,11 @@ void main() {
       expect(afterFirst, lessThan(MobKind.zombie.maxHealth));
 
       system.update(state, 1 / 60, active: true);
-      expect(mob.health, afterFirst, reason: 'drugi cios blokuje cooldown');
+      expect(
+        mob.health,
+        afterFirst,
+        reason: 'the cooldown blocked the second hit',
+      );
 
       for (var i = 0; i < 40; i++) {
         system.update(state, 1 / 60, active: true);

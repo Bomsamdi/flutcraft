@@ -40,7 +40,7 @@ void main() {
       expect(
         before.hotbar.first?.count,
         5,
-        reason: 'stara migawka trzyma stan',
+        reason: 'the old snapshot holds its own state',
       );
       expect(before.selectedSlot, 0);
       expect(session.snapshot.hotbar.first?.count, 15);

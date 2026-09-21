@@ -178,7 +178,9 @@ class Mob extends VoxelBody {
       yaw = math.atan2(-toPlayer.x, -toPlayer.z);
     }
 
-    final desired = chasing ? kind.behavior.desiredSpeed(this, distance) : 0.0;
+    final desired = chasing
+        ? kind.behavior.desiredSpeed(this, distance, context)
+        : 0.0;
     if (desired != 0 && distance > 1e-3) {
       final dir = toPlayer / distance * desired;
       velocity
@@ -192,7 +194,7 @@ class Mob extends VoxelBody {
 
     stepPhysics(step);
 
-    // Prosty "pathfinding": przeszkoda na drodze = podskok.
+    // Pathfinding, such as it is: something in the way means jump.
     if (blockedHorizontally && onGround && chasing) {
       velocity.y = kind.jumpSpeed;
     }

@@ -10,19 +10,38 @@ import 'player.dart';
 /// `kind.explodes` and `kind.ranged`, which meant any new behaviour widened
 /// that method.
 abstract interface class MobBehavior {
-  /// Speed the mob wants this frame. Negative means backing away.
-  double desiredSpeed(Mob mob, double distanceToPlayer);
+  /// Speed the mob wants this frame. Negative means backing away, zero means
+  /// it is already where it wants to be.
+  double desiredSpeed(Mob mob, double distanceToPlayer, MobTickContext context);
 
   /// Runs once per frame while the player is within aggro range.
   void act(Mob mob, double dt, double distance, MobTickContext context);
 }
 
-/// Walks straight at the player and hits them in melee range.
+/// Walks up to the player and hits them from there.
 final class MeleeBehavior implements MobBehavior {
-  const MeleeBehavior();
+  const MeleeBehavior({this.standOff = 0.2});
+
+  /// How much clear space the mob wants between the two bodies.
+  ///
+  /// Without it a zombie walks until it is inside the player and keeps
+  /// pushing; the separation system then shoves it out every frame and the
+  /// fight happens in a shaking blur. Stopping at contact is both calmer to
+  /// watch and easier to swing at.
+  final double standOff;
+
+  /// The distance at which the two bodies touch, plus the stand-off.
+  double contactDistance(Mob mob, Player player) =>
+      mob.halfWidth + player.halfWidth + standOff;
 
   @override
-  double desiredSpeed(Mob mob, double distanceToPlayer) => mob.kind.speed;
+  double desiredSpeed(
+    Mob mob,
+    double distanceToPlayer,
+    MobTickContext context,
+  ) => distanceToPlayer <= contactDistance(mob, context.player)
+      ? 0
+      : mob.kind.speed;
 
   @override
   void act(Mob mob, double dt, double distance, MobTickContext context) {
@@ -57,7 +76,11 @@ final class RangedBehavior implements MobBehavior {
   final double maxShootRange;
 
   @override
-  double desiredSpeed(Mob mob, double distanceToPlayer) {
+  double desiredSpeed(
+    Mob mob,
+    double distanceToPlayer,
+    MobTickContext context,
+  ) {
     if (distanceToPlayer > approachAbove) return mob.kind.speed;
     if (distanceToPlayer < retreatBelow) return -mob.kind.speed * 0.8;
     return 0;
@@ -101,8 +124,15 @@ final class ExplodeBehavior implements MobBehavior {
   /// The fuse goes out if the player gets further away than this.
   final double abandonDistance;
 
+  /// Stops once the fuse is lit: it is already close enough to do the damage,
+  /// and walking into the player from there only shoves them out of the blast
+  /// they are trying to escape.
   @override
-  double desiredSpeed(Mob mob, double distanceToPlayer) => mob.kind.speed;
+  double desiredSpeed(
+    Mob mob,
+    double distanceToPlayer,
+    MobTickContext context,
+  ) => distanceToPlayer <= primeDistance ? 0 : mob.kind.speed;
 
   @override
   void act(Mob mob, double dt, double distance, MobTickContext context) {

@@ -207,7 +207,7 @@ void main() {
   _spawnRangeTest();
 
   group('Arrow', () {
-    test('trafia gracza i znika', () {
+    test('it hits the player and disappears', () {
       final world = flatWorld();
       final player = Player(world: world, spawn: Vector3(32.5, 2, 32.5));
       final arrow = Arrow(

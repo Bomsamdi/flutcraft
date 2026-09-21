@@ -26,6 +26,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `tool/check_layering.dart`, `tool/check_english.dart` and
   `tool/check_platform_config.dart`, all wired into CI.
 
+### Fixed
+
+- Mobs no longer walk inside the player. Bodies push each other apart, and a
+  melee mob stops where the two boxes touch instead of pressing on — you can
+  see what is hitting you, and swing at it.
+
 ### Changed
 
 - The simulation is pure Dart and runs without Flutter, Flame or a GPU.
