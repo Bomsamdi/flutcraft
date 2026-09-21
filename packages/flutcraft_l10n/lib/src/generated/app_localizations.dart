@@ -565,6 +565,186 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Holding: {stack} (hold a slot to place one)'**
   String cursorHolding(String stack);
+
+  /// UI text
+  ///
+  /// In en, this message translates to:
+  /// **'Controls'**
+  String get helpTitle;
+
+  /// UI text
+  ///
+  /// In en, this message translates to:
+  /// **'Combat'**
+  String get helpCombatTitle;
+
+  /// UI text
+  ///
+  /// In en, this message translates to:
+  /// **'The full recipe list is in the book (press B or the book icon).'**
+  String get helpRecipesHint;
+
+  /// UI text
+  ///
+  /// In en, this message translates to:
+  /// **'Aim at a mob: the crosshair turns into a red cross and a health bar appears above it. Then hold the same button you use for mining. A sword hits harder than a pickaxe, a pickaxe harder than a fist.'**
+  String get helpCombatBody;
+
+  /// UI text
+  ///
+  /// In en, this message translates to:
+  /// **'A stone pickaxe is required for iron ore. Beware of creepers — the blast destroys terrain. Tap anywhere to close.'**
+  String get helpFooter;
+
+  /// UI text
+  ///
+  /// In en, this message translates to:
+  /// **'WASD / joystick'**
+  String get helpMove;
+
+  /// UI text
+  ///
+  /// In en, this message translates to:
+  /// **'walk'**
+  String get helpMoveAction;
+
+  /// UI text
+  ///
+  /// In en, this message translates to:
+  /// **'Drag with finger or mouse'**
+  String get helpLook;
+
+  /// UI text
+  ///
+  /// In en, this message translates to:
+  /// **'look around'**
+  String get helpLookAction;
+
+  /// UI text
+  ///
+  /// In en, this message translates to:
+  /// **'Hold / MINE'**
+  String get helpMineKey;
+
+  /// UI text
+  ///
+  /// In en, this message translates to:
+  /// **'mine blocks and hit mobs'**
+  String get helpMineAction;
+
+  /// UI text
+  ///
+  /// In en, this message translates to:
+  /// **'Right click / USE / R'**
+  String get helpUseKey;
+
+  /// UI text
+  ///
+  /// In en, this message translates to:
+  /// **'place and open'**
+  String get helpUseAction;
+
+  /// UI text
+  ///
+  /// In en, this message translates to:
+  /// **'E / backpack icon'**
+  String get helpInventoryKey;
+
+  /// UI text
+  ///
+  /// In en, this message translates to:
+  /// **'inventory and crafting'**
+  String get helpInventoryAction;
+
+  /// UI text
+  ///
+  /// In en, this message translates to:
+  /// **'B / book icon'**
+  String get helpRecipesKey;
+
+  /// UI text
+  ///
+  /// In en, this message translates to:
+  /// **'recipe book'**
+  String get helpRecipesAction;
+
+  /// UI text
+  ///
+  /// In en, this message translates to:
+  /// **'1-9, scroll'**
+  String get helpHotbarKey;
+
+  /// UI text
+  ///
+  /// In en, this message translates to:
+  /// **'select item'**
+  String get helpHotbarAction;
+
+  /// UI text
+  ///
+  /// In en, this message translates to:
+  /// **'Right click / hold a slot'**
+  String get helpSplitKey;
+
+  /// UI text
+  ///
+  /// In en, this message translates to:
+  /// **'split a stack in half'**
+  String get helpSplitAction;
+
+  /// UI text
+  ///
+  /// In en, this message translates to:
+  /// **'Space / JUMP'**
+  String get helpJumpKey;
+
+  /// UI text
+  ///
+  /// In en, this message translates to:
+  /// **'jump'**
+  String get helpJumpAction;
+
+  /// UI text
+  ///
+  /// In en, this message translates to:
+  /// **'Shift'**
+  String get helpSprintKey;
+
+  /// UI text
+  ///
+  /// In en, this message translates to:
+  /// **'sprint (or descend while flying)'**
+  String get helpSprintAction;
+
+  /// UI text
+  ///
+  /// In en, this message translates to:
+  /// **'F / FLY'**
+  String get helpFlyKey;
+
+  /// UI text
+  ///
+  /// In en, this message translates to:
+  /// **'flight mode'**
+  String get helpFlyAction;
+
+  /// UI text
+  ///
+  /// In en, this message translates to:
+  /// **'Fuel: coal. Smelts: raw iron, sand, logs.'**
+  String get furnaceHint;
+
+  /// UI text
+  ///
+  /// In en, this message translates to:
+  /// **'Respawn  (R)'**
+  String get respawnWithKey;
+
+  /// UI text
+  ///
+  /// In en, this message translates to:
+  /// **'MINE/HIT'**
+  String get buttonMineHit;
 }
 
 class _AppLocalizationsDelegate

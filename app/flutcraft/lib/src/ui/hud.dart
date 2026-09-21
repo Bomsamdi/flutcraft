@@ -340,14 +340,14 @@ class _TouchControls extends StatelessWidget {
                 Row(
                   children: [
                     HoldButton(
-                      label: 'KOP/BIJ',
+                      label: context.t.buttonMineHit,
                       icon: Icons.construction,
                       color: Colors.amberAccent,
                       onChanged: game.setMining,
                     ),
                     const SizedBox(width: 10),
                     HoldButton(
-                      label: 'UŻYJ',
+                      label: context.t.buttonUse,
                       icon: Icons.add_box_outlined,
                       color: Colors.lightGreenAccent,
                       onChanged: game.setPlacing,
@@ -358,13 +358,13 @@ class _TouchControls extends StatelessWidget {
                 Row(
                   children: [
                     HoldButton(
-                      label: 'SKOK',
+                      label: context.t.buttonJump,
                       icon: Icons.arrow_upward,
                       onChanged: game.setJump,
                     ),
                     const SizedBox(width: 10),
                     HoldButton(
-                      label: 'LOT',
+                      label: context.t.buttonFly,
                       icon: Icons.flight,
                       color: Colors.lightBlueAccent,
                       onChanged: (down) {
@@ -387,22 +387,25 @@ class _HelpOverlay extends StatelessWidget {
 
   final VoidCallback onClose;
 
-  static const _controls = [
-    ('WSAD / joystick', 'chodzenie'),
-    ('Przeciągnij palcem lub myszą', 'rozglądanie'),
-    ('Przytrzymaj / KOP-BIJ', 'kopanie bloków i bicie potworów'),
-    ('Prawy przycisk / UŻYJ / R', 'stawianie i otwieranie'),
-    ('E / ikona plecaka', 'ekwipunek i crafting'),
-    ('B / ikona książki', 'księga przepisów'),
-    ('1-9, scroll', 'wybór przedmiotu'),
-    ('Prawy przycisk / przytrzymanie slotu', 'podział stosu na pół'),
-    ('Spacja / SKOK', 'skok'),
-    ('Shift', 'sprint (lub w dół w locie)'),
-    ('F / LOT', 'tryb latania'),
+  /// Pary (klawisz, akcja) budowane z tłumaczeń, a nie wpisane w kod —
+  /// dzięki temu nie da się przetłumaczyć jednej kolumny i zapomnieć drugiej.
+  List<(String, String)> _controls(AppLocalizations t) => [
+    (t.helpMove, t.helpMoveAction),
+    (t.helpLook, t.helpLookAction),
+    (t.helpMineKey, t.helpMineAction),
+    (t.helpUseKey, t.helpUseAction),
+    (t.helpInventoryKey, t.helpInventoryAction),
+    (t.helpRecipesKey, t.helpRecipesAction),
+    (t.helpHotbarKey, t.helpHotbarAction),
+    (t.helpSplitKey, t.helpSplitAction),
+    (t.helpJumpKey, t.helpJumpAction),
+    (t.helpSprintKey, t.helpSprintAction),
+    (t.helpFlyKey, t.helpFlyAction),
   ];
 
   @override
   Widget build(BuildContext context) {
+    final t = context.t;
     return Positioned.fill(
       child: GestureDetector(
         onTap: onClose,
@@ -415,16 +418,16 @@ class _HelpOverlay extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'FLUTCRAFT',
-                    style: TextStyle(
+                  Text(
+                    t.helpTitle.toUpperCase(),
+                    style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                       color: Colors.amberAccent,
                     ),
                   ),
                   const SizedBox(height: 10),
-                  for (final (key, action) in _controls)
+                  for (final (key, action) in _controls(t))
                     Padding(
                       padding: const EdgeInsets.symmetric(vertical: 2),
                       child: Row(
@@ -438,38 +441,33 @@ class _HelpOverlay extends StatelessWidget {
                               ),
                             ),
                           ),
-                          Text(action),
+                          Expanded(child: Text(action)),
                         ],
                       ),
                     ),
                   const SizedBox(height: 12),
-                  const Text(
-                    'Pełna lista przepisów jest w księdze (klawisz B\n'
-                    'albo ikona książki u góry ekranu).',
-                    style: TextStyle(color: Colors.white70),
-                  ),
-                  const SizedBox(height: 12),
-                  const Text(
-                    'WALKA',
-                    style: TextStyle(
+                  Text(
+                    t.helpCombatTitle.toUpperCase(),
+                    style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       color: Colors.amberAccent,
                     ),
                   ),
                   const SizedBox(height: 6),
-                  const Text(
-                    'Wyceluj w potwora - celownik zmieni się w czerwony\n'
-                    'krzyżyk, a nad nim pojawi się pasek życia. Wtedy\n'
-                    'przytrzymaj ten sam przycisk co przy kopaniu.\n'
-                    'Miecz bije mocniej niż kilof, a kilof mocniej niż ręka.',
-                    style: TextStyle(color: Colors.white70),
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 420),
+                    child: Text(
+                      t.helpCombatBody,
+                      style: const TextStyle(color: Colors.white70),
+                    ),
                   ),
                   const SizedBox(height: 12),
-                  const Text(
-                    'Kamienny kilof jest potrzebny do rudy żelaza.\n'
-                    'Uważaj na creepery - wybuch niszczy teren.\n'
-                    'Dotknij ekranu, aby zamknąć.',
-                    style: TextStyle(color: Colors.white70),
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 420),
+                    child: Text(
+                      '${t.helpRecipesHint}\n${t.helpFooter}',
+                      style: const TextStyle(color: Colors.white70),
+                    ),
                   ),
                 ],
               ),
