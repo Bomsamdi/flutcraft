@@ -7,6 +7,12 @@ command:
     runPubGetInParallel: false
 
 scripts:
+  layering:
+    description: >-
+      Verify architectural boundaries between packages. Lints cannot see across
+      package borders, so this is where dependency rules are actually enforced.
+    run: dart run tool/check_layering.dart
+
   analyze:
     description: Static analysis across every package, warnings are failures.
     run: dart analyze --fatal-infos --fatal-warnings
