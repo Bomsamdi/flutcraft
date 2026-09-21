@@ -186,11 +186,12 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
     // Okolica spawnu musi być gotowa zanim gracz zobaczy pierwszą klatkę.
     chunkManager.prebuild(20);
 
+    // Kolejność ma znaczenie: pętla dostaje spawner, więc ten musi już istnieć.
+    spawner = MobSpawner(world: voxels, seed: seed);
     loop = GameLoop(state: state, spawner: spawner, random: spawner.rng);
 
     itemMeshes = ItemMeshes(atlas);
     mobModels = MobModels(atlas);
-    spawner = MobSpawner(world: voxels, seed: seed);
     selection = SelectionBox.create(atlas)..visible = false;
     heldItem = HeldItem();
 
