@@ -77,23 +77,19 @@ class FurnaceState {
     if (stack == null || !stack.type.isFuel) return;
     burnTotal = stack.type.burnTime;
     burnLeft = burnTotal;
-    stack.count--;
-    if (stack.isEmpty) fuel = null;
+    final left = stack.plus(-1);
+    fuel = left.isEmpty ? null : left;
   }
 
   void _finishSmelt() {
     final source = input!;
     final result = smeltResult(source.type)!;
 
-    source.count--;
-    if (source.isEmpty) input = null;
+    final left = source.plus(-1);
+    input = left.isEmpty ? null : left;
 
     final slot = output;
-    if (slot == null) {
-      output = ItemStack(result);
-    } else {
-      slot.count++;
-    }
+    output = slot == null ? ItemStack(result) : slot.plus(1);
   }
 
   /// Zawartość do zwrócenia graczowi po zbiciu pieca.

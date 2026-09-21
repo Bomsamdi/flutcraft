@@ -1,4 +1,5 @@
 import '../inventory/inventory.dart';
+import '../inventory/slot_container.dart';
 import '../items/item_type.dart';
 
 /// Przepis rzemieślniczy.
@@ -131,25 +132,11 @@ const List<Recipe> kRecipes = [
 ];
 
 /// Siatka craftingu o dowolnym rozmiarze (2x2 w ekwipunku, 3x3 przy stole).
-class CraftingGrid {
-  CraftingGrid(this.size) : slots = List<ItemStack?>.filled(size * size, null);
+final class CraftingGrid extends SlotContainer {
+  CraftingGrid(this.size) : super(size * size);
 
+  /// Długość boku siatki: 2 w ekwipunku, 3 przy stole.
   final int size;
-  final List<ItemStack?> slots;
-
-  ItemStack? operator [](int index) => slots[index];
-
-  void operator []=(int index, ItemStack? stack) {
-    slots[index] = (stack != null && stack.isEmpty) ? null : stack;
-  }
-
-  bool get isEmpty => slots.every((s) => s == null);
-
-  void clear() {
-    for (var i = 0; i < slots.length; i++) {
-      slots[i] = null;
-    }
-  }
 }
 
 /// Znajduje przepis pasujący do zawartości siatki.
@@ -204,11 +191,10 @@ bool _matchesAt(Recipe recipe, CraftingGrid grid, int offsetRow, int offsetCol) 
 
 /// Zdejmuje po jednej sztuce z każdego zajętego slotu siatki.
 void consumeGrid(CraftingGrid grid) {
-  for (var i = 0; i < grid.slots.length; i++) {
-    final stack = grid.slots[i];
+  for (var i = 0; i < grid.length; i++) {
+    final stack = grid[i];
     if (stack == null) continue;
-    stack.count--;
-    if (stack.isEmpty) grid.slots[i] = null;
+    grid[i] = stack.plus(-1);
   }
 }
 
