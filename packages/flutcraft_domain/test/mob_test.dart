@@ -5,7 +5,12 @@ import 'package:flutcraft_domain/flutcraft_domain.dart';
 import 'package:test/test.dart';
 
 /// Podstawia się pod świat gry i zapisuje, co potwory próbowały zrobić.
-class FakeContext implements MobContext {
+class FakeContext implements MobTickContext {
+  FakeContext(this.player);
+
+  @override
+  final Player player;
+
   final List<(Vector3, Vector3)> arrows = [];
   final List<(Vector3, double, int)> explosions = [];
 
@@ -39,7 +44,7 @@ void main() {
         world: world,
         spawn: Vector3(32.5, 2, 42.5),
       );
-      final context = FakeContext();
+      final context = FakeContext(player);
 
       final before = mob.position.distanceTo(player.position);
       for (var i = 0; i < 120; i++) {
@@ -61,7 +66,7 @@ void main() {
       final start = mob.position.clone();
 
       for (var i = 0; i < 60; i++) {
-        mob.update(1 / 60, player, FakeContext());
+        mob.update(1 / 60, player, FakeContext(player));
       }
 
       expect(mob.position.x, closeTo(start.x, 0.01));
@@ -77,11 +82,11 @@ void main() {
         spawn: Vector3(33.2, 2, 32.5),
       );
 
-      mob.update(1 / 60, player, FakeContext());
+      mob.update(1 / 60, player, FakeContext(player));
       expect(player.health, lessThan(Player.maxHealth));
 
       final afterFirst = player.health;
-      mob.update(1 / 60, player, FakeContext());
+      mob.update(1 / 60, player, FakeContext(player));
       expect(player.health, afterFirst);
     });
 
@@ -93,7 +98,7 @@ void main() {
         world: world,
         spawn: Vector3(32.5, 2, 40.5),
       );
-      final context = FakeContext();
+      final context = FakeContext(player);
 
       mob.update(1 / 60, player, context);
       expect(context.arrows, hasLength(1));
@@ -116,7 +121,7 @@ void main() {
         world: world,
         spawn: Vector3(32.5, 2, 40.5),
       );
-      final context = FakeContext();
+      final context = FakeContext(player);
 
       mob.update(1 / 60, player, context);
       expect(context.arrows, isEmpty);
@@ -130,7 +135,7 @@ void main() {
         world: world,
         spawn: Vector3(34.5, 2, 32.5),
       );
-      final context = FakeContext();
+      final context = FakeContext(player);
 
       mob.update(1 / 60, player, context);
       expect(mob.isPrimed, isTrue);
@@ -152,7 +157,7 @@ void main() {
         world: world,
         spawn: Vector3(34.5, 2, 32.5),
       );
-      final context = FakeContext();
+      final context = FakeContext(player);
 
       mob.update(1 / 60, player, context);
       expect(mob.isPrimed, isTrue);
@@ -361,7 +366,7 @@ void _balanceTests() {
         world: world,
         spawn: Vector3(33.2, 2, 32.5),
       );
-      final context = FakeContext();
+      final context = FakeContext(player);
 
       for (var i = 0; i < 60 * 60; i++) {
         mob.update(1 / 60, player, context);
