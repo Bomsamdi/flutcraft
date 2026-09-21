@@ -1,0 +1,26 @@
+name: flutcraft
+
+command:
+  bootstrap:
+    # Pub workspaces (Dart 3.6+) resolve dependencies for the whole repo,
+    # so melos only needs to run a single `pub get` at the root.
+    runPubGetInParallel: false
+
+scripts:
+  analyze:
+    description: Static analysis across every package, warnings are failures.
+    run: dart analyze --fatal-infos --fatal-warnings
+    exec:
+      concurrency: 1
+
+  format:
+    description: Verify formatting without writing changes.
+    run: dart format --output=none --set-exit-if-changed .
+
+  test:
+    description: Run every test suite.
+    run: flutter test
+    exec:
+      concurrency: 1
+    packageFilters:
+      dirExists: test
