@@ -62,6 +62,9 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
 
   final int seed;
 
+  /// Które bloki reagują na użycie i w jaki sposób.
+  static const BlockRegistry blocks = BlockRegistry.standard;
+
   static const double reach = 5.5;
   static const double lookSensitivity = 0.0032;
   static const double placeCooldown = 0.22;
@@ -371,7 +374,7 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
           if (dx * dx + dy * dy + dz * dz > radius * radius) continue;
           final block = voxels.blockAt(x, y, z);
           if (!block.solid || !block.breakable) continue;
-          if (block.isFurnace) furnaces.remove(BlockPos(x, y, z));
+          if (block.hasLitVariant) furnaces.remove(BlockPos(x, y, z));
           voxels.setBlock(x, y, z, BlockType.air);
         }
       }
@@ -453,7 +456,7 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
   void _breakBlock(RayHit hit) {
     final block = hit.block;
 
-    if (block.isFurnace) {
+    if (block.hasLitVariant) {
       final state = furnaces.remove(BlockPos(hit.x, hit.y, hit.z));
       for (final stack in state?.contents() ?? const <ItemStack>[]) {
         inventory.add(stack.type, stack.count);
@@ -500,7 +503,7 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
   /// Prawy przycisk: otwiera stół/piec albo stawia blok.
   void interactOrPlace() {
     if (_aim case BlockTarget(:final hit)) {
-      if (hit.block.interactive) {
+      if (blocks.isInteractive(hit.block)) {
         _openBlock(hit);
       } else {
         _place(hit);
@@ -509,14 +512,17 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
   }
 
   void _openBlock(RayHit hit) {
-    if (hit.block == BlockType.craftingTable) {
-      _openScreen(UiScreen.craftingTable);
-      return;
+    switch (blocks.interactionFor(hit.block)) {
+      case null:
+        return;
+      case OpenCraftingTable():
+        _openScreen(UiScreen.craftingTable);
+      case OpenFurnace():
+        final pos = hit.pos;
+        furnaces.open(pos);
+        openFurnaceKey = pos;
+        _openScreen(UiScreen.furnace);
     }
-    final pos = BlockPos(hit.x, hit.y, hit.z);
-    furnaces.open(pos);
-    openFurnaceKey = pos;
-    _openScreen(UiScreen.furnace);
   }
 
   void placeBlock() {
@@ -564,8 +570,9 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
   /// Podmienia blok pieca na wariant z płomieniem (lub z powrotem).
   void _applyFurnaceBlock(BlockPos pos, bool lit) {
     final current = voxels.blockAt(pos.x, pos.y, pos.z);
-    if (!current.isFurnace) return;
-    final wanted = lit ? BlockType.furnaceLit : BlockType.furnace;
+    if (!current.hasLitVariant) return;
+    final wanted =
+        (lit ? current.litVariant : current.unlitVariant) ?? current;
     if (current != wanted) voxels.setBlock(pos.x, pos.y, pos.z, wanted);
   }
 

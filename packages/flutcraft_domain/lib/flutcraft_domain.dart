@@ -10,6 +10,7 @@ export 'src/actors/mob.dart';
 export 'src/actors/player.dart';
 export 'src/aiming/aim_result.dart';
 export 'src/aiming/target_picker.dart';
+export 'src/blocks/block_interaction.dart';
 export 'src/blocks/block_pos.dart';
 export 'src/blocks/block_type.dart';
 export 'src/blocks/tile.dart';
