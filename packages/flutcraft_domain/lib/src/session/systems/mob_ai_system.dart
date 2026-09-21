@@ -18,6 +18,16 @@ class MobAiSystem {
   final MobSpawner spawner;
   final Random random;
 
+  /// Past this from everybody, a mob is retired without ceremony.
+  ///
+  /// The companion rule to [Mob.leashRange]. A leash leaves mobs standing
+  /// where their chase ran out, and the population is capped: six abandoned
+  /// zombies in an empty field mean nothing ever spawns near anybody again.
+  ///
+  /// Comfortably beyond [Mob.aggroRange], so nothing vanishes out of a fight
+  /// the player can see.
+  static const double despawnRange = 64;
+
   List<AddressedEvent> update(
     GameState state,
     double dt,
@@ -43,7 +53,13 @@ class MobAiSystem {
         target?.player ?? state.participants.values.first.player,
         context,
       );
-      if (!mob.isDead) continue;
+      if (!mob.isDead) {
+        if (target != null &&
+            mob.position.distanceTo(target.player.position) > despawnRange) {
+          state.mobs.remove(mob);
+        }
+        continue;
+      }
 
       state.mobs.remove(mob);
       final loot = mob.kind.loot.roll(random);

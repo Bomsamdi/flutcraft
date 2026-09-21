@@ -35,6 +35,24 @@ VoxelWorld flatWorld({int size = 64}) {
   return world;
 }
 
+/// Distance on the ground, which is what the leash is measured in.
+double flatDistance(Vector3 a, Vector3 b) =>
+    math.sqrt(math.pow(a.x - b.x, 2) + math.pow(a.z - b.z, 2)).toDouble();
+
+/// Walks the player backwards at exactly the mob's pace until the leash runs
+/// out, so the distance between the two never changes and nothing but the
+/// leash can end the chase.
+///
+/// Returns the tick it gave up on, or null if it never did.
+int? chaseUntilItGivesUp(Mob mob, Player player, MobTickContext context) {
+  for (var tick = 0; tick < 60 * 60; tick++) {
+    player.position.x += mob.kind.speed / 60;
+    mob.update(1 / 60, player, context);
+    if (mob.mood == MobMood.returning) return tick;
+  }
+  return null;
+}
+
 void main() {
   group('Mob', () {
     test('a zombie closes in on the player', () {
@@ -74,6 +92,102 @@ void main() {
       expect(mob.position.z, closeTo(start.z, 0.01));
     });
 
+    test('a chase runs out of leash', () {
+      final world = flatWorld(size: 160);
+      final player = Player(world: world, spawn: Vector3(30.5, 2, 80.5));
+      final mob = Mob(
+        kind: MobKind.zombie,
+        world: world,
+        spawn: Vector3(20.5, 2, 80.5),
+      );
+      final context = FakeContext(player);
+
+      final gaveUp = chaseUntilItGivesUp(mob, player, context);
+
+      expect(gaveUp, isNotNull, reason: 'it followed for a minute of play');
+      // The point of the leash: it gives up with the player in plain sight,
+      // which aggro range alone would never do.
+      expect(
+        mob.position.distanceTo(player.position),
+        lessThan(Mob.aggroRange),
+      );
+      expect(
+        flatDistance(mob.position, mob.anchor),
+        greaterThan(Mob.leashRange - 1),
+      );
+    });
+
+    test('it walks back to where the chase began', () {
+      final world = flatWorld(size: 160);
+      final player = Player(world: world, spawn: Vector3(30.5, 2, 80.5));
+      final mob = Mob(
+        kind: MobKind.zombie,
+        world: world,
+        spawn: Vector3(20.5, 2, 80.5),
+      );
+      final context = FakeContext(player);
+      chaseUntilItGivesUp(mob, player, context);
+      final home = mob.anchor.clone();
+
+      for (var i = 0; i < 60 * 60 && mob.mood != MobMood.waiting; i++) {
+        mob.update(1 / 60, player, context);
+      }
+
+      expect(mob.mood, MobMood.waiting);
+      expect(flatDistance(mob.position, home), lessThan(Mob.settleRange));
+    });
+
+    test('on its way home it ignores a player walking beside it', () {
+      final world = flatWorld(size: 160);
+      final player = Player(world: world, spawn: Vector3(30.5, 2, 80.5));
+      final mob = Mob(
+        kind: MobKind.zombie,
+        world: world,
+        spawn: Vector3(20.5, 2, 80.5),
+      );
+      final context = FakeContext(player);
+      chaseUntilItGivesUp(mob, player, context);
+
+      // Without this the mob bounces on the boundary: out of leash, back in,
+      // interested again, out of leash again.
+      var chasedAgain = false;
+      for (var i = 0; i < 60 * 60 && mob.mood != MobMood.waiting; i++) {
+        player.position.setValues(mob.position.x + 3, 2, mob.position.z);
+        mob.update(1 / 60, player, context);
+        if (mob.mood == MobMood.chasing) chasedAgain = true;
+      }
+
+      expect(mob.mood, MobMood.waiting);
+      expect(chasedAgain, isFalse);
+    });
+
+    test('hitting a mob on its way home turns it round', () {
+      final world = flatWorld(size: 160);
+      final player = Player(world: world, spawn: Vector3(30.5, 2, 80.5));
+      final mob = Mob(
+        kind: MobKind.zombie,
+        world: world,
+        spawn: Vector3(20.5, 2, 80.5),
+      );
+      final context = FakeContext(player);
+      chaseUntilItGivesUp(mob, player, context);
+
+      mob.damage(1);
+
+      expect(mob.mood, MobMood.chasing);
+      // A fight that starts here is measured from here, so picking one buys
+      // a full leash of chase.
+      expect(flatDistance(mob.anchor, mob.position), lessThan(0.01));
+      mob.update(1 / 60, player, context);
+      expect(mob.mood, MobMood.chasing);
+    });
+
+    test('the leash is longer than the furthest a mob can spawn', () {
+      // Otherwise a mob anchored at its spawn runs out of leash on the way
+      // over, and the player watches it turn back just short of arriving.
+      expect(Mob.leashRange, greaterThan(MobSpawner.maxDistance));
+    });
+
     test('a zombie in reach hurts the player, but not every frame', () {
       final world = flatWorld();
       final player = Player(world: world, spawn: Vector3(32.5, 2, 32.5));
@@ -91,7 +205,7 @@ void main() {
       expect(player.health, afterFirst);
     });
 
-    test('szkielet strzela z dystansu', () {
+    test('a skeleton shoots from a distance', () {
       final world = flatWorld();
       final player = Player(world: world, spawn: Vector3(32.5, 2, 32.5));
       final mob = Mob(
@@ -128,7 +242,7 @@ void main() {
       expect(context.arrows, isEmpty);
     });
 
-    test('creeper zapala lont i wybucha przy graczu', () {
+    test('a creeper lights its fuse and goes off beside the player', () {
       final world = flatWorld();
       final player = Player(world: world, spawn: Vector3(32.5, 2, 32.5));
       final mob = Mob(

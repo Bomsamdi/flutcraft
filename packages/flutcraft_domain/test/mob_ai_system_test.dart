@@ -54,6 +54,35 @@ void main() {
       expect(state.mobs, hasLength(1));
     });
 
+    test('a mob left far behind is retired', () {
+      // Nothing kills it and nothing sees it: it is standing where its leash
+      // ran out. Six of those would be the whole population, and then nothing
+      // spawns near anybody again.
+      final world = state.world;
+      final far = state.solo.player.position.x + MobAiSystem.despawnRange + 5;
+      state.spawn(
+        Mob(kind: MobKind.zombie, world: world, spawn: Vector3(far, 2, 48.5)),
+      );
+
+      system.update(state, 1 / 60, context);
+
+      expect(state.mobs, isEmpty);
+    });
+
+    test('a mob at the far end of a chase is left alone', () {
+      state.spawn(
+        Mob(
+          kind: MobKind.zombie,
+          world: state.world,
+          spawn: Vector3(48.5 + Mob.aggroRange - 1, 2, 48.5),
+        ),
+      );
+
+      system.update(state, 1 / 60, context);
+
+      expect(state.mobs, hasLength(1));
+    });
+
     test('a dead mob disappears and leaves loot', () {
       final mob = Mob(
         kind: MobKind.skeleton,

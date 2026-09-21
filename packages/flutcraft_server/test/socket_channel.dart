@@ -13,8 +13,15 @@ import 'package:flutcraft_protocol/flutcraft_protocol.dart';
 class SocketChannel implements MessageChannel {
   SocketChannel(this.socket, {this.codec = const JsonMessageCodec()}) {
     socket.listen(
-      (raw) => _incoming.add(codec.decodeServer(_bytes(raw))),
-      onDone: _incoming.close,
+      // A frame can already be on its way in when the socket is closed; the
+      // listener still fires, and adding to a closed controller throws where
+      // nobody is waiting to catch it.
+      (raw) => _incoming.isClosed
+          ? null
+          : _incoming.add(codec.decodeServer(_bytes(raw))),
+      onDone: () {
+        if (!_incoming.isClosed) _incoming.close();
+      },
     );
   }
 

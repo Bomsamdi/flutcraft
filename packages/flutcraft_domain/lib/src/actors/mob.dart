@@ -118,11 +118,28 @@ enum MobKind {
   };
 }
 
+/// What a mob is doing with itself.
+enum MobMood {
+  /// Standing around where it belongs.
+  waiting,
+
+  /// After somebody.
+  chasing,
+
+  /// Walking back to where the chase began, deaf to the player.
+  ///
+  /// Deaf on purpose. A mob that took an interest again the moment it stepped
+  /// back inside its leash would bounce on the boundary for ever: out, in,
+  /// out, in. Hitting it wakes it up — see [Mob.damage].
+  returning,
+}
+
 /// One mob: a physical body plus a small state machine.
 class Mob extends VoxelBody {
   // ignore: use_super_parameters
   Mob({required this.kind, required VoxelWorld world, required Vector3 spawn})
     : health = kind.maxHealth.toDouble(),
+      _anchor = spawn.clone(),
       super(world: world, spawn: spawn, width: kind.width, height: kind.height);
 
   final MobKind kind;
@@ -139,7 +156,7 @@ class Mob extends VoxelBody {
   /// Which way it faces, in radians; 0 is -Z.
   double yaw = 0;
 
-  /// Faza animacji chodu.
+  /// Where it is in its walk cycle.
   double walkPhase = 0;
 
   /// How fast the limbs move this frame; 0 means standing still.
@@ -148,7 +165,7 @@ class Mob extends VoxelBody {
   double attackTimer = 0;
   double hurtFlash = 0;
 
-  /// Lont creepera; -1 oznacza "niezapalony".
+  /// A creeper's fuse; -1 means unlit.
   double fuse = -1;
 
   bool removed = false;
@@ -157,6 +174,35 @@ class Mob extends VoxelBody {
   /// or freshly spawned mobs stand around doing nothing until the player
   /// walks up to them.
   static const double aggroRange = 20;
+
+  /// How far from [anchor] a chase may drag it before it gives up.
+  ///
+  /// Aggro range alone is no limit at all. It is measured to the player, and
+  /// that distance does not grow while the player walks away with a mob
+  /// behind them, so every mob that ever noticed you joins the queue and the
+  /// world empties out behind it. This is measured to a fixed point instead,
+  /// and a fixed point is something a player can outrun.
+  ///
+  /// Must exceed [MobSpawner.maxDistance]: a mob is anchored where it spawns,
+  /// so a shorter leash would run out on the way over and the player would
+  /// watch it turn back just short of arriving.
+  static const double leashRange = 32;
+
+  /// Near enough to the anchor to stop walking and call it home.
+  static const double settleRange = 1.5;
+
+  /// What it is doing: waiting, chasing, or on its way back.
+  MobMood mood = MobMood.waiting;
+
+  final Vector3 _anchor;
+
+  /// The point the leash is measured from — where the current pursuit began.
+  ///
+  /// Not the spawn. A mob that spawned twenty blocks off has already spent
+  /// most of a spawn-anchored leash getting to the player, so the same number
+  /// would buy one mob a long chase and the next none at all. It moves when a
+  /// pursuit starts, which makes every chase the same length.
+  Vector3 get anchor => _anchor;
 
   bool get isDead => health <= 0;
 
@@ -179,7 +225,15 @@ class Mob extends VoxelBody {
       player.position.z - position.z,
     );
     final distance = toPlayer.length;
-    final chasing = distance < aggroRange && !player.isDead;
+
+    final was = mood;
+    mood = _nextMood(player, distance);
+    // The leash is measured from wherever the chase started, so a chase that
+    // is starting now starts here.
+    if (mood == MobMood.chasing && was != MobMood.chasing) {
+      _anchor.setFrom(position);
+    }
+    final chasing = mood == MobMood.chasing;
 
     if (chasing) {
       yaw = math.atan2(-toPlayer.x, -toPlayer.z);
@@ -193,6 +247,8 @@ class Mob extends VoxelBody {
       velocity
         ..x = dir.x
         ..z = dir.z;
+    } else if (mood == MobMood.returning) {
+      _headFor(_anchor);
     } else {
       velocity
         ..x = 0
@@ -201,8 +257,10 @@ class Mob extends VoxelBody {
 
     stepPhysics(dt);
 
-    // Pathfinding, such as it is: something in the way means jump.
-    if (blockedHorizontally && onGround && chasing) {
+    // Pathfinding, such as it is: something in the way means jump. A mob on
+    // its way home needs this as much as one in pursuit — walled in at the
+    // far end of its leash, it would never get back.
+    if (blockedHorizontally && onGround && mood != MobMood.waiting) {
       velocity.y = kind.jumpSpeed;
     }
 
@@ -216,6 +274,51 @@ class Mob extends VoxelBody {
     }
 
     if (position.y < -8) health = 0;
+  }
+
+  /// Decides between waiting, chasing and going home.
+  ///
+  /// Written as one function returning the next mood rather than as
+  /// assignments scattered through [update], because the interesting part of
+  /// this change is the three rules and not where each of them fires.
+  MobMood _nextMood(Player player, double distanceToPlayer) {
+    final fromAnchor = _flatDistanceTo(_anchor);
+
+    // Somebody on their way back is not looking for a fight.
+    if (mood == MobMood.returning) {
+      return fromAnchor <= settleRange ? MobMood.waiting : MobMood.returning;
+    }
+
+    final interested = distanceToPlayer < aggroRange && !player.isDead;
+    if (!interested || fromAnchor >= leashRange) {
+      return fromAnchor <= settleRange ? MobMood.waiting : MobMood.returning;
+    }
+    return MobMood.chasing;
+  }
+
+  /// Walks towards a point on the ground, unhurried: it is going home, not
+  /// hunting.
+  void _headFor(Vector3 target) {
+    final away = Vector3(target.x - position.x, 0, target.z - position.z);
+    final distance = away.length;
+    if (distance < 1e-3) {
+      velocity
+        ..x = 0
+        ..z = 0;
+      return;
+    }
+    yaw = math.atan2(-away.x, -away.z);
+    final step = away / distance * (kind.speed * 0.6);
+    velocity
+      ..x = step.x
+      ..z = step.z;
+  }
+
+  /// Distance ignoring height: a mob two blocks up a hill is not further off.
+  double _flatDistanceTo(Vector3 point) {
+    final dx = point.x - position.x;
+    final dz = point.z - position.z;
+    return math.sqrt(dx * dx + dz * dz);
   }
 
   /// Whether it has a clear line of fire to the player.
@@ -244,6 +347,16 @@ class Mob extends VoxelBody {
     health -= amount;
     hurtFlash = 0.25;
     if (by != null) lastHitBy = by;
+
+    // Being hit is an invitation that cannot be refused. Without this, a mob
+    // walking home would take an axe in the back without turning round, and
+    // the leash would read as a bug rather than as a rule. The anchor moves
+    // here too: the fight is starting where the fight is, so the player gets
+    // a full leash of chase out of picking it.
+    if (mood != MobMood.chasing) {
+      _anchor.setFrom(position);
+      mood = MobMood.chasing;
+    }
 
     if (source != null) {
       final push = Vector3(position.x - source.x, 0, position.z - source.z);
