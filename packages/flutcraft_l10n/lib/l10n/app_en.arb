@@ -1,0 +1,371 @@
+{
+  "@@locale": "en",
+  "blockAir": "Air",
+  "@blockAir": {
+    "description": "block name: air"
+  },
+  "blockGrass": "Grass",
+  "@blockGrass": {
+    "description": "block name: grass"
+  },
+  "blockDirt": "Dirt",
+  "@blockDirt": {
+    "description": "block name: dirt"
+  },
+  "blockStone": "Stone",
+  "@blockStone": {
+    "description": "block name: stone"
+  },
+  "blockCobblestone": "Cobblestone",
+  "@blockCobblestone": {
+    "description": "block name: cobblestone"
+  },
+  "blockSand": "Sand",
+  "@blockSand": {
+    "description": "block name: sand"
+  },
+  "blockGravel": "Gravel",
+  "@blockGravel": {
+    "description": "block name: gravel"
+  },
+  "blockLog": "Log",
+  "@blockLog": {
+    "description": "block name: log"
+  },
+  "blockLeaves": "Leaves",
+  "@blockLeaves": {
+    "description": "block name: leaves"
+  },
+  "blockPlanks": "Planks",
+  "@blockPlanks": {
+    "description": "block name: planks"
+  },
+  "blockBrick": "Bricks",
+  "@blockBrick": {
+    "description": "block name: brick"
+  },
+  "blockCoalOre": "Coal Ore",
+  "@blockCoalOre": {
+    "description": "block name: coalOre"
+  },
+  "blockIronOre": "Iron Ore",
+  "@blockIronOre": {
+    "description": "block name: ironOre"
+  },
+  "blockCraftingTable": "Crafting Table",
+  "@blockCraftingTable": {
+    "description": "block name: craftingTable"
+  },
+  "blockFurnace": "Furnace",
+  "@blockFurnace": {
+    "description": "block name: furnace"
+  },
+  "blockFurnaceLit": "Furnace",
+  "@blockFurnaceLit": {
+    "description": "block name: furnaceLit"
+  },
+  "blockBedrock": "Bedrock",
+  "@blockBedrock": {
+    "description": "block name: bedrock"
+  },
+  "itemStick": "Stick",
+  "@itemStick": {
+    "description": "item name: stick"
+  },
+  "itemCoal": "Coal",
+  "@itemCoal": {
+    "description": "item name: coal"
+  },
+  "itemRawIron": "Raw Iron",
+  "@itemRawIron": {
+    "description": "item name: rawIron"
+  },
+  "itemIronIngot": "Iron Ingot",
+  "@itemIronIngot": {
+    "description": "item name: ironIngot"
+  },
+  "itemBone": "Bone",
+  "@itemBone": {
+    "description": "item name: bone"
+  },
+  "itemString": "String",
+  "@itemString": {
+    "description": "item name: string"
+  },
+  "itemGunpowder": "Gunpowder",
+  "@itemGunpowder": {
+    "description": "item name: gunpowder"
+  },
+  "itemArrow": "Arrow",
+  "@itemArrow": {
+    "description": "item name: arrow"
+  },
+  "itemWoodenPickaxe": "Wooden Pickaxe",
+  "@itemWoodenPickaxe": {
+    "description": "item name: woodenPickaxe"
+  },
+  "itemStonePickaxe": "Stone Pickaxe",
+  "@itemStonePickaxe": {
+    "description": "item name: stonePickaxe"
+  },
+  "itemIronPickaxe": "Iron Pickaxe",
+  "@itemIronPickaxe": {
+    "description": "item name: ironPickaxe"
+  },
+  "itemWoodenSword": "Wooden Sword",
+  "@itemWoodenSword": {
+    "description": "item name: woodenSword"
+  },
+  "itemStoneSword": "Stone Sword",
+  "@itemStoneSword": {
+    "description": "item name: stoneSword"
+  },
+  "itemIronSword": "Iron Sword",
+  "@itemIronSword": {
+    "description": "item name: ironSword"
+  },
+  "mobZombie": "Zombie",
+  "@mobZombie": {
+    "description": "mob name: zombie"
+  },
+  "mobSkeleton": "Skeleton",
+  "@mobSkeleton": {
+    "description": "mob name: skeleton"
+  },
+  "mobSpider": "Spider",
+  "@mobSpider": {
+    "description": "mob name: spider"
+  },
+  "mobCreeper": "Creeper",
+  "@mobCreeper": {
+    "description": "mob name: creeper"
+  },
+  "appTitle": "Flutcraft",
+  "@appTitle": {
+    "description": "UI text"
+  },
+  "loadingWorld": "Generating world…",
+  "@loadingWorld": {
+    "description": "UI text"
+  },
+  "screenInventory": "Inventory",
+  "@screenInventory": {
+    "description": "UI text"
+  },
+  "screenCraftingTable": "Crafting Table",
+  "@screenCraftingTable": {
+    "description": "UI text"
+  },
+  "screenFurnace": "Furnace",
+  "@screenFurnace": {
+    "description": "UI text"
+  },
+  "screenRecipes": "Recipe Book",
+  "@screenRecipes": {
+    "description": "UI text"
+  },
+  "recipesLink": "Recipes",
+  "@recipesLink": {
+    "description": "UI text"
+  },
+  "craftingTableHint": "Place a crafting table to unlock the 3x3 grid",
+  "@craftingTableHint": {
+    "description": "UI text"
+  },
+  "furnaceInput": "input",
+  "@furnaceInput": {
+    "description": "UI text"
+  },
+  "furnaceFuel": "fuel",
+  "@furnaceFuel": {
+    "description": "UI text"
+  },
+  "youDied": "You died",
+  "@youDied": {
+    "description": "UI text"
+  },
+  "respawn": "Respawn",
+  "@respawn": {
+    "description": "UI text"
+  },
+  "noTarget": "Target: ---",
+  "@noTarget": {
+    "description": "UI text"
+  },
+  "flying": "Flying",
+  "@flying": {
+    "description": "UI text"
+  },
+  "buttonMine": "MINE",
+  "@buttonMine": {
+    "description": "UI text"
+  },
+  "buttonUse": "USE",
+  "@buttonUse": {
+    "description": "UI text"
+  },
+  "buttonJump": "JUMP",
+  "@buttonJump": {
+    "description": "UI text"
+  },
+  "buttonFly": "FLY",
+  "@buttonFly": {
+    "description": "UI text"
+  },
+  "recipesInInventory": "In your inventory (2x2 grid)",
+  "@recipesInInventory": {
+    "description": "UI text"
+  },
+  "recipesAtTable": "At a crafting table (3x3)",
+  "@recipesAtTable": {
+    "description": "UI text"
+  },
+  "haveIngredients": "You have the ingredients",
+  "@haveIngredients": {
+    "description": "UI text"
+  },
+  "haveIngredientsTable": "You have the ingredients — use a table",
+  "@haveIngredientsTable": {
+    "description": "UI text"
+  },
+  "msgInventoryFull": "Inventory full",
+  "@msgInventoryFull": {
+    "description": "UI text"
+  },
+  "msgNotABlock": "That is not a block — pick one from the hotbar",
+  "@msgNotABlock": {
+    "description": "UI text"
+  },
+  "msgInsidePlayer": "You cannot place a block inside yourself",
+  "@msgInsidePlayer": {
+    "description": "UI text"
+  },
+  "msgInsideMob": "A mob is standing there",
+  "@msgInsideMob": {
+    "description": "UI text"
+  },
+  "msgCreeperExploded": "A creeper exploded!",
+  "@msgCreeperExploded": {
+    "description": "UI text"
+  },
+  "msgFlightOn": "Flight: on",
+  "@msgFlightOn": {
+    "description": "UI text"
+  },
+  "msgFlightOff": "Flight: off",
+  "@msgFlightOff": {
+    "description": "UI text"
+  },
+  "msgRespawned": "Respawned at the starting point",
+  "@msgRespawned": {
+    "description": "UI text"
+  },
+  "msgToolTooWeak": "You need a better pickaxe for {block}",
+  "@msgToolTooWeak": {
+    "description": "UI text",
+    "placeholders": {
+      "block": {
+        "type": "String"
+      }
+    }
+  },
+  "msgMobDefeated": "Defeated: {mob}",
+  "@msgMobDefeated": {
+    "description": "UI text",
+    "placeholders": {
+      "mob": {
+        "type": "String"
+      }
+    }
+  },
+  "msgMobDefeatedWithLoot": "Defeated: {mob} → {loot}",
+  "@msgMobDefeatedWithLoot": {
+    "description": "UI text",
+    "placeholders": {
+      "mob": {
+        "type": "String"
+      },
+      "loot": {
+        "type": "String"
+      }
+    }
+  },
+  "stackOf": "{item} x{count}",
+  "@stackOf": {
+    "description": "UI text",
+    "placeholders": {
+      "item": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "hudFps": "{fps} FPS",
+  "@hudFps": {
+    "description": "UI text",
+    "placeholders": {
+      "fps": {
+        "type": "String"
+      }
+    }
+  },
+  "hudTarget": "Target: {name}",
+  "@hudTarget": {
+    "description": "UI text",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "hudChunks": "Chunks: {done}/{total}",
+  "@hudChunks": {
+    "description": "UI text",
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "missingIngredients": "Missing: {list}",
+  "@missingIngredients": {
+    "description": "UI text",
+    "placeholders": {
+      "list": {
+        "type": "String"
+      }
+    }
+  },
+  "hudMobs": "{count, plural, =0{No mobs} =1{1 mob} other{{count} mobs}}",
+  "@hudMobs": {
+    "description": "UI text",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "andMore": "{count, plural, =1{and 1 more} other{and {count} more}}",
+  "@andMore": {
+    "description": "UI text",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "smeltSeconds": "{count, plural, =1{1 second each} other{{count} seconds each}}",
+  "@smeltSeconds": {
+    "description": "UI text",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
+}
