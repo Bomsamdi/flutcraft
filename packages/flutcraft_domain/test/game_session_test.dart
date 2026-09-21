@@ -12,7 +12,7 @@ LoopGameSession newSession({int size = 32}) {
       world.setRaw(x, 1, z, BlockType.stone);
     }
   }
-  final state = GameState(
+  final state = GameState.solo(
     world: world,
     player: Player(world: world, spawn: Vector3(16.5, 2, 16.5)),
     inventory: Inventory(),
@@ -30,11 +30,11 @@ void main() {
   group('GameSnapshot really is a snapshot', () {
     test('a snapshot kept aside does not change as the game ticks', () {
       final session = newSession();
-      session.loop.state.inventory.add(ItemType.planks, 5);
+      session.loop.state.solo.inventory.add(ItemType.planks, 5);
       session.dispatch(const SelectHotbarSlot(0));
 
       final before = session.snapshot;
-      session.loop.state.inventory.add(ItemType.planks, 10);
+      session.loop.state.solo.inventory.add(ItemType.planks, 10);
       session.dispatch(const SelectHotbarSlot(1));
 
       expect(
@@ -56,7 +56,7 @@ void main() {
       final session = newSession();
       expect(session.snapshot.aim, isA<NoAimView>());
 
-      session.loop.state.player
+      session.loop.state.solo.player
         ..yaw = 0
         ..pitch = -1.4;
       session.tick(1 / 60, InputFrame.idle);
@@ -67,7 +67,7 @@ void main() {
 
     test('the snapshot carries health and position', () {
       final session = newSession();
-      session.loop.state.player.damage(6);
+      session.loop.state.solo.player.damage(6);
       session.dispatch(const SelectHotbarSlot(0));
 
       expect(session.snapshot.health, Player.maxHealth - 6);

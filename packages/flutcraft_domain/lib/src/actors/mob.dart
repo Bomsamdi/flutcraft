@@ -179,7 +179,7 @@ class Mob extends VoxelBody {
     }
 
     final desired = chasing
-        ? kind.behavior.desiredSpeed(this, distance, context)
+        ? kind.behavior.desiredSpeed(this, distance, player)
         : 0.0;
     if (desired != 0 && distance > 1e-3) {
       final dir = toPlayer / distance * desired;
@@ -203,7 +203,7 @@ class Mob extends VoxelBody {
     walkPhase += walkSpeed * step * 3.2;
 
     if (chasing) {
-      kind.behavior.act(this, dt, distance, context);
+      kind.behavior.act(this, dt, distance, player, context);
     } else if (isPrimed) {
       fuse = -1;
     }

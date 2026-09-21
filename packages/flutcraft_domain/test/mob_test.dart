@@ -8,7 +8,8 @@ import 'package:test/test.dart';
 class FakeContext implements MobTickContext {
   FakeContext(this.player);
 
-  @override
+  /// Kept for the tests' convenience: the context no longer carries a
+  /// target, because with several players a mob picks its own.
   final Player player;
 
   final List<(Vector3, Vector3)> arrows = [];

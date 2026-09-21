@@ -7,7 +7,11 @@ import 'game_loop.dart';
 import 'game_session.dart';
 import 'game_snapshot.dart';
 
-/// A [GameSession] driven by a [GameLoop].
+/// A [GameSession] driven by a [GameLoop], for one player.
+///
+/// The loop itself runs any number of players; this is the single-player
+/// facade the app talks to. A server would drive the same loop with one
+/// input frame per connection instead.
 ///
 /// Publishes snapshots at a fixed rate rather than every frame. At 60 Hz the
 /// UI would rebuild sixty times a second for changes nobody can see; 20 Hz
@@ -41,7 +45,7 @@ class LoopGameSession implements GameSession {
 
   /// Advances the simulation. Call once per rendered frame.
   void tick(double dt, InputFrame input) {
-    _publishEvents(loop.tick(dt, input));
+    _publishEvents(loop.tickSolo(dt, input));
 
     _sinceSnapshot += dt;
     if (_sinceSnapshot < 1 / snapshotHz) return;
@@ -51,7 +55,7 @@ class LoopGameSession implements GameSession {
 
   @override
   void dispatch(GameCommand command) {
-    _publishEvents(loop.dispatch(command));
+    _publishEvents(loop.dispatchSolo(command));
     // An action the player just took should show up now, not up to 50 ms later.
     _publishSnapshot();
   }

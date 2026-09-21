@@ -52,6 +52,7 @@ export 'src/session/systems/mob_ai_system.dart';
 export 'src/session/systems/placement_system.dart';
 export 'src/session/systems/player_movement_system.dart';
 export 'src/session/systems/projectile_system.dart';
+export 'src/session/participant.dart';
 export 'src/session/ui_route.dart';
 export 'src/world/terrain_generator.dart';
 export 'src/world/voxel_world.dart';

@@ -12,10 +12,16 @@ import 'player.dart';
 abstract interface class MobBehavior {
   /// Speed the mob wants this frame. Negative means backing away, zero means
   /// it is already where it wants to be.
-  double desiredSpeed(Mob mob, double distanceToPlayer, MobTickContext context);
+  double desiredSpeed(Mob mob, double distanceToTarget, Player target);
 
-  /// Runs once per frame while the player is within aggro range.
-  void act(Mob mob, double dt, double distance, MobTickContext context);
+  /// Runs once per frame while [target] is within aggro range.
+  void act(
+    Mob mob,
+    double dt,
+    double distance,
+    Player target,
+    MobTickContext context,
+  );
 }
 
 /// Walks up to the player and hits them from there.
@@ -31,28 +37,28 @@ final class MeleeBehavior implements MobBehavior {
   final double standOff;
 
   /// The distance at which the two bodies touch, plus the stand-off.
-  double contactDistance(Mob mob, Player player) =>
-      mob.halfWidth + player.halfWidth + standOff;
+  double contactDistance(Mob mob, Player target) =>
+      mob.halfWidth + target.halfWidth + standOff;
 
   @override
-  double desiredSpeed(
+  double desiredSpeed(Mob mob, double distanceToTarget, Player target) =>
+      distanceToTarget <= contactDistance(mob, target) ? 0 : mob.kind.speed;
+
+  @override
+  void act(
     Mob mob,
-    double distanceToPlayer,
+    double dt,
+    double distance,
+    Player target,
     MobTickContext context,
-  ) => distanceToPlayer <= contactDistance(mob, context.player)
-      ? 0
-      : mob.kind.speed;
-
-  @override
-  void act(Mob mob, double dt, double distance, MobTickContext context) {
-    final player = context.player;
-    final reach = 0.8 + mob.kind.width / 2 + player.halfWidth;
+  ) {
+    final reach = 0.8 + mob.kind.width / 2 + target.halfWidth;
     final verticalOverlap =
-        (player.position.y - mob.position.y).abs() < mob.kind.height + 0.5;
+        (target.position.y - mob.position.y).abs() < mob.kind.height + 0.5;
 
     if (distance <= reach && verticalOverlap && mob.attackTimer <= 0) {
       mob.attackTimer = mob.kind.attackCooldown;
-      player.damage(mob.kind.damage, source: mob.position);
+      target.damage(mob.kind.damage, source: mob.position);
     }
   }
 }
@@ -76,29 +82,31 @@ final class RangedBehavior implements MobBehavior {
   final double maxShootRange;
 
   @override
-  double desiredSpeed(
-    Mob mob,
-    double distanceToPlayer,
-    MobTickContext context,
-  ) {
-    if (distanceToPlayer > approachAbove) return mob.kind.speed;
-    if (distanceToPlayer < retreatBelow) return -mob.kind.speed * 0.8;
+  double desiredSpeed(Mob mob, double distanceToTarget, Player target) {
+    if (distanceToTarget > approachAbove) return mob.kind.speed;
+    if (distanceToTarget < retreatBelow) return -mob.kind.speed * 0.8;
     return 0;
   }
 
   @override
-  void act(Mob mob, double dt, double distance, MobTickContext context) {
+  void act(
+    Mob mob,
+    double dt,
+    double distance,
+    Player target,
+    MobTickContext context,
+  ) {
     if (distance >= maxShootRange || distance <= minShootRange) return;
     if (mob.attackTimer > 0) return;
-    if (!mob.hasLineOfSightTo(context.player)) return;
+    if (!mob.hasLineOfSightTo(target)) return;
 
     mob.attackTimer = mob.kind.attackCooldown;
-    final target = context.player.eye;
+    final aim = target.eye;
     // Aim slightly high so the arrow's drop lands it on target.
     final direction = Vector3(
-      target.x - mob.eye.x,
-      target.y - mob.eye.y + distance * 0.06,
-      target.z - mob.eye.z,
+      aim.x - mob.eye.x,
+      aim.y - mob.eye.y + distance * 0.06,
+      aim.z - mob.eye.z,
     )..normalize();
     context.spawnArrow(mob.eye, direction);
   }
@@ -128,14 +136,17 @@ final class ExplodeBehavior implements MobBehavior {
   /// and walking into the player from there only shoves them out of the blast
   /// they are trying to escape.
   @override
-  double desiredSpeed(
-    Mob mob,
-    double distanceToPlayer,
-    MobTickContext context,
-  ) => distanceToPlayer <= primeDistance ? 0 : mob.kind.speed;
+  double desiredSpeed(Mob mob, double distanceToTarget, Player target) =>
+      distanceToTarget <= primeDistance ? 0 : mob.kind.speed;
 
   @override
-  void act(Mob mob, double dt, double distance, MobTickContext context) {
+  void act(
+    Mob mob,
+    double dt,
+    double distance,
+    Player target,
+    MobTickContext context,
+  ) {
     // An explosion cannot be undone, so the strategy checks this itself
     // rather than trusting every caller to test isDead first.
     if (mob.isDead) return;
@@ -156,8 +167,6 @@ final class ExplodeBehavior implements MobBehavior {
 
 /// What a behaviour is allowed to do to the world around it.
 abstract interface class MobTickContext {
-  Player get player;
-
   void spawnArrow(Vector3 from, Vector3 direction);
 
   void explode(Vector3 at, double radius, int maxDamage);

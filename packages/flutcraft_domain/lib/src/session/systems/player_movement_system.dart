@@ -1,7 +1,7 @@
 import '../../actors/player.dart';
-import '../game_state.dart';
+import '../participant.dart';
 
-/// Moves the player and keeps them inside the world.
+/// Moves one player and keeps them inside the world.
 ///
 /// Thin by design: the physics lives in [Player] and [VoxelBody]. This system
 /// exists so the game loop has one place to call, and so that "the world is
@@ -10,8 +10,8 @@ import '../game_state.dart';
 class PlayerMovementSystem {
   const PlayerMovementSystem();
 
-  void update(GameState state, double dt, MoveInput input) {
-    if (state.route.pausesWorld) return;
-    state.player.update(dt, input);
+  void update(Participant participant, double dt, MoveInput input) {
+    if (participant.route.pausesWorld) return;
+    participant.player.update(dt, input);
   }
 }
