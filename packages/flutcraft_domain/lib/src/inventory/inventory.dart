@@ -1,10 +1,10 @@
 import '../items/item_type.dart';
 import 'slot_container.dart';
 
-/// Ekwipunek gracza: 9 slotów paska + 27 slotów plecaka.
+/// The player's inventory: a 9-slot hotbar and a 27-slot backpack.
 ///
-/// Sloty 0-8 to pasek szybkiego dostępu, 9-35 to plecak - dokładnie
-/// jak w Minecrafcie, dzięki czemu numeracja w UI jest oczywista.
+/// Slots 0-8 are the hotbar, 9-35 the backpack — the same numbering the
+/// original uses, so the interface needs no translation table.
 final class Inventory extends SlotContainer {
   Inventory({this.hotbarSize = 9, this.backpackSize = 27})
     : super(hotbarSize + backpackSize);
@@ -14,9 +14,9 @@ final class Inventory extends SlotContainer {
 
   Iterable<ItemStack?> get hotbar => slots.take(hotbarSize);
 
-  /// Dokłada przedmioty, najpierw dopełniając istniejące stosy.
+  /// Adds items, filling existing stacks first.
   ///
-  /// Zwraca liczbę sztuk, które się nie zmieściły.
+  /// Returns how many did not fit.
   int add(ItemType type, [int count = 1]) {
     var left = count;
 
@@ -38,7 +38,7 @@ final class Inventory extends SlotContainer {
     return left;
   }
 
-  /// Zdejmuje [count] sztuk ze slotu; zwraca ile faktycznie zdjęto.
+  /// Takes [count] items from a slot; returns how many it actually got.
   int takeFrom(int index, int count) {
     final stack = slots[index];
     if (stack == null) return 0;
@@ -56,22 +56,22 @@ final class Inventory extends SlotContainer {
   }
 }
 
-/// Zawartość slotu i kursora po przełożeniu.
+/// What the slot and the cursor hold after a transfer.
 typedef SlotSwap = ({ItemStack? slot, ItemStack? cursor});
 
-/// Kliknięcie w zwykły slot: podnosi, odkłada, scala albo zamienia stosy.
+/// A click on an ordinary slot: picks up, puts down, merges or swaps.
 ///
-/// Wydzielone z gry, żeby dało się przetestować bez GPU.
+/// Pulled out of the game so it can be tested without a GPU.
 SlotSwap transferSlot(ItemStack? slot, ItemStack? cursor) {
   if (cursor == null) {
-    // Pusta ręka podnosi zawartość slotu.
+    // An empty hand picks the slot up.
     return (slot: null, cursor: slot);
   }
   if (slot == null) {
     return (slot: cursor, cursor: null);
   }
   if (slot.type != cursor.type) {
-    // Różne przedmioty po prostu zamieniają się miejscami.
+    // Different items simply trade places.
     return (slot: cursor, cursor: slot);
   }
 
@@ -81,7 +81,7 @@ SlotSwap transferSlot(ItemStack? slot, ItemStack? cursor) {
   return (slot: merged, cursor: left.isEmpty ? null : left);
 }
 
-/// Kliknięcie w slot wynikowy (crafting, piec): można tylko zabierać.
+/// A click on an output slot — crafting, furnace: taking only.
 SlotSwap takeOutput(ItemStack? slot, ItemStack? cursor) {
   if (slot == null) return (slot: null, cursor: cursor);
   if (cursor == null) return (slot: null, cursor: slot);
@@ -99,11 +99,11 @@ bool cursorAccepts(ItemStack? cursor, ItemType type, int count) {
   return cursor.type == type && cursor.space >= count;
 }
 
-/// Kliknięcie pomocnicze (prawy przycisk / przytrzymanie) w slocie.
+/// The secondary click on a slot: right button, or a long press.
 ///
-/// Odwzorowuje oryginał: pustą ręką bierzemy połowę stosu (zaokrągloną
-/// w górę), a trzymając coś w ręce kładziemy po jednej sztuce. Dzięki temu
-/// da się rozbić stos na mniejsze porcje.
+/// It follows the original: an empty hand takes half a stack, rounded up,
+/// and a full hand puts down one item at a time. That is how a stack gets
+/// split into smaller ones.
 SlotSwap splitSlot(ItemStack? slot, ItemStack? cursor) {
   if (cursor == null) {
     if (slot == null) return (slot: null, cursor: null);
@@ -117,7 +117,7 @@ SlotSwap splitSlot(ItemStack? slot, ItemStack? cursor) {
     return (slot: cursor.withCount(1), cursor: left.isEmpty ? null : left);
   }
 
-  // Na obcy przedmiot albo pełny stos nic nie da się dołożyć.
+  // Nothing can be added to a different item, or to a full stack.
   if (slot.type != cursor.type || slot.space <= 0) {
     return (slot: slot, cursor: cursor);
   }

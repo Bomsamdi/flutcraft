@@ -2,11 +2,11 @@ import '../inventory/inventory.dart';
 import '../inventory/slot_container.dart';
 import '../items/item_type.dart';
 
-/// Przepis rzemieślniczy.
+/// A crafting recipe.
 ///
-/// [pattern] opisuje układ na siatce; spacja to pusty slot, każdy inny
-/// znak odsyła do [key]. Przepis bezkształtowy ([shapeless]) ignoruje
-/// układ i patrzy tylko na zestaw składników.
+/// [pattern] is the layout on the grid: a space is an empty slot, any other
+/// character looks up [key]. A [shapeless] recipe ignores the layout and
+/// only looks at which ingredients are present.
 class Recipe {
   const Recipe.shaped({
     required this.pattern,
@@ -31,7 +31,7 @@ class Recipe {
   final ItemType output;
   final int outputCount;
 
-  /// Szerokość wzoru (0 dla przepisów bezkształtowych).
+  /// Width of the pattern; 0 for shapeless recipes.
   int get width => pattern.isEmpty
       ? 0
       : pattern.map((row) => row.length).reduce((a, b) => a > b ? a : b);
@@ -39,7 +39,7 @@ class Recipe {
   int get height => pattern.length;
 
   ItemType? at(int row, int col) {
-    // Ujemne indeksy pojawiają się, gdy wzór jest przesuwany po siatce.
+    // Negative indices turn up while the pattern is slid across the grid.
     if (row < 0 || row >= pattern.length) return null;
     final line = pattern[row];
     if (col < 0 || col >= line.length) return null;
@@ -50,8 +50,8 @@ class Recipe {
 
 /// Wszystkie przepisy prototypu.
 ///
-/// Odwzorowują oryginał: kłoda daje deski, deski patyki, a narzędzia
-/// powstają z materiału na górze i patyków jako trzonka.
+/// They follow the original: a log gives planks, planks give sticks, and a
+/// tool is its material on top with sticks for a handle.
 const List<Recipe> kRecipes = [
   Recipe.shapeless(
     ingredients: [ItemType.log],
@@ -118,7 +118,7 @@ const List<Recipe> kRecipes = [
   ),
 
   // --- drobiazgi ---
-  // Cegły zdobywa się wytapiając piasek, więc nie ma dla nich przepisu.
+  // Bricks come out of a furnace, so there is no recipe for them.
   Recipe.shaped(
     pattern: ['I', 'S', 'F'],
     key: {'I': ItemType.ironIngot, 'S': ItemType.stick, 'F': ItemType.string},
@@ -131,11 +131,11 @@ const List<Recipe> kRecipes = [
 final class CraftingGrid extends SlotContainer {
   CraftingGrid(this.size) : super(size * size);
 
-  /// Długość boku siatki: 2 w ekwipunku, 3 przy stole.
+  /// Side of the grid: 2 in the inventory, 3 at a table.
   final int size;
 }
 
-/// Znajduje przepis pasujący do zawartości siatki.
+/// Finds the recipe that matches what is on the grid.
 Recipe? matchRecipe(CraftingGrid grid) {
   for (final recipe in kRecipes) {
     if (recipe.shapeless) {
@@ -161,8 +161,8 @@ bool _matchesShapeless(Recipe recipe, CraftingGrid grid) {
   return needed.isEmpty;
 }
 
-/// Dopasowanie kształtowe z przesuwaniem wzoru po siatce - dzięki temu
-/// kilof zrobiony w prawym dolnym rogu 3x3 też zadziała.
+/// Shaped matching slides the pattern across the grid, so a pickaxe laid
+/// out in the bottom-right corner of a 3x3 works too.
 bool _matchesShaped(Recipe recipe, CraftingGrid grid) {
   if (recipe.width > grid.size || recipe.height > grid.size) return false;
 
@@ -194,7 +194,7 @@ bool _matchesAt(
   return true;
 }
 
-/// Zdejmuje po jednej sztuce z każdego zajętego slotu siatki.
+/// Takes one item from every occupied slot of the grid.
 void consumeGrid(CraftingGrid grid) {
   for (var i = 0; i < grid.length; i++) {
     final stack = grid[i];
@@ -203,7 +203,7 @@ void consumeGrid(CraftingGrid grid) {
   }
 }
 
-/// Co wytapia się z czego w piecu.
+/// What smelts into what.
 ItemType? smeltResult(ItemType input) => switch (input) {
   ItemType.rawIron => ItemType.ironIngot,
   ItemType.ironOre => ItemType.ironIngot,
@@ -212,11 +212,11 @@ ItemType? smeltResult(ItemType input) => switch (input) {
   _ => null,
 };
 
-/// Czy przepis wymaga stołu rzemieślniczego (nie mieści się w 2x2).
+/// Whether the recipe needs a crafting table — it does not fit in 2x2.
 extension RecipeRequirements on Recipe {
   bool get needsTable => width > 2 || height > 2;
 
-  /// Ile sztuk każdego składnika zjada jedno wykonanie przepisu.
+  /// How many of each ingredient one go at the recipe consumes.
   Map<ItemType, int> get cost {
     final result = <ItemType, int>{};
     void add(ItemType type) =>
@@ -236,7 +236,7 @@ extension RecipeRequirements on Recipe {
   }
 }
 
-/// Czy gracz ma w ekwipunku wszystkie składniki przepisu.
+/// Whether the inventory holds everything the recipe needs.
 bool canCraft(Recipe recipe, Inventory inventory) {
   for (final MapEntry(key: type, value: needed) in recipe.cost.entries) {
     if (inventory.countOf(type) < needed) return false;
@@ -244,7 +244,7 @@ bool canCraft(Recipe recipe, Inventory inventory) {
   return true;
 }
 
-/// Czego i ile brakuje w ekwipunku, żeby wykonać przepis.
+/// What is missing, and how much of it, to make the recipe.
 Map<ItemType, int> missingFor(Recipe recipe, Iterable<ItemStack?> slots) {
   final have = <ItemType, int>{};
   for (final stack in slots) {
@@ -257,7 +257,7 @@ Map<ItemType, int> missingFor(Recipe recipe, Iterable<ItemStack?> slots) {
   };
 }
 
-/// Przedmioty, które da się wytopić w piecu - kolejność jak w księdze.
+/// Items a furnace accepts, in the order the recipe book lists them.
 const List<ItemType> kSmeltable = [
   ItemType.rawIron,
   ItemType.ironOre,

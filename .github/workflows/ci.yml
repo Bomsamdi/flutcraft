@@ -76,6 +76,16 @@ jobs:
           flutter-version: ${{ env.FLUTTER_VERSION }}
       - run: dart run tool/check_layering.dart
 
+  english:
+    name: Source reads in English
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+      - run: dart run tool/check_english.dart
+
   platform-config:
     name: Platform configuration
     runs-on: ubuntu-latest

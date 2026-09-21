@@ -1,7 +1,7 @@
 import 'package:flutcraft_domain/flutcraft_domain.dart';
 import 'package:test/test.dart';
 
-/// Wypełnia siatkę według wzoru; kropka to pole puste.
+/// Fills the grid from a pattern; a dot is an empty cell.
 CraftingGrid gridOf(List<String> rows, Map<String, ItemType> key) {
   final grid = CraftingGrid(rows.length);
   for (var r = 0; r < rows.length; r++) {
@@ -16,7 +16,7 @@ CraftingGrid gridOf(List<String> rows, Map<String, ItemType> key) {
 
 void main() {
   group('Inventory', () {
-    test('dokłada do istniejącego stosu zanim zajmie nowy slot', () {
+    test('tops up an existing stack before taking a new slot', () {
       final inv = Inventory()..add(ItemType.planks, 10);
       inv.add(ItemType.planks, 5);
       expect(inv[0]!.count, 15);
@@ -38,13 +38,13 @@ void main() {
       expect(inv[0]!.count, 64);
     });
 
-    test('narzędzia nie stakują się', () {
+    test('tools do not stack', () {
       final inv = Inventory()..add(ItemType.ironPickaxe, 2);
       expect(inv[0]!.count, 1);
       expect(inv[1]!.count, 1);
     });
 
-    test('takeFrom opróżnia slot do końca', () {
+    test('takeFrom empties the slot completely', () {
       final inv = Inventory()..add(ItemType.coal, 3);
       expect(inv.takeFrom(0, 5), 3);
       expect(inv[0], isNull);
@@ -56,8 +56,8 @@ void main() {
     });
   });
 
-  group('Przepisy kształtowe', () {
-    test('kłoda daje deski niezależnie od pola', () {
+  group('Shaped recipes', () {
+    test('a log gives planks from any cell', () {
       final grid = CraftingGrid(2);
       grid[3] = ItemStack(ItemType.log);
       final recipe = matchRecipe(grid);
@@ -65,17 +65,17 @@ void main() {
       expect(recipe?.outputCount, 4);
     });
 
-    test('dwie deski w pionie dają patyki', () {
+    test('two planks stacked give sticks', () {
       final grid = gridOf(['P.', 'P.'], {'P': ItemType.planks});
       expect(matchRecipe(grid)?.output, ItemType.stick);
     });
 
-    test('deski w pionie muszą być w jednej kolumnie', () {
+    test('the planks have to be in the same column', () {
       final grid = gridOf(['P.', '.P'], {'P': ItemType.planks});
       expect(matchRecipe(grid), isNull);
     });
 
-    test('2x2 desek to stół rzemieślniczy', () {
+    test('2x2 planks make a crafting table', () {
       final grid = gridOf(['PP', 'PP'], {'P': ItemType.planks});
       expect(matchRecipe(grid)?.output, ItemType.craftingTable);
     });
@@ -94,7 +94,7 @@ void main() {
       expect(matchRecipe(big)?.output, ItemType.stonePickaxe);
     });
 
-    test('miecz da się zrobić w przesuniętym rogu siatki 3x3', () {
+    test('a sword works in an offset corner of the 3x3 grid', () {
       final shifted = gridOf(
         ['..I', '..I', '..S'],
         {'I': ItemType.ironIngot, 'S': ItemType.stick},
@@ -102,7 +102,7 @@ void main() {
       expect(matchRecipe(shifted)?.output, ItemType.ironSword);
     });
 
-    test('pierścień bruku to piec, pełny kwadrat już nie', () {
+    test('a ring of cobble is a furnace, a full square is not', () {
       final ring = gridOf(['CCC', 'C.C', 'CCC'], {'C': ItemType.cobblestone});
       expect(matchRecipe(ring)?.output, ItemType.furnace);
 
@@ -110,7 +110,7 @@ void main() {
       expect(matchRecipe(full), isNull);
     });
 
-    test('consumeGrid zdejmuje po jednej sztuce z każdego pola', () {
+    test('consumeGrid takes one item from every filled cell', () {
       final grid = CraftingGrid(2);
       grid[0] = ItemStack(ItemType.planks, 3);
       grid[1] = ItemStack(ItemType.planks, 1);
@@ -121,8 +121,8 @@ void main() {
   });
 
   group('Piec', () {
-    test('wytapia surowe żelazo na sztabki, zużywając paliwo', () {
-      // 3 sztuki po 4 s = 12 s wytopu; 2 węgle dają 16 s palenia.
+    test('smelts raw iron into ingots, burning fuel', () {
+      // Three items at 4 s each is 12 s of smelting; two coal burn for 16 s.
       final furnace = FurnaceState()
         ..input = ItemStack(ItemType.rawIron, 3)
         ..fuel = ItemStack(ItemType.coal, 2);
@@ -137,7 +137,7 @@ void main() {
       expect(furnace.fuel, isNull);
     });
 
-    test('jedna porcja węgla starczy na dwa wytopy', () {
+    test('one portion of coal covers two smelts', () {
       final furnace = FurnaceState()
         ..input = ItemStack(ItemType.rawIron, 4)
         ..fuel = ItemStack(ItemType.coal, 1);
@@ -146,13 +146,13 @@ void main() {
         furnace.tick(0.05);
       }
 
-      // 8 s palenia to dokładnie dwa cykle po 4 s.
+      // Eight seconds of burning is exactly two 4-second cycles.
       expect(furnace.output!.count, 2);
       expect(furnace.input!.count, 2);
       expect(furnace.isLit, isFalse);
     });
 
-    test('bez paliwa nic się nie dzieje', () {
+    test('without fuel nothing happens', () {
       final furnace = FurnaceState()..input = ItemStack(ItemType.rawIron, 1);
       for (var i = 0; i < 100; i++) {
         furnace.tick(0.05);
@@ -173,7 +173,7 @@ void main() {
       expect(furnace.fuel!.count, 1);
     });
 
-    test('zawartość wraca do gracza po rozbiciu', () {
+    test('the contents come back when the furnace is broken', () {
       final furnace = FurnaceState()
         ..input = ItemStack(ItemType.rawIron, 2)
         ..output = ItemStack(ItemType.ironIngot, 1);
@@ -185,18 +185,18 @@ void main() {
   _splitTests();
 
   group('ItemType', () {
-    test('bloki znają swój przedmiot i odwrotnie', () {
+    test('blocks know their item and the other way round', () {
       expect(ItemType.cobblestone.isBlock, isTrue);
       expect(ItemType.stick.isBlock, isFalse);
       expect(ItemType.forBlock(ItemType.furnace.block!), ItemType.furnace);
     });
 
-    test('kilofy mają rosnący poziom i obrażenia', () {
+    test('pickaxes rise in tier and in damage', () {
       expect(ItemType.woodenPickaxe.tier, lessThan(ItemType.ironPickaxe.tier));
       expect(ItemType.woodenSword.damage, lessThan(ItemType.ironSword.damage));
     });
 
-    test('tylko węgiel pali się w piecu', () {
+    test('only coal burns in a furnace', () {
       expect(ItemType.coal.isFuel, isTrue);
       expect(ItemType.ironIngot.isFuel, isFalse);
     });
@@ -204,31 +204,31 @@ void main() {
 }
 
 void _slotTransferTests() {
-  group('Przekładanie przedmiotów', () {
-    test('pusta ręka podnosi zawartość slotu', () {
+  group('Moving items between slots', () {
+    test('an empty hand picks the slot up', () {
       final result = transferSlot(ItemStack(ItemType.coal, 5), null);
       expect(result.slot, isNull);
       expect(result.cursor!.type, ItemType.coal);
       expect(result.cursor!.count, 5);
     });
 
-    test('pełna ręka odkłada do pustego slotu', () {
+    test('a full hand puts it down in an empty slot', () {
       final result = transferSlot(null, ItemStack(ItemType.coal, 5));
       expect(result.slot!.count, 5);
       expect(result.cursor, isNull);
     });
 
-    test('te same przedmioty się scalają', () {
+    test('the same item merges', () {
       final result = transferSlot(
         ItemStack(ItemType.dirt, 60),
         ItemStack(ItemType.dirt, 10),
       );
       expect(result.slot!.count, 64);
-      // Sześć sztuk nie zmieściło się i zostaje na kursorze.
+      // Six items did not fit and stay on the cursor.
       expect(result.cursor!.count, 6);
     });
 
-    test('różne przedmioty zamieniają się miejscami', () {
+    test('different items trade places', () {
       final result = transferSlot(
         ItemStack(ItemType.dirt, 3),
         ItemStack(ItemType.coal, 7),
@@ -237,9 +237,9 @@ void _slotTransferTests() {
       expect(result.cursor!.type, ItemType.dirt);
     });
 
-    test('ze slotu wyniku można tylko zabierać', () {
+    test('the result slot can only be taken from', () {
       final put = takeOutput(null, ItemStack(ItemType.coal, 5));
-      expect(put.slot, isNull, reason: 'nic nie wolno włożyć');
+      expect(put.slot, isNull, reason: 'nothing may be put in');
       expect(put.cursor!.count, 5);
 
       final take = takeOutput(ItemStack(ItemType.ironIngot, 2), null);
@@ -247,7 +247,7 @@ void _slotTransferTests() {
       expect(take.cursor!.count, 2);
     });
 
-    test('wynik dokłada się do tego samego przedmiotu na kursorze', () {
+    test('the result merges with the same item on the cursor', () {
       final result = takeOutput(
         ItemStack(ItemType.ironIngot, 3),
         ItemStack(ItemType.ironIngot, 1),
@@ -272,43 +272,43 @@ void _slotTransferTests() {
 
 void _splitTests() {
   group('Dzielenie stosu', () {
-    test('pustą ręką bierzemy połowę parzystego stosu', () {
+    test('an empty hand takes half an even stack', () {
       final result = splitSlot(ItemStack(ItemType.planks, 8), null);
       expect(result.slot!.count, 4);
       expect(result.cursor!.count, 4);
     });
 
-    test('nieparzysty stos dzieli się z nadwyżką na kursor', () {
+    test('an odd stack splits with the extra on the cursor', () {
       final result = splitSlot(ItemStack(ItemType.planks, 7), null);
       expect(result.cursor!.count, 4);
       expect(result.slot!.count, 3);
     });
 
-    test('pojedyncza sztuka trafia w całości na kursor', () {
+    test('a single item moves to the cursor whole', () {
       final result = splitSlot(ItemStack(ItemType.coal, 1), null);
       expect(result.slot, isNull);
       expect(result.cursor!.count, 1);
     });
 
-    test('pusty slot pustą ręką nic nie robi', () {
+    test('an empty slot and an empty hand do nothing', () {
       final result = splitSlot(null, null);
       expect(result.slot, isNull);
       expect(result.cursor, isNull);
     });
 
-    test('z pełną ręką kładziemy jedną sztukę do pustego slotu', () {
+    test('a full hand puts one item into an empty slot', () {
       final result = splitSlot(null, ItemStack(ItemType.dirt, 5));
       expect(result.slot!.count, 1);
       expect(result.cursor!.count, 4);
     });
 
-    test('ostatnia sztuka opróżnia kursor', () {
+    test('the last item empties the cursor', () {
       final result = splitSlot(null, ItemStack(ItemType.dirt, 1));
       expect(result.slot!.count, 1);
       expect(result.cursor, isNull);
     });
 
-    test('dokładamy po jednej do stosu tego samego typu', () {
+    test('items go one at a time onto a stack of the same type', () {
       final result = splitSlot(
         ItemStack(ItemType.dirt, 3),
         ItemStack(ItemType.dirt, 5),
@@ -317,7 +317,7 @@ void _splitTests() {
       expect(result.cursor!.count, 4);
     });
 
-    test('obcy przedmiot w slocie blokuje dokładanie', () {
+    test('a different item in the slot blocks adding', () {
       final result = splitSlot(
         ItemStack(ItemType.coal, 3),
         ItemStack(ItemType.dirt, 5),
@@ -326,7 +326,7 @@ void _splitTests() {
       expect(result.cursor!.count, 5);
     });
 
-    test('pełnego stosu nie da się przepełnić', () {
+    test('a full stack cannot be overfilled', () {
       final result = splitSlot(
         ItemStack(ItemType.dirt, 64),
         ItemStack(ItemType.dirt, 5),
@@ -336,7 +336,7 @@ void _splitTests() {
     });
 
     test('powtarzane dzielenie rozbija stos na coraz mniejsze porcje', () {
-      // Osiem desek rozkładamy na cztery osobne sloty.
+      // Spread eight planks across four separate slots.
       var source = ItemStack(ItemType.planks, 8);
       final placed = <int>[];
       ItemStack? cursor;
@@ -346,12 +346,12 @@ void _splitTests() {
         source = taken.slot ?? ItemStack(ItemType.planks, 0);
         cursor = taken.cursor;
 
-        // Kładziemy jedną sztukę do nowego, pustego slotu.
+        // Put one item into a new, empty slot.
         final put = splitSlot(null, cursor);
         placed.add(put.slot!.count);
         cursor = put.cursor;
 
-        // Reszta wraca do stosu źródłowego.
+        // The rest goes back to the source stack.
         final back = transferSlot(source, cursor);
         source = back.slot ?? ItemStack(ItemType.planks, 0);
         cursor = back.cursor;

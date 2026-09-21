@@ -20,7 +20,7 @@ void main() {
   final forward = Vector3(0, 0, -1);
 
   group('pickTarget', () {
-    test('trafia potwora stojącego przed graczem', () {
+    test('it hits a mob standing in front of the player', () {
       final world = emptyWorld();
       final mob = zombieAt(world, 16.5, 13.5);
 
@@ -36,7 +36,7 @@ void main() {
       expect((aim as MobTarget).mob, same(mob));
     });
 
-    test('nie trafia potwora zza ściany', () {
+    test('it does not hit a mob behind a wall', () {
       final world = emptyWorld();
       for (var y = 1; y <= 4; y++) {
         world.setRaw(16, y, 15, BlockType.stone);
@@ -55,7 +55,7 @@ void main() {
       expect((aim as BlockTarget).hit.block, BlockType.stone);
     });
 
-    test('potwór poza zasięgiem ręki jest ignorowany', () {
+    test('a mob out of arm\'s reach is ignored', () {
       final world = emptyWorld();
       final mob = zombieAt(world, 16.5, 8.5);
 
@@ -70,7 +70,7 @@ void main() {
       expect(aim, isA<NoTarget>());
     });
 
-    test('wybiera bliższego z dwóch potworów', () {
+    test('it picks the nearer of two mobs', () {
       final world = emptyWorld();
       final near = zombieAt(world, 16.5, 14.0);
       final far = zombieAt(world, 16.5, 12.0);
@@ -86,7 +86,7 @@ void main() {
       expect((aim as MobTarget).mob, same(near));
     });
 
-    test('martwy potwór nie jest celem', () {
+    test('a dead mob is not a target', () {
       final world = emptyWorld();
       final mob = zombieAt(world, 16.5, 13.5)..health = 0;
 
@@ -101,7 +101,7 @@ void main() {
       expect(aim, isNot(isA<MobTarget>()));
     });
 
-    test('patrząc w bok celuje w blok, nie w potwora obok', () {
+    test('looking aside aims at the block, not the mob beside it', () {
       final world = emptyWorld();
       final mob = zombieAt(world, 16.5, 13.5);
 
@@ -116,7 +116,7 @@ void main() {
       expect(aim, isNot(isA<MobTarget>()));
     });
 
-    test('patrząc pod nogi celuje w podłoże', () {
+    test('looking down aims at the ground', () {
       final world = emptyWorld();
 
       final aim = pickTarget(
@@ -134,21 +134,24 @@ void main() {
 
   _sealedSwitchTests();
 
-  group('Obrażenia od trzymanego przedmiotu', () {
-    test('miecz bije mocniej niż kilof, kilof mocniej niż ręka', () {
-      const bare = 1;
-      expect(ItemType.woodenPickaxe.damage, greaterThan(bare));
-      expect(
-        ItemType.woodenSword.damage,
-        greaterThan(ItemType.woodenPickaxe.damage),
-      );
-      expect(
-        ItemType.ironSword.damage,
-        greaterThan(ItemType.stoneSword.damage),
-      );
-    });
+  group('Damage from the held item', () {
+    test(
+      'a sword hits harder than a pickaxe, a pickaxe harder than a fist',
+      () {
+        const bare = 1;
+        expect(ItemType.woodenPickaxe.damage, greaterThan(bare));
+        expect(
+          ItemType.woodenSword.damage,
+          greaterThan(ItemType.woodenPickaxe.damage),
+        );
+        expect(
+          ItemType.ironSword.damage,
+          greaterThan(ItemType.stoneSword.damage),
+        );
+      },
+    );
 
-    test('żelazny miecz zabija pająka w dwóch ciosach', () {
+    test('an iron sword kills a spider in two hits', () {
       final world = emptyWorld();
       final mob = Mob(
         kind: MobKind.spider,
@@ -162,7 +165,7 @@ void main() {
       expect(mob.isDead, isTrue);
     });
 
-    test('gołą ręką zombie ginie po dwudziestu ciosach', () {
+    test('bare-handed, a zombie takes twenty hits', () {
       final world = emptyWorld();
       final mob = Mob(
         kind: MobKind.zombie,
@@ -181,16 +184,16 @@ void main() {
 }
 
 void _sealedSwitchTests() {
-  group('Wyczerpujący switch', () {
-    /// Kompilator wymusza obsługę wszystkich trzech przypadków — dodanie
+  group('An exhaustive switch', () {
+    /// The compiler insists on all three cases — adding
     /// czwartego wariantu AimResult wywali to w czasie kompilacji.
     String describe(AimResult aim) => switch (aim) {
       NoTarget() => 'nic',
       BlockTarget(:final hit) => 'blok ${hit.block.name}',
-      MobTarget(:final mob) => 'potwór ${mob.kind.name}',
+      MobTarget(:final mob) => 'mob ${mob.kind.name}',
     };
 
-    test('każdy wariant ma swój opis', () {
+    test('every variant has its own description', () {
       final world = emptyWorld();
       expect(describe(const NoTarget()), 'nic');
 
@@ -211,7 +214,7 @@ void _sealedSwitchTests() {
         direction: Vector3(0, 0, -1),
         reach: 5.5,
       );
-      expect(describe(aimAtMob), 'potwór zombie');
+      expect(describe(aimAtMob), 'mob zombie');
     });
 
     test('MobTarget niesie dystans, nie tylko potwora', () {

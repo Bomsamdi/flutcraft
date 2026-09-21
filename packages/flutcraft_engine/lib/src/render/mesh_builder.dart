@@ -3,10 +3,10 @@ import 'package:flame_3d/resources.dart';
 import 'package:flutcraft_engine/src/render/atlas_texture.dart';
 import 'package:flutcraft_domain/flutcraft_domain.dart';
 
-/// Jedna z sześciu ścian sześcianu jednostkowego.
+/// One of the six faces of a unit cube.
 ///
-/// [corners] są w kolejności CCW patrząc z zewnątrz (Impeller traktuje
-/// counter-clockwise jako front face), więc culling tylnych ścian działa.
+/// [corners] run counter-clockwise seen from outside — Impeller treats
+/// counter-clockwise as the front face — so back-face culling works.
 class Face {
   const Face._(this.dx, this.dy, this.dz, this.shade, this.corners);
 
@@ -55,11 +55,11 @@ class Face {
 
   static const values = [up, down, north, south, east, west];
 
-  /// Kafelek, jakim malowana jest ta ściana danego bloku.
+  /// Which tile paints this face of this block.
   Tile tileOf(BlockType block) => switch (this) {
     Face.up => block.topTile,
     Face.down => block.bottomTile,
-    // Wyróżniona ściana (np. palenisko pieca) zawsze patrzy na północ.
+    // A block's distinguished face — a furnace's firebox, say — always faces north.
     Face.north => block.frontTile ?? block.sideTile,
     _ => block.sideTile,
   };
@@ -67,15 +67,15 @@ class Face {
 
 /// Zbiera quady i wypuszcza gotowy [Mesh].
 ///
-/// Indeksy w [Surface] są 16-bitowe, więc builder sam rozbija geometrię na
-/// kolejne powierzchnie po przekroczeniu limitu wierzchołków.
+/// Indices in a [Surface] are 16-bit, so the builder splits geometry into
+/// further surfaces once the vertex limit is reached.
 class MeshBuilder {
   MeshBuilder(this.atlas, this.material);
 
   final EngineAtlas atlas;
   final Material material;
 
-  /// 16 000 quadów = 64 000 wierzchołków, tuż pod limitem uint16.
+  /// 16,000 quads = 64,000 vertices, just under the uint16 limit.
   static const int _maxQuadsPerSurface = 16000;
 
   final List<Surface> _surfaces = [];
@@ -83,8 +83,8 @@ class MeshBuilder {
   List<int> _indices = [];
   int _quads = 0;
 
-  // Wektory są kopiowane wewnątrz `Vertex`, więc można je bezpiecznie
-  // recyklingować zamiast alokować 4 sztuki na quad.
+  // `Vertex` copies the vectors it is given, so these can be recycled
+  // instead of allocating four per quad.
   final Vector3 _p = Vector3.zero();
   final Vector2 _t = Vector2.zero();
   final Vector3 _n = Vector3.zero();
@@ -94,7 +94,7 @@ class MeshBuilder {
   int get quadCount =>
       _quads + _surfaces.fold(0, (sum, s) => sum + s.vertexCount ~/ 4);
 
-  /// Dokłada ścianę [face] bloku o rogu w (x, y, z), skalując sześcian
+  /// Adds face [face] of the block whose corner is at (x, y, z), scaling the cube
   /// jednostkowy do [size].
   void addFace(
     double x,
@@ -108,7 +108,7 @@ class MeshBuilder {
     final uv = atlas.uv(tile, shadeOverride ?? face.shade);
     final base = _vertices.length;
 
-    // a,b to dolna krawędź (v1), c,d górna (v0) - tekstura stoi pionowo.
+    // a,b are the bottom edge (v1), c,d the top (v0) — the texture stands upright.
     const us = [0, 1, 1, 0];
     const vs = [1, 1, 0, 0];
 
@@ -134,7 +134,7 @@ class MeshBuilder {
     }
   }
 
-  /// Prostopadłościan o dowolnych wymiarach - używany do modelu kilofa
+  /// A box of arbitrary size — used for the pickaxe model
   /// i trzymanego bloku.
   void addBox(Vector3 min, Vector3 max, Tile tile, {Tile? front}) {
     final size = max - min;
@@ -186,7 +186,7 @@ class MeshBuilder {
     _quads = 0;
   }
 
-  /// Zwraca gotową siatkę albo `null`, jeśli nic nie dodano.
+  /// Returns the finished mesh, or `null` if nothing was added.
   Mesh? build() {
     _flush();
     if (_surfaces.isEmpty) return null;

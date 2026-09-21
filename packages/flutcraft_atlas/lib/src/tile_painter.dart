@@ -22,8 +22,8 @@ int _hash(int x, int y, int salt) {
 /// Deterministyczny szum 0..1.
 double _noise(int x, int y, int salt) => (_hash(x, y, salt) % 1024) / 1023.0;
 
-/// Kolory są kodowane jako 0xAARRGGBB; alfa 0 oznacza piksel pominięty
-/// (używane w ikonach przedmiotów).
+/// Colours are 0xAARRGGBB; an alpha of 0 means the pixel is skipped, which
+/// is how item icons get their transparent background.
 int _rgb(int r, int g, int b) =>
     0xFF000000 |
     (r.clamp(0, 255) << 16) |
@@ -32,7 +32,7 @@ int _rgb(int r, int g, int b) =>
 
 const int _clear = 0x00000000;
 
-/// Rozjaśnia/przyciemnia kolor o [delta] (w jednostkach 0..255).
+/// Lightens or darkens a colour by [delta], in 0..255 units.
 int _vary(int color, double delta) {
   return _rgb(
     ((color >> 16) & 0xFF) + delta.round(),
@@ -97,7 +97,7 @@ int _pixel(Tile tile, int x, int y) {
       return n > 0.93 ? _vary(c, 18) : c;
 
     case Tile.grassSide:
-      // Nierówna krawędź darni: wysokość zielonej czapki zależy od kolumny.
+      // A ragged grass line: the height of the green cap varies per column.
       final cap = 3 + _hash(x, 0, salt) % 3;
       if (y < cap) {
         return _vary(_kGrass, (n - 0.5) * 24);
@@ -124,7 +124,7 @@ int _pixel(Tile tile, int x, int y) {
       return n < 0.14 ? _vary(c, -30) : c;
 
     case Tile.logSide:
-      // Pionowe słoje kory.
+      // Vertical grain in the bark.
       final grain = _noise(x, y ~/ 4, salt) - 0.5;
       final streak = (x % 5 == 2 || x % 7 == 5) ? -14.0 : 0.0;
       return _vary(_kLogSide, grain * 22 + streak);
@@ -170,7 +170,7 @@ int _pixel(Tile tile, int x, int y) {
       return _vary(_kBrick, (n - 0.5) * 22);
 
     case Tile.craftingTableTop:
-      // Deski z wyrysowaną siatką 3x3.
+      // Planks with a 3x3 grid drawn on them.
       if (x % 5 == 0 || y % 5 == 0 || x == 15 || y == 15) {
         return _vary(_kPlanks, -40);
       }
@@ -179,7 +179,7 @@ int _pixel(Tile tile, int x, int y) {
     case Tile.craftingTableSide:
       if (y < 4) return _vary(_kPlanks, -10 + (n - 0.5) * 14);
       if (y == 4) return _vary(_kPlanks, -38);
-      // Narzędzia zawieszone na boku stołu.
+      // Tools hanging off the side of the table.
       if (_onLine(x, y, 4, 13, 7, 8, 1.0)) return _vary(_kHandle, 0);
       if (_onLine(x, y, 10, 13, 12, 7, 1.0)) return _vary(_kMetal, -20);
       return _vary(_kPlanks, (n - 0.5) * 20);
@@ -195,7 +195,7 @@ int _pixel(Tile tile, int x, int y) {
 
     case Tile.furnaceFront:
     case Tile.furnaceFrontLit:
-      // Wnęka paleniska; w wersji rozpalonej bucha z niej ogień.
+      // The firebox; in the lit variant flames come out of it.
       if (x >= 3 && x <= 12 && y >= 6 && y <= 13) {
         if (tile == Tile.furnaceFrontLit && y >= 8) {
           final flicker = _noise(x, y, salt) * 60;
@@ -206,7 +206,7 @@ int _pixel(Tile tile, int x, int y) {
       return _cobble(x, y, salt, _kStone);
 
     case Tile.metal:
-      // Jasna krawędź u góry/po lewej daje wrażenie fazowanej bryłki.
+      // A light edge along the top and left reads as a bevelled lump.
       final edge = (x == 0 || y == 0)
           ? 16.0
           : (x == _n - 1 || y == _n - 1)
@@ -231,7 +231,7 @@ int _pixel(Tile tile, int x, int y) {
       return _nugget(x, y, _kRawIron, salt);
 
     case Tile.ironIngotIcon:
-      // Sztabka: trapez z jaśniejszą górną krawędzią.
+      // The ingot: a trapezium with a lighter top edge.
       if (y < 5 || y > 11) return _clear;
       final inset = y < 7 ? 4 : 2;
       if (x < inset || x > 15 - inset) return _clear;
@@ -239,7 +239,7 @@ int _pixel(Tile tile, int x, int y) {
 
     case Tile.boneIcon:
       if (_onLine(x, y, 4, 11, 11, 4, 1.2)) return _vary(_kBone, 0);
-      // Zgrubienia na obu końcach.
+      // Thicker at both ends.
       for (final (cx, cy) in const [(3, 12), (5, 10), (10, 5), (12, 3)]) {
         final dx = x - cx;
         final dy = y - cy;
@@ -301,7 +301,7 @@ int _pixel(Tile tile, int x, int y) {
       return _vary(_kSkeleton, (n - 0.5) * 20);
 
     case Tile.spiderSkin:
-      // Ciemna sierść z jaśniejszymi włoskami.
+      // Dark fur with lighter hairs through it.
       if (n > 0.9) return _vary(_kSpider, 34);
       return _vary(_kSpider, (n - 0.5) * 20);
 
@@ -321,7 +321,7 @@ int _pixel(Tile tile, int x, int y) {
       return _vary(_kSpider, (n - 0.5) * 18);
 
     case Tile.creeperSkin:
-      // Charakterystyczna mozaika dwóch odcieni zieleni.
+      // The familiar mosaic of two greens.
       final patch = _noise(x ~/ 2, y ~/ 2, salt);
       return _vary(_kCreeper, (patch - 0.5) * 44);
 
@@ -332,7 +332,7 @@ int _pixel(Tile tile, int x, int y) {
   }
 }
 
-/// Bryłka surowca - nieregularna kulka z szumem.
+/// A lump of raw material: an irregular blob with noise in it.
 int _nugget(int x, int y, int color, int salt) {
   final dx = x - 7.5;
   final dy = y - 8.0;
@@ -341,7 +341,7 @@ int _nugget(int x, int y, int color, int salt) {
   return _vary(color, (_noise(x, y, salt) - 0.5) * 40);
 }
 
-/// Para prostokątnych oczu wspólna dla twarzy potworów.
+/// The pair of rectangular eyes every mob face shares.
 bool _eyes(int x, int y, int _) =>
     y >= 6 && y <= 8 && ((x >= 3 && x <= 5) || (x >= 10 && x <= 12));
 
@@ -357,7 +357,7 @@ bool _creeperMask(int x, int y) {
   return false;
 }
 
-/// Worley-lite: komórki bruku + ciemna fuga na granicach.
+/// Worley-lite: cobble cells with dark mortar along the borders.
 int _cobble(int x, int y, int salt, int base) {
   var best = 1e9;
   var second = 1e9;
@@ -383,7 +383,7 @@ int _cobble(int x, int y, int salt, int base) {
   return _vary(base, tint + (_noise(x, y, salt) - 0.5) * 14);
 }
 
-/// Czy piksel leży na odcinku (x0,y0)-(x1,y1) o promieniu [r].
+/// Whether the pixel lies on the segment (x0,y0)-(x1,y1) of radius [r].
 bool _onLine(
   int x,
   int y,
@@ -403,7 +403,7 @@ bool _onLine(
   return px * px + py * py <= r * r;
 }
 
-/// Ikona kilofa: ukośny trzonek i wygięta głowica w kolorze materiału.
+/// A pickaxe icon: a diagonal handle and a curved head in the material's colour.
 int _pickaxeIcon(int x, int y, int head, int salt) {
   if (_onLine(x, y, 4, 13, 9.5, 7, 1.1)) {
     return _vary(_kHandle, (_noise(x, y, salt) - 0.5) * 16);
@@ -415,7 +415,7 @@ int _pickaxeIcon(int x, int y, int head, int salt) {
   return _clear;
 }
 
-/// Ikona miecza: rękojeść, jelec i ostrze.
+/// A sword icon: grip, crossguard and blade.
 int _swordIcon(int x, int y, int blade, int salt) {
   if (_onLine(x, y, 2, 13.5, 4.5, 11, 1.0)) return _vary(_kHandle, 0);
   if (_onLine(x, y, 2.5, 10, 6, 13.5, 1.0)) return _vary(0x6B6B6B, 0);

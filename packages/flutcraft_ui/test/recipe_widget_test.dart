@@ -26,7 +26,7 @@ void main() {
         ),
       );
 
-  testWidgets('księga rysuje wszystkie sekcje', (tester) async {
+  testWidgets('the book draws every section', (tester) async {
     await tester.pumpWidget(book(Inventory()));
 
     expect(find.text('In your inventory (2x2 grid)'), findsOneWidget);
@@ -35,7 +35,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('pokazuje wyniki przepisów wraz z liczbą sztuk', (tester) async {
+  testWidgets('it shows recipe outputs with their counts', (tester) async {
     await tester.pumpWidget(book(Inventory()));
 
     expect(find.text('Planks x4'), findsOneWidget);
@@ -43,7 +43,7 @@ void main() {
     expect(find.text('Crafting Table'), findsOneWidget);
   });
 
-  testWidgets('bez składników wszystko jest oznaczone jako niedostępne', (
+  testWidgets('with nothing in the inventory everything reads as unavailable', (
     tester,
   ) async {
     await tester.pumpWidget(book(Inventory()));
@@ -56,40 +56,40 @@ void main() {
     final inventory = Inventory()..add(ItemType.cobblestone, 3);
     await tester.pumpWidget(book(inventory));
 
-    // Do kamiennego kilofa zostają tylko patyki.
+    // Only the sticks are still missing for a stone pickaxe.
     expect(find.text('Missing: Stick x2'), findsWidgets);
   });
 
-  testWidgets('przepis ze stołu mówi, gdzie go ułożyć', (tester) async {
+  testWidgets('a table recipe says where to lay it out', (tester) async {
     final inventory = Inventory()..add(ItemType.cobblestone, 8);
     await tester.pumpWidget(book(inventory));
 
     expect(find.text('You have the ingredients — use a table'), findsOneWidget);
   });
 
-  testWidgets('kłoda w ekwipunku odblokowuje desk i tylko je', (tester) async {
+  testWidgets('a log in the inventory unlocks planks and nothing else', (
+    tester,
+  ) async {
     final inventory = Inventory()..add(ItemType.log, 1);
     await tester.pumpWidget(book(inventory));
 
     expect(find.text('You have the ingredients'), findsOneWidget);
   });
 
-  testWidgets('materiały na kilof podświetlają przepisy ze stołu', (
-    tester,
-  ) async {
+  testWidgets('pickaxe materials light up the table recipes', (tester) async {
     final inventory = Inventory()
       ..add(ItemType.cobblestone, 8)
       ..add(ItemType.stick, 2);
     await tester.pumpWidget(book(inventory));
 
-    // Kamienny kilof, kamienny miecz i piec naraz stają się dostępne.
+    // Stone pickaxe, stone sword and furnace all become available at once.
     expect(
       find.text('You have the ingredients — use a table'),
       findsNWidgets(3),
     );
   });
 
-  testWidgets('polski przełącza całą księgę', (tester) async {
+  testWidgets('Polish switches the whole book', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
         locale: const Locale('pl'),
@@ -105,7 +105,10 @@ void main() {
 
     expect(find.text('W ekwipunku (siatka 2x2)'), findsOneWidget);
     expect(find.text('Deski x4'), findsOneWidget);
-    expect(find.text('Surowe żelazo → Sztabka żelaza'), findsOneWidget);
+    expect(
+      find.text('Surowe żelazo → Sztabka żelaza'), // polish-ok
+      findsOneWidget,
+    );
   });
 
   testWidgets('wytop pokazuje kierunek przemiany', (tester) async {

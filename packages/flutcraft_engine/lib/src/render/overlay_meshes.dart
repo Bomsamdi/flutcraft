@@ -8,7 +8,7 @@ import 'package:flutcraft_engine/src/render/atlas_texture.dart';
 import 'package:flutcraft_engine/src/render/mesh_builder.dart';
 import 'package:flutcraft_domain/flutcraft_domain.dart';
 
-/// [MeshComponent], które można ukryć bez wyjmowania z drzewa komponentów.
+/// A [MeshComponent] that can be hidden without leaving the component tree.
 class ToggleableMesh extends MeshComponent {
   ToggleableMesh({required super.mesh, super.position});
 
@@ -21,7 +21,7 @@ class ToggleableMesh extends MeshComponent {
   }
 }
 
-/// Czarna ramka podświetlająca blok pod celownikiem.
+/// The black frame around the block under the crosshair.
 class SelectionBox extends ToggleableMesh {
   SelectionBox._(Mesh mesh) : super(mesh: mesh);
 
@@ -29,8 +29,8 @@ class SelectionBox extends ToggleableMesh {
     final material = UnlitMaterial(albedoColor: const Color(0xFF0A0A0A));
     final builder = MeshBuilder(atlas, material);
 
-    const t = 0.018; // grubość krawędzi
-    const o = 0.004; // lekkie rozdęcie, żeby nie walczyło o Z z blokiem
+    const t = 0.018; // edge thickness
+    const o = 0.004; // a slight swell, to stop it fighting the block for Z
     const lo = -o;
     const hi = 1 + o;
 
@@ -55,13 +55,13 @@ class SelectionBox extends ToggleableMesh {
     return SelectionBox._(builder.build()!);
   }
 
-  /// Ustawia ramkę na bloku o podanych współrzędnych.
+  /// Puts the frame around the block at these coordinates.
   void target(int x, int y, int z) {
     position.setValues(x.toDouble(), y.toDouble(), z.toDouble());
   }
 }
 
-/// Fabryki siatek dla przedmiotu trzymanego w ręce.
+/// Mesh factories for the item held in hand.
 class ItemMeshes {
   ItemMeshes(this.atlas)
     : _material = UnlitMaterial(albedoTexture: atlas.texture)
@@ -71,7 +71,7 @@ class ItemMeshes {
   final Material _material;
   final Map<ItemType, Mesh> _cache = {};
 
-  /// Siatka dla przedmiotu w ręce; `null` oznacza pustą rękę.
+  /// The mesh for the held item; `null` means an empty hand.
   Mesh? forItem(ItemType? item) {
     if (item == null) return null;
     return _cache.putIfAbsent(item, () => _build(item));
@@ -86,7 +86,7 @@ class ItemMeshes {
     };
   }
 
-  /// Drewno, kamień albo metal - zależnie od poziomu narzędzia.
+  /// Wood, stone or metal, depending on the tool's tier.
   Tile _materialTile(int tier) => switch (tier) {
     1 => Tile.planks,
     2 => Tile.stone,
@@ -95,19 +95,19 @@ class ItemMeshes {
 
   Mesh _buildPickaxe(Tile head) {
     final b = MeshBuilder(atlas, _material);
-    // Trzonek wzdłuż osi Y.
+    // The handle, along Y.
     b.addBox(
       Vector3(-0.013, -0.17, -0.013),
       Vector3(0.013, 0.13, 0.013),
       Tile.handle,
     );
-    // Poprzeczka głowicy.
+    // The crossbar of the head.
     b.addBox(
       Vector3(-0.070, 0.115, -0.018),
       Vector3(0.070, 0.155, 0.018),
       head,
     );
-    // Zaostrzone końce.
+    // Tapered tips.
     b.addBox(
       Vector3(-0.105, 0.085, -0.015),
       Vector3(-0.070, 0.145, 0.015),
@@ -119,7 +119,7 @@ class ItemMeshes {
 
   Mesh _buildSword(Tile blade) {
     final b = MeshBuilder(atlas, _material);
-    // Rękojeść.
+    // The grip.
     b.addBox(
       Vector3(-0.014, -0.18, -0.014),
       Vector3(0.014, -0.06, 0.014),
@@ -140,7 +140,7 @@ class ItemMeshes {
     return b.build()!;
   }
 
-  /// Płaska tafla z ikoną - tak jak surowce wyglądają w oryginale.
+  /// A flat quad with the icon on it, the way raw materials look in the original.
   Mesh _buildFlat(Tile icon) {
     final b = MeshBuilder(atlas, _material);
     b.addBox(Vector3(-0.13, -0.13, -0.008), Vector3(0.13, 0.13, 0.008), icon);

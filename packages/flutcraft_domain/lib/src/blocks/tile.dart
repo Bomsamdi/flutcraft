@@ -1,6 +1,6 @@
 /// Pojedyncze kafelki 16x16 px w proceduralnym atlasie tekstur.
 ///
-/// Kolejność wyznacza układ kolumn w atlasie, więc nie zmieniaj jej
+/// The order sets the column layout in the atlas, so do not change it
 /// bez regeneracji [TextureAtlas].
 enum Tile {
   // --- bloki ---
@@ -26,11 +26,11 @@ enum Tile {
   furnaceFront,
   furnaceFrontLit,
 
-  // --- materiały modeli 3D ---
+  // --- materials for the 3D models ---
   metal,
   handle,
 
-  // --- ikony surowców ---
+  // --- material icons ---
   stickIcon,
   coalIcon,
   rawIronIcon,
@@ -40,7 +40,7 @@ enum Tile {
   gunpowderIcon,
   arrowIcon,
 
-  // --- ikony narzędzi ---
+  // --- tool icons ---
   woodPickIcon,
   stonePickIcon,
   ironPickIcon,
@@ -48,7 +48,7 @@ enum Tile {
   stoneSwordIcon,
   ironSwordIcon,
 
-  // --- skóry potworów ---
+  // --- mob skins ---
   zombieSkin,
   zombieFace,
   skeletonSkin,
@@ -59,20 +59,20 @@ enum Tile {
   creeperFace,
 }
 
-/// Poziomy przyciemnienia wypalone w atlasie (zamiast liczenia światła
-/// w shaderze). Dzięki temu wystarczy [UnlitMaterial] i jeden draw call
+/// Shading levels baked into the atlas instead of computed in a shader.
+/// That is what lets the world render with an unlit material and one draw call
 /// na chunk.
 enum Shade {
-  /// Góra bloku - pełna jasność.
+  /// The top of a block: full brightness.
   top(1.0),
 
-  /// Ściany wzdłuż osi Z.
+  /// Faces along Z.
   sideZ(0.86),
 
-  /// Ściany wzdłuż osi X - nieco ciemniejsze, żeby czytać bryłę.
+  /// Faces along X, slightly darker so the shape reads.
   sideX(0.70),
 
-  /// Spód bloku.
+  /// The bottom of a block.
   bottom(0.52);
 
   const Shade(this.factor);

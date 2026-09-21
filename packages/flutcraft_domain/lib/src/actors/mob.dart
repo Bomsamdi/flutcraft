@@ -10,7 +10,7 @@ import 'player.dart';
 import '../physics/voxel_body.dart';
 import '../world/voxel_world.dart';
 
-/// Gatunki potworów i ich statystyki.
+/// The mob species and their stats.
 enum MobKind {
   zombie(
     maxHealth: 20,
@@ -90,14 +90,14 @@ enum MobKind {
   final Tile skin;
   final Tile face;
 
-  /// Względna szansa pojawienia się - creepery mają być rzadkie.
+  /// Relative chance of spawning — creepers are meant to be rare.
   final int weight;
 
-  /// Jak ten gatunek się zachowuje. Nowe zachowanie to nowa implementacja
-  /// MobBehavior, a nie kolejna gałąź w klasie Mob.
+  /// How this species behaves. A new behaviour is a new MobBehavior, not
+  /// another branch inside Mob.
   final MobBehavior behavior;
 
-  /// Co upuszcza po śmierci - ten sam typ co przy blokach.
+  /// What it drops when killed — the same type blocks use.
   LootTable get loot => switch (this) {
     MobKind.skeleton => LootTable([
       const LootEntry(ItemType.bone, min: 1, max: 2),
@@ -109,14 +109,14 @@ enum MobKind {
     MobKind.creeper => LootTable([
       const LootEntry(ItemType.gunpowder, min: 1, max: 2),
     ]),
-    // Zombie tylko sporadycznie gubi żelazo - tak jak w oryginale.
+    // A zombie only occasionally drops iron, as in the original.
     MobKind.zombie => LootTable([
       const LootEntry(ItemType.ironIngot, chance: 0.12),
     ]),
   };
 }
 
-/// Pojedynczy potwór: bryła fizyczna plus prosta maszyna stanów.
+/// One mob: a physical body plus a small state machine.
 class Mob extends VoxelBody {
   // ignore: use_super_parameters
   Mob({required this.kind, required VoxelWorld world, required Vector3 spawn})
@@ -127,13 +127,13 @@ class Mob extends VoxelBody {
 
   double health;
 
-  /// Kierunek, w którym potwór patrzy (radiany, 0 = -Z).
+  /// Which way it faces, in radians; 0 is -Z.
   double yaw = 0;
 
   /// Faza animacji chodu.
   double walkPhase = 0;
 
-  /// Jak szybko kończyny się ruszają w tej klatce (0 = stoi).
+  /// How fast the limbs move this frame; 0 means standing still.
   double walkSpeed = 0;
 
   double attackTimer = 0;
@@ -144,9 +144,9 @@ class Mob extends VoxelBody {
 
   bool removed = false;
 
-  /// Zasięg wykrywania gracza. Musi być większy niż
-  /// [MobSpawner.minDistance], inaczej świeżo postawione potwory stoją
-  /// bezczynnie, dopóki gracz sam do nich nie podejdzie.
+  /// How far it notices the player. Must exceed [MobSpawner.minDistance],
+  /// or freshly spawned mobs stand around doing nothing until the player
+  /// walks up to them.
   static const double aggroRange = 20;
 
   bool get isDead => health <= 0;
@@ -157,8 +157,8 @@ class Mob extends VoxelBody {
       Vector3(position.x, position.y + height * 0.85, position.z);
 
   void update(double dt, Player player, MobTickContext context) {
-    // Martwy potwór czeka tylko na sprzątnięcie - bez tego creeper
-    // mógłby wybuchnąć kilka razy w tej samej klatce.
+    // A dead mob is only waiting to be cleaned up; without this a creeper
+    // could explode several times in one frame.
     if (isDead) return;
 
     final step = math.min(dt, 1 / 30);
@@ -209,7 +209,7 @@ class Mob extends VoxelBody {
     if (position.y < -8) health = 0;
   }
 
-  /// Czy potwór ma czystą linię strzału do gracza.
+  /// Whether it has a clear line of fire to the player.
   bool hasLineOfSightTo(Player player) {
     final target = player.eye;
     final dir = Vector3(target.x - eye.x, target.y - eye.y, target.z - eye.z);
@@ -220,7 +220,7 @@ class Mob extends VoxelBody {
     return hit == null;
   }
 
-  /// Zadaje potworowi obrażenia i odrzuca go.
+  /// Damages the mob and knocks it back.
   void damage(double amount, {Vector3? source}) {
     if (isDead) return;
     health -= amount;
@@ -241,7 +241,7 @@ class Mob extends VoxelBody {
   }
 }
 
-/// Strzała wystrzelona przez szkieleta.
+/// An arrow loosed by a skeleton.
 class Arrow extends VoxelBody {
   // ignore: use_super_parameters
   Arrow({
@@ -272,7 +272,7 @@ class Arrow extends VoxelBody {
     final before = position.clone();
     stepPhysics(math.min(dt, 1 / 60), gravity: 9, terminal: 40);
 
-    // Zatrzymana w locie znaczy, że wbiła się w blok.
+    // Stopped in flight means it stuck into a block.
     if (position.distanceToSquared(before) < 1e-8 || onGround) {
       removed = true;
       return;
@@ -299,7 +299,7 @@ class Arrow extends VoxelBody {
   }
 }
 
-/// Wypuszcza potwory w pobliżu gracza, trzymając populację w ryzach.
+/// Spawns mobs near the player, keeping the population in check.
 class MobSpawner {
   MobSpawner({required this.world, this.maxMobs = 6, int seed = 7})
     : _rng = math.Random(seed);
@@ -310,14 +310,14 @@ class MobSpawner {
 
   double _timer = 0;
 
-  /// Co ile sekund próbować dosypać potwora.
+  /// Seconds between attempts to add another mob.
   static const double interval = 6.0;
   static const double minDistance = 12;
   static const double maxDistance = 26;
 
   math.Random get rng => _rng;
 
-  /// Zwraca nowego potwora albo `null`, gdy nie ma miejsca lub szczęścia.
+  /// Returns a new mob, or `null` when there is no room or no luck.
   Mob? maybeSpawn(double dt, Player player, int currentCount) {
     _timer += dt;
     if (_timer < interval) return null;
@@ -341,14 +341,14 @@ class MobSpawner {
       final kind = _pickKind();
       final spawn = Vector3(x + 0.5, surface + 1.0, z + 0.5);
       final mob = Mob(kind: kind, world: world, spawn: spawn);
-      // Nie wciskamy potwora w ścianę ani w strop.
+      // Never wedge a mob into a wall or a ceiling.
       if (mob.collides()) continue;
       return mob;
     }
     return null;
   }
 
-  /// Losowanie gatunku ważone polem [MobKind.weight].
+  /// Picks a species, weighted by [MobKind.weight].
   MobKind _pickKind() {
     final total = MobKind.values.fold(0, (sum, k) => sum + k.weight);
     var roll = _rng.nextInt(total);

@@ -3,16 +3,16 @@ import 'dart:math' as math;
 import '../blocks/block_type.dart';
 import 'voxel_world.dart';
 
-/// Generator terenu: szum wartościowy (value noise) + kilka warstw i drzewa.
+/// Terrain generation: value noise, a few layers and some trees.
 ///
-/// Wszystko jest deterministyczne względem [seed], więc ten sam seed
-/// daje ten sam świat.
+/// Everything is deterministic in [seed], so the same seed gives the same
+/// world — which is what lets a save store a number instead of a map.
 class TerrainGenerator {
   TerrainGenerator({this.seed = 1337});
 
   final int seed;
 
-  /// Poziom, poniżej którego powierzchnia jest piaszczysta.
+  /// Below this height the surface is sand.
   static const int beachLevel = 15;
 
   void generate(VoxelWorld world) {
@@ -50,7 +50,7 @@ class TerrainGenerator {
     }
   }
 
-  /// Kamień z wtrąceniami rud i żwiru.
+  /// Stone, with ore and gravel through it.
   BlockType _stoneAt(int x, int y, int z) {
     if (y < 24 && _value3(x / 5.5, y / 5.5, z / 5.5, 31) > 0.82) {
       return BlockType.coalOre;
@@ -101,7 +101,7 @@ class TerrainGenerator {
       final radius = dy >= 1 ? 1 : 2;
       for (var dz = -radius; dz <= radius; dz++) {
         for (var dx = -radius; dx <= radius; dx++) {
-          // Ścinamy rogi, żeby korona nie była sześcianem.
+          // Cut the corners, so the crown is not a cube.
           if (dx.abs() == radius &&
               dz.abs() == radius &&
               _hash(x + dx, z + dz, seed + 17) % 2 == 0) {
@@ -170,7 +170,7 @@ class TerrainGenerator {
     return lerp(lerp(c00, c10, fy), lerp(c01, c11, fy), fz);
   }
 
-  /// Fractal Brownian motion - kilka oktaw szumu o malejącej amplitudzie.
+  /// Fractal Brownian motion: octaves of noise at falling amplitude.
   double _fbm(double x, double z, int octaves, int salt) {
     var amplitude = 1.0;
     var frequency = 1.0;

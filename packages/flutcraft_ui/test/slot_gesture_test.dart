@@ -28,7 +28,7 @@ void main() {
         ),
       );
 
-  testWidgets('zwykłe stuknięcie podnosi cały stos', (tester) async {
+  testWidgets('a plain tap picks up the whole stack', (tester) async {
     var taps = 0;
     var splits = 0;
     await tester.pumpWidget(slot(onTap: () => taps++, onSplit: () => splits++));

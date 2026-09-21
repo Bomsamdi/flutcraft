@@ -8,10 +8,10 @@ import 'package:flutcraft_engine/src/render/atlas_texture.dart';
 import 'package:flutcraft_engine/src/render/mesh_builder.dart';
 import 'package:flutcraft_domain/flutcraft_domain.dart';
 
-/// Oś, wokół której kołysze się kończyna.
+/// The axis a limb swings around.
 enum SwingAxis { none, pitch, roll }
 
-/// Jedna bryła modelu potwora wraz z opisem animacji.
+/// One box of a mob model, with how it animates.
 class MobPart {
   MobPart({
     required this.mesh,
@@ -23,7 +23,7 @@ class MobPart {
 
   final Mesh mesh;
 
-  /// Punkt zaczepienia względem stóp potwora.
+  /// Where it attaches, measured from the mob's feet.
   final Vector3 anchor;
 
   final SwingAxis axis;
@@ -31,18 +31,18 @@ class MobPart {
   /// Amplituda wychylenia w radianach.
   final double amount;
 
-  /// Przesunięcie fazy, żeby kończyny nie machały zgodnie.
+  /// Phase offset, so the limbs do not all swing together.
   final double phase;
 }
 
-/// Zestaw brył jednego gatunku - współdzielony przez wszystkie egzemplarze.
+/// The boxes of one species, shared by every instance of it.
 class MobModel {
   MobModel(this.parts);
 
   final List<MobPart> parts;
 }
 
-/// Buduje i cache'uje modele potworów oraz strzał.
+/// Builds and caches mob and arrow models.
 class MobModels {
   MobModels(this.atlas)
     : _material = UnlitMaterial(albedoTexture: atlas.texture)
@@ -67,8 +67,8 @@ class MobModels {
     bool hanging = false,
   }) {
     final builder = MeshBuilder(atlas, _material);
-    // `hanging` zaczepia bryłę górną krawędzią, żeby obracała się jak
-    // wahadło wokół barku albo biodra.
+    // `hanging` pins the box by its top edge, so it swings like a pendulum
+    // from a shoulder or a hip.
     final minY = hanging ? -sy : 0.0;
     builder.addBox(
       Vector3(-sx / 2, minY, -sz / 2),
@@ -134,7 +134,7 @@ class MobModels {
         mesh: _box(limb, 0.6, limb, skin, hanging: true),
         anchor: Vector3(-(torsoWidth / 2 + limb / 2), 1.42, 0),
         axis: SwingAxis.pitch,
-        // Zombie trzyma ręce wyciągnięte przed siebie.
+        // A zombie holds its arms out in front.
         amount: armForward ? 0.25 : 0.55,
         phase: math.pi,
       ),
@@ -163,7 +163,7 @@ class MobModels {
       ),
     ];
 
-    // Osiem odnóży, po cztery na stronę, machających w przeciwfazach.
+    // Eight legs, four a side, swinging in opposite phase.
     for (var i = 0; i < 4; i++) {
       final z = -0.25 + i * 0.22;
       for (final side in const [-1.0, 1.0]) {
@@ -213,7 +213,7 @@ class MobModels {
   }
 }
 
-/// Komponent renderujący jednego potwora.
+/// Renders one mob.
 class MobComponent extends Component3D {
   MobComponent({required this.mob, required MobModel model}) {
     for (final part in model.parts) {
@@ -229,13 +229,13 @@ class MobComponent extends Component3D {
   final Mob mob;
   final List<(MobPart, MeshComponent)> _parts = [];
 
-  /// Przepisuje stan logiczny potwora na transformacje komponentów.
+  /// Copies the mob's simulated state onto the component transforms.
   void sync() {
     position.setValues(mob.position.x, mob.position.y, mob.position.z);
     rotation.setFrom(Quaternion.axisAngle(Vector3(0, 1, 0), mob.yaw));
 
-    // Trafienie i tykający lont creepera sygnalizujemy pulsem skali -
-    // meshe są współdzielone, więc nie da się zmienić im koloru.
+    // A hit, and a creeper's ticking fuse, show as a pulse in scale: the
+    // meshes are shared, so their colour cannot be changed per mob.
     var pulse = 1.0;
     if (mob.hurtFlash > 0) {
       pulse += mob.hurtFlash * 0.7;
@@ -245,7 +245,7 @@ class MobComponent extends Component3D {
     }
     scale.setValues(pulse, pulse, pulse);
 
-    // Stojący potwór tylko leciutko się buja, idący macha pełną amplitudą.
+    // A standing mob sways slightly; a walking one swings fully.
     final damping = mob.walkSpeed > 0.2 ? 1.0 : 0.15;
     for (final (part, component) in _parts) {
       if (part.axis == SwingAxis.none) continue;
@@ -261,7 +261,7 @@ class MobComponent extends Component3D {
   }
 }
 
-/// Komponent renderujący lecącą strzałę.
+/// Renders an arrow in flight.
 class ArrowComponent extends MeshComponent {
   ArrowComponent({required this.arrow, required super.mesh});
 

@@ -27,8 +27,8 @@ LoopGameSession newSession({int size = 32}) {
 }
 
 void main() {
-  group('GameSnapshot jest migawką', () {
-    test('zapamiętana migawka nie zmienia się po tickach', () {
+  group('GameSnapshot really is a snapshot', () {
+    test('a snapshot kept aside does not change as the game ticks', () {
       final session = newSession();
       session.loop.state.inventory.add(ItemType.planks, 5);
       session.dispatch(const SelectHotbarSlot(0));
@@ -52,7 +52,7 @@ void main() {
       expect(() => session.snapshot.hotbar.add(null), throwsUnsupportedError);
     });
 
-    test('celowanie zamienia się w widok dla UI', () {
+    test('aiming turns into a view the UI can render', () {
       final session = newSession();
       expect(session.snapshot.aim, isA<NoAimView>());
 
@@ -65,7 +65,7 @@ void main() {
       expect(session.snapshot.aim, isA<BlockAimView>());
     });
 
-    test('migawka niesie życie i pozycję', () {
+    test('the snapshot carries health and position', () {
       final session = newSession();
       session.loop.state.player.damage(6);
       session.dispatch(const SelectHotbarSlot(0));
@@ -76,12 +76,12 @@ void main() {
   });
 
   group('Throttling', () {
-    test('tick nie publikuje migawki częściej niż zadany takt', () async {
+    test('ticking does not publish faster than the chosen rate', () async {
       final session = newSession();
       final received = <GameSnapshot>[];
       final sub = session.snapshots.listen(received.add);
 
-      // Sekunda przy 60 klatkach; przy 20 Hz spodziewamy się ~20 migawek.
+      // One second at 60 fps; at 20 Hz that should be about 20 snapshots.
       for (var i = 0; i < 60; i++) {
         session.tick(1 / 60, InputFrame.idle);
       }
@@ -91,7 +91,7 @@ void main() {
       await sub.cancel();
     });
 
-    test('komenda publikuje migawkę natychmiast', () async {
+    test('a command publishes a snapshot at once', () async {
       final session = newSession();
       final received = <GameSnapshot>[];
       final sub = session.snapshots.listen(received.add);
@@ -105,8 +105,8 @@ void main() {
     });
   });
 
-  group('Strumień zdarzeń', () {
-    test('komendy trafiają do strumienia', () async {
+  group('The event stream', () {
+    test('commands reach the stream', () async {
       final session = newSession();
       final events = <GameEvent>[];
       final sub = session.events.listen(events.add);
@@ -118,7 +118,7 @@ void main() {
       await sub.cancel();
     });
 
-    test('zdarzenia z symulacji też', () async {
+    test('so do events from the simulation', () async {
       final session = newSession();
       final events = <GameEvent>[];
       final sub = session.events.listen(events.add);
