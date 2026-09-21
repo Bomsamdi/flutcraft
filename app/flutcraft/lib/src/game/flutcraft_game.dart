@@ -175,7 +175,10 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
     itemMeshes = ItemMeshes(atlas);
     mobModels = MobModels(atlas);
     selection = SelectionBox.create(atlas)..visible = false;
+    // Przedmioty startowe daje composition root, więc mesh w ręce trzeba
+    // ustawić od razu, a nie dopiero przy pierwszej komendzie.
     heldItem = HeldItem();
+    _syncHeldMesh();
 
 
     await add(chunkManager);
