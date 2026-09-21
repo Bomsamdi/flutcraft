@@ -110,6 +110,7 @@ enum BlockType {
     top: Tile.furnaceTop,
     side: Tile.furnaceSide,
     front: Tile.furnaceFront,
+    litVariantName: 'furnaceLit',
   ),
   furnaceLit(
     label: 'Piec',
@@ -119,6 +120,7 @@ enum BlockType {
     top: Tile.furnaceTop,
     side: Tile.furnaceSide,
     front: Tile.furnaceFrontLit,
+    unlitVariantName: 'furnace',
   ),
   bedrock(
     label: 'Skała macierzysta',
@@ -137,7 +139,11 @@ enum BlockType {
     Tile? front,
     this.solid = true,
     this.requiredTier = 0,
-  }) : _top = top,
+    String? litVariantName,
+    String? unlitVariantName,
+  }) : _litVariantName = litVariantName,
+       _unlitVariantName = unlitVariantName,
+       _top = top,
        _side = side,
        _bottom = bottom,
        _front = front;
@@ -158,6 +164,11 @@ enum BlockType {
   /// 0 = ręka wystarczy, 1 = drewniany, 2 = kamienny, 3 = żelazny.
   final int requiredTier;
 
+  // Warianty trzymamy po nazwie, bo enum nie może odwoływać się do własnych
+  // wartości w konstruktorze const.
+  final String? _litVariantName;
+  final String? _unlitVariantName;
+
   final Tile _top;
   final Tile? _side;
   final Tile? _bottom;
@@ -174,14 +185,19 @@ enum BlockType {
   bool get breakable => hardness >= 0;
 
   /// Czy blok otwiera jakiś interfejs po kliknięciu.
-  bool get interactive =>
-      this == BlockType.craftingTable ||
-      this == BlockType.furnace ||
-      this == BlockType.furnaceLit;
+  /// Wariant tego bloku z zapalonym paleniskiem; `null`, gdy blok nie płonie.
+  BlockType? get litVariant => _byName(_litVariantName);
 
-  /// Czy to piec (w dowolnym stanie palenia).
-  bool get isFurnace =>
-      this == BlockType.furnace || this == BlockType.furnaceLit;
+  /// Wariant wygaszony; `null`, gdy blok nie ma takiego stanu.
+  BlockType? get unlitVariant => _byName(_unlitVariantName);
+
+  /// Czy blok ma dwa stany palenia (czyli jest piecem).
+  bool get hasLitVariant =>
+      _litVariantName != null || _unlitVariantName != null;
+
+  static BlockType? _byName(String? name) => name == null
+      ? null
+      : BlockType.values.firstWhere((b) => b.name == name);
 
   static final List<BlockType> byId = BlockType.values;
 }
