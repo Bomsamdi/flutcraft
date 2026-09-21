@@ -124,12 +124,12 @@ void main() {
       final en = arb('en');
       final pl = arb('pl');
       for (final key in keysOf(en)) {
-        final meta = en['@\$key'] as Map<String, dynamic>?;
+        final meta = en['@$key'] as Map<String, dynamic>?;
         final declared =
             (meta?['placeholders'] as Map<String, dynamic>?)?.keys ?? const [];
         for (final name in declared) {
-          expect(en[key] as String, contains('{\$name'), reason: 'en/\$key');
-          expect(pl[key] as String, contains('{\$name'), reason: 'pl/\$key');
+          expect(en[key] as String, contains('{$name'), reason: 'en/$key');
+          expect(pl[key] as String, contains('{$name'), reason: 'pl/$key');
         }
       }
     });

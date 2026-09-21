@@ -1,0 +1,29 @@
+name: flutcraft_ui
+description: >-
+  Every widget in Flutcraft, plus the Riverpod providers that feed them.
+  Depends on neither Flame nor flame_3d, which is what makes each screen
+  renderable in `flutter test` without a GPU.
+publish_to: none
+version: 0.1.0
+
+environment:
+  sdk: ^3.12.2
+
+resolution: workspace
+
+dependencies:
+  flutcraft_atlas:
+    path: ../flutcraft_atlas
+  flutcraft_domain:
+    path: ../flutcraft_domain
+  flutcraft_l10n:
+    path: ../flutcraft_l10n
+  flutter:
+    sdk: flutter
+  flutter_riverpod: ^3.4.3
+
+dev_dependencies:
+  flutter_lints: ^6.0.0
+  vector_math: ^2.1.4
+  flutter_test:
+    sdk: flutter

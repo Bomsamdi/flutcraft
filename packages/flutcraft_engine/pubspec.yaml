@@ -1,0 +1,28 @@
+name: flutcraft_engine
+description: >-
+  The renderer: meshing, chunk components, mob models and the Flame game that
+  drives the simulation. Knows nothing about widgets or translations — it
+  draws what the domain already decided.
+publish_to: none
+version: 0.1.0
+
+environment:
+  sdk: ^3.12.2
+
+resolution: workspace
+
+dependencies:
+  flame: ^1.38.0
+  flame_3d: ^0.3.0
+  flutcraft_atlas:
+    path: ../flutcraft_atlas
+  flutcraft_domain:
+    path: ../flutcraft_domain
+  flutter:
+    sdk: flutter
+  vector_math: ^2.1.4
+
+dev_dependencies:
+  flutter_lints: ^6.0.0
+  flutter_test:
+    sdk: flutter
