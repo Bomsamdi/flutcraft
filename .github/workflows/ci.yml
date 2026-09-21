@@ -63,6 +63,10 @@ jobs:
       # keeping flame out of flutcraft_ui.
       - run: flutter test
         working-directory: packages/flutcraft_ui
+      # The engine cannot be covered without a GPU, but what it does own that
+      # is GPU-free — the entity sync — still gets tested.
+      - run: flutter test
+        working-directory: packages/flutcraft_engine
       - run: flutter test
         working-directory: app/flutcraft
 
