@@ -1,5 +1,5 @@
 // ignore_for_file: prefer_initializing_formals
-import 'package:flutcraft/src/core/tiles.dart';
+import 'tile.dart';
 
 /// Rodzaj narzędzia, które przyspiesza kopanie danego bloku.
 enum ToolType { none, pickaxe, axe, shovel, sword }

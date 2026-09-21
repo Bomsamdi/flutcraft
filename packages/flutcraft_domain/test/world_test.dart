@@ -1,10 +1,6 @@
 import 'package:vector_math/vector_math.dart';
-import 'package:flutcraft/src/core/block.dart';
-import 'package:flutcraft/src/core/item.dart';
-import 'package:flutcraft/src/game/player.dart';
-import 'package:flutcraft/src/world/terrain.dart';
-import 'package:flutcraft/src/world/voxel_world.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:flutcraft_domain/flutcraft_domain.dart';
+import 'package:test/test.dart';
 
 void main() {
   group('VoxelWorld', () {

@@ -1,12 +1,12 @@
 import 'dart:math' as math;
 
 import 'package:vector_math/vector_math.dart';
-import 'package:flutcraft/src/core/block.dart';
-import 'package:flutcraft/src/core/item.dart';
-import 'package:flutcraft/src/core/tiles.dart';
-import 'package:flutcraft/src/game/player.dart';
-import 'package:flutcraft/src/world/voxel_body.dart';
-import 'package:flutcraft/src/world/voxel_world.dart';
+import '../blocks/block_type.dart';
+import '../items/item_type.dart';
+import '../blocks/tile.dart';
+import 'player.dart';
+import '../physics/voxel_body.dart';
+import '../world/voxel_world.dart';
 
 /// Gatunki potworów i ich statystyki.
 enum MobKind {

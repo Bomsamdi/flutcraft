@@ -4,7 +4,7 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:flame_3d/resources.dart';
-import 'package:flutcraft/src/core/tiles.dart';
+import 'package:flutcraft_domain/flutcraft_domain.dart';
 
 /// Prostokąt UV pojedynczego kafelka w atlasie.
 class TileUv {

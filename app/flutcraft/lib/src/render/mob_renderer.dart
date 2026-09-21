@@ -4,10 +4,9 @@ import 'package:flame_3d/components.dart';
 import 'package:flame_3d/core.dart';
 import 'package:flame_3d/graphics.dart';
 import 'package:flame_3d/resources.dart';
-import 'package:flutcraft/src/core/tiles.dart';
-import 'package:flutcraft/src/game/mob.dart';
 import 'package:flutcraft/src/render/atlas.dart';
 import 'package:flutcraft/src/render/mesh_builder.dart';
+import 'package:flutcraft_domain/flutcraft_domain.dart';
 
 /// Oś, wokół której kołysze się kończyna.
 enum SwingAxis { none, pitch, roll }

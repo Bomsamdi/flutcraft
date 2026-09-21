@@ -9,3 +9,4 @@ environment:
 
 workspace:
   - app/flutcraft
+  - packages/flutcraft_domain

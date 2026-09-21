@@ -6,7 +6,7 @@ import 'package:flame_3d/graphics.dart';
 import 'package:flame_3d/resources.dart';
 import 'package:flutcraft/src/render/atlas.dart';
 import 'package:flutcraft/src/render/mesh_builder.dart';
-import 'package:flutcraft/src/world/voxel_world.dart';
+import 'package:flutcraft_domain/flutcraft_domain.dart';
 
 /// Jeden chunk świata jako obiekt renderowany.
 ///

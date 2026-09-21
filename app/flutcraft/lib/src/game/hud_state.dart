@@ -1,4 +1,5 @@
-import 'package:flutcraft/src/core/item.dart';
+
+import 'package:flutcraft_domain/flutcraft_domain.dart';
 
 /// Który interfejs jest otwarty nad światem.
 enum UiScreen {

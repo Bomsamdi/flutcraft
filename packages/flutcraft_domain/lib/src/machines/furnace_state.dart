@@ -1,5 +1,5 @@
-import 'package:flutcraft/src/core/item.dart';
-import 'package:flutcraft/src/core/recipes.dart';
+import '../items/item_type.dart';
+import '../crafting/recipes.dart';
 
 /// Stan jednego pieca w świecie.
 ///

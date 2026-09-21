@@ -4,11 +4,9 @@ import 'package:flame_3d/components.dart';
 import 'package:flame_3d/core.dart';
 import 'package:flame_3d/graphics.dart';
 import 'package:flame_3d/resources.dart';
-import 'package:flutcraft/src/core/block.dart';
-import 'package:flutcraft/src/core/item.dart';
-import 'package:flutcraft/src/core/tiles.dart';
 import 'package:flutcraft/src/render/atlas.dart';
 import 'package:flutcraft/src/render/mesh_builder.dart';
+import 'package:flutcraft_domain/flutcraft_domain.dart';
 
 /// [MeshComponent], które można ukryć bez wyjmowania z drzewa komponentów.
 class ToggleableMesh extends MeshComponent {

@@ -1,6 +1,6 @@
 // ignore_for_file: prefer_initializing_formals
-import 'package:flutcraft/src/core/block.dart';
-import 'package:flutcraft/src/core/tiles.dart';
+import '../blocks/block_type.dart';
+import '../blocks/tile.dart';
 
 /// Wszystko, co może leżeć w ekwipunku: bloki, surowce i narzędzia.
 ///
