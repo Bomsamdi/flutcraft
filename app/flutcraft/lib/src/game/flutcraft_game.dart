@@ -98,9 +98,9 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
   /// Ekran, do którego wraca księga przepisów po zamknięciu.
   UiScreen? _screenBeforeRecipes;
 
-  /// Piece w świecie, kluczowane indeksem bloku.
-  final Map<int, FurnaceState> furnaces = {};
-  int? openFurnaceKey;
+  /// Piece w świecie, kluczowane pozycją bloku.
+  final FurnaceRegistry furnaces = FurnaceRegistry();
+  BlockPos? openFurnaceKey;
 
   int selected = 0;
   int revision = 0;
@@ -108,8 +108,10 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
   CraftingGrid get activeGrid =>
       screen == UiScreen.craftingTable ? bigGrid : smallGrid;
 
-  FurnaceState? get openFurnace =>
-      openFurnaceKey == null ? null : furnaces[openFurnaceKey];
+  FurnaceState? get openFurnace {
+    final pos = openFurnaceKey;
+    return pos == null ? null : furnaces[pos];
+  }
 
   ItemType? get heldItemType => inventory[selected]?.type;
 
@@ -369,7 +371,7 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
           if (dx * dx + dy * dy + dz * dz > radius * radius) continue;
           final block = voxels.blockAt(x, y, z);
           if (!block.solid || !block.breakable) continue;
-          if (block.isFurnace) furnaces.remove(_furnaceKey(x, y, z));
+          if (block.isFurnace) furnaces.remove(BlockPos(x, y, z));
           voxels.setBlock(x, y, z, BlockType.air);
         }
       }
@@ -459,7 +461,7 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
     final block = hit.block;
 
     if (block.isFurnace) {
-      final state = furnaces.remove(_furnaceKey(hit.x, hit.y, hit.z));
+      final state = furnaces.remove(BlockPos(hit.x, hit.y, hit.z));
       for (final stack in state?.contents() ?? const <ItemStack>[]) {
         inventory.add(stack.type, stack.count);
       }
@@ -515,9 +517,9 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
       _openScreen(UiScreen.craftingTable);
       return;
     }
-    final key = _furnaceKey(hit.x, hit.y, hit.z);
-    furnaces.putIfAbsent(key, FurnaceState.new);
-    openFurnaceKey = key;
+    final pos = BlockPos(hit.x, hit.y, hit.z);
+    furnaces.open(pos);
+    openFurnaceKey = pos;
     _openScreen(UiScreen.furnace);
   }
 
@@ -554,29 +556,19 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
 
   // --- piec -----------------------------------------------------------------
 
-  int _furnaceKey(int x, int y, int z) => (y * voxels.sizeZ + z) * voxels.sizeX + x;
-
   void _tickFurnaces(double dt) {
     if (furnaces.isEmpty) return;
-    for (final entry in furnaces.entries) {
-      final state = entry.value;
-      final wasLit = state.isLit;
-      state.tick(dt);
-      if (state.isLit != wasLit) {
-        _applyFurnaceBlock(entry.key, state.isLit);
-      }
+    for (final pos in furnaces.tick(dt)) {
+      _applyFurnaceBlock(pos, furnaces[pos]!.isLit);
     }
   }
 
   /// Podmienia blok pieca na wariant z płomieniem (lub z powrotem).
-  void _applyFurnaceBlock(int key, bool lit) {
-    final x = key % voxels.sizeX;
-    final z = (key ~/ voxels.sizeX) % voxels.sizeZ;
-    final y = key ~/ (voxels.sizeX * voxels.sizeZ);
-    final current = voxels.blockAt(x, y, z);
+  void _applyFurnaceBlock(BlockPos pos, bool lit) {
+    final current = voxels.blockAt(pos.x, pos.y, pos.z);
     if (!current.isFurnace) return;
     final wanted = lit ? BlockType.furnaceLit : BlockType.furnace;
-    if (current != wanted) voxels.setBlock(x, y, z, wanted);
+    if (current != wanted) voxels.setBlock(pos.x, pos.y, pos.z, wanted);
   }
 
   // --- przedmiot w ręce -----------------------------------------------------
