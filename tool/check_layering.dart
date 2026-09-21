@@ -11,6 +11,7 @@ const forbiddenDependencies = <String, List<String>>{
   'flutcraft_atlas': ['flutter', 'flame', 'flame_3d'],
   'flutcraft_ui': ['flame', 'flame_3d', 'flutcraft_engine'],
   'flutcraft_engine': ['flutcraft_ui', 'flutcraft_l10n'],
+  'flutcraft_l10n': ['flame', 'flame_3d', 'flutcraft_ui'],
 };
 
 /// Import prefixes banned inside a package's `lib/`, with the reason shown
