@@ -32,8 +32,8 @@ void main() {
         reach: reach,
       );
 
-      expect(aim.isMob, isTrue);
-      expect(aim.mob, same(mob));
+      expect(aim, isA<MobTarget>());
+      expect((aim as MobTarget).mob, same(mob));
     });
 
     test('nie trafia potwora zza ściany', () {
@@ -51,9 +51,8 @@ void main() {
         reach: reach,
       );
 
-      expect(aim.isMob, isFalse);
-      expect(aim.blockHit, isNotNull);
-      expect(aim.blockHit!.block, BlockType.stone);
+      expect(aim, isA<BlockTarget>());
+      expect((aim as BlockTarget).hit.block, BlockType.stone);
     });
 
     test('potwór poza zasięgiem ręki jest ignorowany', () {
@@ -68,8 +67,7 @@ void main() {
         reach: reach,
       );
 
-      expect(aim.isMob, isFalse);
-      expect(aim.isEmpty, isTrue);
+      expect(aim, isA<NoTarget>());
     });
 
     test('wybiera bliższego z dwóch potworów', () {
@@ -85,7 +83,7 @@ void main() {
         reach: reach,
       );
 
-      expect(aim.mob, same(near));
+      expect((aim as MobTarget).mob, same(near));
     });
 
     test('martwy potwór nie jest celem', () {
@@ -100,7 +98,7 @@ void main() {
         reach: reach,
       );
 
-      expect(aim.isMob, isFalse);
+      expect(aim, isNot(isA<MobTarget>()));
     });
 
     test('patrząc w bok celuje w blok, nie w potwora obok', () {
@@ -115,7 +113,7 @@ void main() {
         reach: reach,
       );
 
-      expect(aim.isMob, isFalse);
+      expect(aim, isNot(isA<MobTarget>()));
     });
 
     test('patrząc pod nogi celuje w podłoże', () {
@@ -129,10 +127,12 @@ void main() {
         reach: reach,
       );
 
-      expect(aim.blockHit, isNotNull);
-      expect(aim.blockHit!.y, 0);
+      expect(aim, isA<BlockTarget>());
+      expect((aim as BlockTarget).hit.y, 0);
     });
   });
+
+  _sealedSwitchTests();
 
   group('Obrażenia od trzymanego przedmiotu', () {
     test('miecz bije mocniej niż kilof, kilof mocniej niż ręka', () {
@@ -176,6 +176,54 @@ void main() {
       expect(mob.isDead, isFalse);
       mob.damage(1);
       expect(mob.isDead, isTrue);
+    });
+  });
+}
+
+void _sealedSwitchTests() {
+  group('Wyczerpujący switch', () {
+    /// Kompilator wymusza obsługę wszystkich trzech przypadków — dodanie
+    /// czwartego wariantu AimResult wywali to w czasie kompilacji.
+    String describe(AimResult aim) => switch (aim) {
+      NoTarget() => 'nic',
+      BlockTarget(:final hit) => 'blok ${hit.block.name}',
+      MobTarget(:final mob) => 'potwór ${mob.kind.name}',
+    };
+
+    test('każdy wariant ma swój opis', () {
+      final world = emptyWorld();
+      expect(describe(const NoTarget()), 'nic');
+
+      final aimAtBlock = pickTarget(
+        world: world,
+        mobs: const [],
+        eye: Vector3(16.5, 2.6, 16.5),
+        direction: Vector3(0, -1, 0),
+        reach: 5.5,
+      );
+      expect(describe(aimAtBlock), 'blok stone');
+
+      final mob = zombieAt(world, 16.5, 13.5);
+      final aimAtMob = pickTarget(
+        world: world,
+        mobs: [mob],
+        eye: Vector3(16.5, 2.6, 16.5),
+        direction: Vector3(0, 0, -1),
+        reach: 5.5,
+      );
+      expect(describe(aimAtMob), 'potwór zombie');
+    });
+
+    test('MobTarget niesie dystans, nie tylko potwora', () {
+      final world = emptyWorld();
+      final aim = pickTarget(
+        world: world,
+        mobs: [zombieAt(world, 16.5, 13.5)],
+        eye: Vector3(16.5, 2.6, 16.5),
+        direction: Vector3(0, 0, -1),
+        reach: 5.5,
+      );
+      expect((aim as MobTarget).distance, closeTo(2.2, 0.5));
     });
   });
 }

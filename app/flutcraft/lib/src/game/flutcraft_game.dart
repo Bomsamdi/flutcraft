@@ -132,7 +132,7 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
 
   // --- stan gry -------------------------------------------------------------
 
-  AimResult _aim = AimResult.nothing;
+  AimResult _aim = const NoTarget();
   double _breakProgress = 0;
   double _placeTimer = 0;
   double _attackTimer = 0;
@@ -398,7 +398,7 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
   // --- celowanie ------------------------------------------------------------
 
   void _updateAim() {
-    final previous = _aim.blockHit;
+    final previous = _aim;
     _aim = pickTarget(
       world: voxels,
       mobs: mobs,
@@ -407,23 +407,19 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
       reach: reach,
     );
 
-    final hit = _aim.blockHit;
-    if (hit == null) {
-      _breakProgress = 0;
-      selection.visible = false;
-      return;
+    switch (_aim) {
+      case NoTarget() || MobTarget():
+        _breakProgress = 0;
+        selection.visible = false;
+      case BlockTarget(:final hit):
+        // Zmiana celowanego bloku kasuje postęp kopania.
+        if (previous is! BlockTarget || !previous.hit.samePosition(hit)) {
+          _breakProgress = 0;
+        }
+        selection
+          ..visible = true
+          ..target(hit.x, hit.y, hit.z);
     }
-
-    // Zmiana celowanego bloku kasuje postęp kopania.
-    if (previous == null ||
-        previous.x != hit.x ||
-        previous.y != hit.y ||
-        previous.z != hit.z) {
-      _breakProgress = 0;
-    }
-    selection
-      ..visible = true
-      ..target(hit.x, hit.y, hit.z);
   }
 
   // --- kopanie i walka ------------------------------------------------------
@@ -436,25 +432,22 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
       return;
     }
 
-    final mob = _aim.mob;
-    if (mob != null) {
-      if (_attackTimer <= 0) {
+    switch (_aim) {
+      case NoTarget():
+        return;
+      case MobTarget(:final mob):
+        if (_attackTimer > 0) return;
         _attackTimer = attackCooldown;
         _swingTimer = _swingDuration;
-        final held = heldItemType;
-        mob.damage((held?.damage ?? 1).toDouble(), source: player.position);
-      }
-      return;
+        mob.damage((heldItemType?.damage ?? 1).toDouble(),
+            source: player.position);
+      case BlockTarget(:final hit):
+        if (!hit.block.breakable) return;
+        _breakProgress += dt / _breakTime(hit.block);
+        if (_breakProgress < 1) return;
+        _breakProgress = 0;
+        _breakBlock(hit);
     }
-
-    final hit = _aim.blockHit;
-    if (hit == null || !hit.block.breakable) return;
-
-    _breakProgress += dt / _breakTime(hit.block);
-    if (_breakProgress < 1) return;
-
-    _breakProgress = 0;
-    _breakBlock(hit);
   }
 
   void _breakBlock(RayHit hit) {
@@ -478,7 +471,7 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
       _notify('Ekwipunek pełny');
     }
 
-    _aim = AimResult.nothing;
+    _aim = const NoTarget();
     selection.visible = false;
     revision++;
   }
@@ -502,14 +495,13 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
 
   /// Prawy przycisk: otwiera stół/piec albo stawia blok.
   void interactOrPlace() {
-    final hit = _aim.blockHit;
-    if (hit == null) return;
-
-    if (hit.block.interactive) {
-      _openBlock(hit);
-      return;
+    if (_aim case BlockTarget(:final hit)) {
+      if (hit.block.interactive) {
+        _openBlock(hit);
+      } else {
+        _place(hit);
+      }
     }
-    placeBlock();
   }
 
   void _openBlock(RayHit hit) {
@@ -524,8 +516,10 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
   }
 
   void placeBlock() {
-    final hit = _aim.blockHit;
-    if (hit == null) return;
+    if (_aim case BlockTarget(:final hit)) _place(hit);
+  }
+
+  void _place(RayHit hit) {
 
     final stack = inventory[selected];
     final item = stack?.type;
@@ -574,7 +568,7 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
   // --- przedmiot w ręce -----------------------------------------------------
 
   void _updateHeldItem(double dt) {
-    final swingingAtBlock = _mining && _aim.blockHit != null;
+    final swingingAtBlock = _mining && _aim is BlockTarget;
     if (_swingTimer > 0) {
       _swingTimer -= dt;
       if (_swingTimer <= 0) {
@@ -867,7 +861,7 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
   }
 
   void _publishHud() {
-    final mob = _aim.mob;
+    final mob = switch (_aim) { MobTarget(:final mob) => mob, _ => null };
     hud.value = HudSnapshot(
       targetMob: mob == null
           ? null
@@ -879,7 +873,11 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
       hotbar: inventory.hotbar.toList(),
       selected: selected,
       breakProgress: _breakProgress.clamp(0, 1),
-      targetLabel: mob?.kind.label ?? _aim.blockHit?.block.label ?? '',
+      targetLabel: switch (_aim) {
+        NoTarget() => '',
+        BlockTarget(:final hit) => hit.block.label,
+        MobTarget(:final mob) => mob.kind.label,
+      },
       position: (
         player.position.x.floor(),
         player.position.y.floor(),

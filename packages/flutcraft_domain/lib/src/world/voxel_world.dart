@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:vector_math/vector_math.dart';
+import '../blocks/block_pos.dart';
 import '../blocks/block_type.dart';
 
 /// Trafienie promienia w blok.
@@ -30,6 +31,13 @@ class RayHit {
 
   /// Pozycja bloku stawianego "na" trafionej ścianie.
   (int, int, int) get placement => (x + nx, y + ny, z + nz);
+
+  /// Pozycja trafionego bloku.
+  BlockPos get pos => BlockPos(x, y, z);
+
+  /// Czy oba trafienia wskazują ten sam blok (ściana może być inna).
+  bool samePosition(RayHit other) =>
+      other.x == x && other.y == y && other.z == z;
 }
 
 /// Siatka wokseli trzymana w jednej ciągłej tablicy bajtów.
