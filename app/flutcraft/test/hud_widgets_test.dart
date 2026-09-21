@@ -1,9 +1,14 @@
 import 'package:flutcraft_domain/flutcraft_domain.dart';
+import 'package:flutcraft_l10n/flutcraft_l10n.dart';
 import 'package:flutcraft/src/ui/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-Widget wrap(Widget child) => MaterialApp(home: Scaffold(body: child));
+Widget wrap(Widget child) => MaterialApp(
+  localizationsDelegates: AppLocalizations.localizationsDelegates,
+  supportedLocales: AppLocalizations.supportedLocales,
+  home: Scaffold(body: child),
+);
 
 void main() {
   group('Celownik', () {
@@ -40,7 +45,7 @@ void main() {
           ),
         ),
       );
-      expect(find.text(MobKind.creeper.label), findsOneWidget);
+      expect(find.text('Creeper'), findsOneWidget);
     });
 
     testWidgets('szerokość paska odpowiada ułamkowi życia', (tester) async {

@@ -13,7 +13,6 @@ import '../world/voxel_world.dart';
 /// Gatunki potworów i ich statystyki.
 enum MobKind {
   zombie(
-    label: 'Zombie',
     maxHealth: 20,
     speed: 2.3,
     width: 0.6,
@@ -26,7 +25,6 @@ enum MobKind {
     behavior: MeleeBehavior(),
   ),
   skeleton(
-    label: 'Szkielet',
     maxHealth: 16,
     speed: 2.6,
     width: 0.6,
@@ -39,7 +37,6 @@ enum MobKind {
     behavior: RangedBehavior(),
   ),
   spider(
-    label: 'Pająk',
     maxHealth: 14,
     speed: 4.2,
     width: 1.2,
@@ -53,7 +50,6 @@ enum MobKind {
     behavior: MeleeBehavior(),
   ),
   creeper(
-    label: 'Creeper',
     maxHealth: 18,
     speed: 2.6,
     width: 0.6,
@@ -72,7 +68,6 @@ enum MobKind {
   );
 
   const MobKind({
-    required this.label,
     required this.maxHealth,
     required this.speed,
     required this.width,
@@ -85,8 +80,6 @@ enum MobKind {
     required this.behavior,
     this.jumpSpeed = 8.2,
   });
-
-  final String label;
   final int maxHealth;
   final double speed;
   final double width;

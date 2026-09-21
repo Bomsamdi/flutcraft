@@ -553,6 +553,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count, plural, =1{1 second each} other{{count} seconds each}}'**
   String smeltSeconds(int count);
+
+  /// UI text
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to pick up. Hold or right-click to take half a stack.'**
+  String get cursorEmptyHint;
+
+  /// UI text
+  ///
+  /// In en, this message translates to:
+  /// **'Holding: {stack} (hold a slot to place one)'**
+  String cursorHolding(String stack);
 }
 
 class _AppLocalizationsDelegate

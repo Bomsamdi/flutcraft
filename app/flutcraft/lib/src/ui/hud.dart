@@ -2,6 +2,7 @@ import 'dart:ui' as ui;
 
 import 'package:flutcraft/src/game/flutcraft_game.dart';
 import 'package:flutcraft_domain/flutcraft_domain.dart';
+import 'package:flutcraft_l10n/flutcraft_l10n.dart';
 import 'package:flutcraft/src/game/hud_state.dart';
 import 'package:flutcraft/src/ui/screens.dart';
 import 'package:flutcraft/src/ui/slots.dart';
@@ -50,7 +51,7 @@ class Hud extends StatelessWidget {
         if (snapshot.screen == UiRoute.none) ...[
           Crosshair(
             progress: snapshot.breakProgress,
-            hasTarget: snapshot.targetLabel.isNotEmpty,
+            hasTarget: snapshot.aim is! NoAimView,
             hostile: snapshot.targetMob != null,
           ),
           if (snapshot.targetMob case final target?)
@@ -65,17 +66,23 @@ class Hud extends StatelessWidget {
             onOpenRecipes: game.openRecipes,
             touchControls: showTouchControls,
           ),
-          if (snapshot.message.isNotEmpty)
-            Align(
-              alignment: const Alignment(0, -0.35),
-              child: IgnorePointer(
-                child: _Panel(
-                  child: Text(
-                    snapshot.message,
-                    style: const TextStyle(color: Colors.amberAccent),
+          if (snapshot.event case final event?)
+            Builder(
+              builder: (context) {
+                final text = context.strings.event(event);
+                if (text.isEmpty) return const SizedBox.shrink();
+                return Align(
+                  alignment: const Alignment(0, -0.35),
+                  child: IgnorePointer(
+                    child: _Panel(
+                      child: Text(
+                        text,
+                        style: const TextStyle(color: Colors.amberAccent),
+                      ),
+                    ),
                   ),
-                ),
-              ),
+                );
+              },
             ),
           if (image != null)
             Align(
@@ -158,19 +165,25 @@ class _TopBar extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('${snapshot.fps.toStringAsFixed(0)} FPS'),
+                    Text(context.t.hudFps(snapshot.fps.toStringAsFixed(0))),
                     Text('XYZ  $x / $y / $z'),
-                    Text(
-                      snapshot.targetLabel.isEmpty
-                          ? 'Cel: ---'
-                          : 'Cel: ${snapshot.targetLabel}',
-                    ),
-                    Text('Potwory: ${snapshot.mobCount}'),
-                    if (snapshot.flying) const Text('Latanie'),
+                    Text(switch (snapshot.aim) {
+                      NoAimView() => context.t.noTarget,
+                      BlockAimView(:final block) => context.t.hudTarget(
+                        context.strings.blockName(block),
+                      ),
+                      MobAimView(:final kind) => context.t.hudTarget(
+                        context.strings.mobName(kind),
+                      ),
+                    }),
+                    Text(context.t.hudMobs(snapshot.mobCount)),
+                    if (snapshot.flying) Text(context.t.flying),
                     if (loading)
                       Text(
-                        'Chunki: ${snapshot.chunksTotal - snapshot.chunksPending}'
-                        '/${snapshot.chunksTotal}',
+                        context.t.hudChunks(
+                          snapshot.chunksTotal - snapshot.chunksPending,
+                          snapshot.chunksTotal,
+                        ),
                         style: const TextStyle(color: Colors.amberAccent),
                       ),
                   ],

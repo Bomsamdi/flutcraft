@@ -277,4 +277,13 @@ class AppLocalizationsEn extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get cursorEmptyHint =>
+      'Tap to pick up. Hold or right-click to take half a stack.';
+
+  @override
+  String cursorHolding(String stack) {
+    return 'Holding: $stack (hold a slot to place one)';
+  }
 }

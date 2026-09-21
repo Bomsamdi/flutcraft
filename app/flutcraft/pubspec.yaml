@@ -35,6 +35,8 @@ dependencies:
   flame_3d: ^0.3.0
   flutcraft_domain:
     path: ../../packages/flutcraft_domain
+  flutcraft_l10n:
+    path: ../../packages/flutcraft_l10n
   flutter:
     sdk: flutter
   flutter_riverpod: ^3.4.3
