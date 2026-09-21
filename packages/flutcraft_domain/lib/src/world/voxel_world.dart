@@ -56,6 +56,13 @@ class VoxelWorld {
   /// Chunki, które wymagają przebudowy siatki.
   final Set<int> dirtyChunks = <int>{};
 
+  /// Bloki zmienione względem wygenerowanego terenu.
+  ///
+  /// Zapis gry trzyma ziarno i tę mapę zamiast 786 432 bajtów tablicy:
+  /// teren jest deterministyczny, więc da się go odtworzyć, a edycji
+  /// bywa zwykle kilkaset.
+  final Map<BlockPos, BlockType> edits = {};
+
   static const int chunkSize = 16;
 
   int get chunksX => (sizeX / chunkSize).ceil();
@@ -80,10 +87,11 @@ class VoxelWorld {
   }
 
   /// Zapis w trakcie gry: oznacza chunk (i sąsiadów na granicy) do
-  /// przebudowy siatki.
+  /// przebudowy siatki i zapamiętuje zmianę na potrzeby zapisu.
   void setBlock(int x, int y, int z, BlockType block) {
     if (!inBounds(x, y, z)) return;
     _blocks[_index(x, y, z)] = block.index;
+    edits[BlockPos(x, y, z)] = block;
 
     final cx = x ~/ chunkSize;
     final cz = z ~/ chunkSize;
