@@ -1,0 +1,13 @@
+# Everything the server does not need: the app, the renderer, the interface,
+# and every build artefact.
+app/
+!docker/pubspec.yaml
+packages/flutcraft_atlas/
+packages/flutcraft_engine/
+packages/flutcraft_l10n/
+packages/flutcraft_ui/
+**/build/
+**/.dart_tool/
+**/coverage/
+.git/
+.github/

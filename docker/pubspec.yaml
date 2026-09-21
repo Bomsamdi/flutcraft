@@ -1,0 +1,17 @@
+# The workspace as the server image sees it.
+#
+# The real root at the top of the repository lists all eight packages, and
+# four of them are Flutter ones: `dart pub get` on a Dart-only image cannot
+# resolve a dependency on the Flutter SDK, so it would fail before compiling
+# anything. The server needs three packages, and this says so.
+name: flutcraft_workspace
+description: The Flutcraft server and what it depends on.
+publish_to: none
+
+environment:
+  sdk: ^3.12.2
+
+workspace:
+  - packages/flutcraft_domain
+  - packages/flutcraft_protocol
+  - packages/flutcraft_server

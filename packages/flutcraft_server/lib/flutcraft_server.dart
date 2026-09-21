@@ -9,3 +9,4 @@ export 'src/client_link.dart';
 export 'src/game_host.dart';
 export 'src/outbound_queue.dart';
 export 'src/web_socket_host.dart';
+export 'src/world_store.dart';

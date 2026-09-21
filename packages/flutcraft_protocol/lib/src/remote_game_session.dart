@@ -26,11 +26,15 @@ class RemoteGameSession implements PlayableSession {
     required this.viewerId,
     required GameState state,
     required int serverTick,
+    required StreamSubscription<ServerMessage> subscription,
   }) : _state = state,
        _tick = serverTick,
+       // A named parameter cannot be `this._subscription`: a named parameter
+       // cannot start with an underscore.
+       // ignore: prefer_initializing_formals
+       _subscription = subscription,
        loop = GameLoop.predicting(state: state, random: Random(serverTick)) {
     _snapshot = GameSnapshot.forPlayer(state, state.participants[viewerId]!);
-    _subscription = channel.incoming.listen(_receive);
   }
 
   /// Joins a server and waits for the world.
@@ -43,20 +47,44 @@ class RemoteGameSession implements PlayableSession {
     PlayerId me, {
     Duration timeout = const Duration(seconds: 10),
   }) async {
-    final welcome = channel.incoming
-        .where((message) => message is Welcome)
-        .cast<Welcome>()
-        .first
-        .timeout(timeout);
+    // One subscription from the first moment, and anything that arrives
+    // before the world is built waits in a queue.
+    //
+    // Subscribing twice — once to wait for the welcome, once for the rest —
+    // leaves a gap between them, and a broadcast stream keeps nothing for
+    // whoever was not listening. A server sends the welcome and the player's
+    // inventory back to back, so the gap is not theoretical: the inventory
+    // fell into it every time, and the player arrived empty-handed.
+    final waiting = <ServerMessage>[];
+    final welcome = Completer<Welcome>();
+
+    final subscription = channel.incoming.listen((message) {
+      if (message is Welcome && !welcome.isCompleted) {
+        welcome.complete(message);
+        return;
+      }
+      waiting.add(message);
+    });
     channel.send(Hello(me));
 
-    final arrived = await welcome;
-    return RemoteGameSession._(
+    final Welcome arrived;
+    try {
+      arrived = await welcome.future.timeout(timeout);
+    } on Object {
+      await subscription.cancel();
+      rethrow;
+    }
+
+    final session = RemoteGameSession._(
       channel: channel,
       viewerId: arrived.you,
       serverTick: arrived.tick,
       state: _worldFrom(arrived),
+      subscription: subscription,
     );
+    subscription.onData(session._receive);
+    waiting.forEach(session._receive);
+    return session;
   }
 
   /// How far the player may be wrong before the view is snapped rather than
@@ -89,7 +117,7 @@ class RemoteGameSession implements PlayableSession {
   /// Blocks put down locally that the server has not yet confirmed.
   final List<_Prediction> _predictions = [];
 
-  late StreamSubscription<ServerMessage> _subscription;
+  final StreamSubscription<ServerMessage> _subscription;
   late GameSnapshot _snapshot;
 
   final Vector3 _correction = Vector3.zero();

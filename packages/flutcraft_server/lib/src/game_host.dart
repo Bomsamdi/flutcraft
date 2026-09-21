@@ -5,6 +5,7 @@ import 'package:flutcraft_protocol/flutcraft_protocol.dart';
 import 'package:vector_math/vector_math.dart';
 
 import 'client_link.dart';
+import 'world_store.dart';
 
 /// One world, everybody in it, and the loop that decides what is true.
 ///
@@ -24,6 +25,27 @@ class GameHost {
     final world = VoxelWorld();
     TerrainGenerator(seed: seed).generate(world);
     return GameHost.on(world, seed: seed, saveSink: saveSink);
+  }
+
+  /// Opens the world kept in [store], or starts one if there is none there.
+  ///
+  /// The people who have been here before are remembered but not put back in
+  /// the world: they come back when they connect, with what they were
+  /// carrying.
+  factory GameHost.fromStore(WorldStore store, {int seed = 1337}) {
+    final saved = store.loadWorld();
+    final host = saved == null
+        ? GameHost.newWorld(seed: seed)
+        : GameHost.on(
+            const GamePersistence().restoreWorld(saved),
+            seed: saved.seed,
+          );
+
+    host._store = store;
+    for (final player in store.loadPlayers()) {
+      host._remembered[player.id] = player;
+    }
+    return host;
   }
 
   /// Builds a host over a world that already exists — one just loaded, say.
@@ -76,6 +98,16 @@ class GameHost {
   int _tick = 0;
   int _sinceSnapshot = 0;
 
+  WorldStore? _store;
+
+  /// What each player was carrying when they last left.
+  final Map<PlayerId, PlayerSave> _remembered = {};
+
+  /// How often the world is written down, in ticks.
+  static const int saveEvery = kTicksPerSecond * 60;
+
+  int _sinceSave = 0;
+
   /// The server's current tick. Clients stamp their input with it.
   int get tick => _tick;
 
@@ -89,7 +121,7 @@ class GameHost {
     _links.remove(who)?.close();
     _links[who] = link;
 
-    state.participants.putIfAbsent(who, () => _arrive(who));
+    state.participants.putIfAbsent(who, () => _returning(who) ?? _arrive(who));
     _retireCaretaker();
 
     link.send(
@@ -103,6 +135,17 @@ class GameHost {
       ),
     );
     _sendInventory(who, force: true);
+  }
+
+  /// Somebody this world has seen before, put back as they left.
+  ///
+  /// Keyed by the id the client chose and keeps, not by the connection, so
+  /// coming back after a dropped connection finds the same inventory rather
+  /// than a new player standing beside the old one's belongings.
+  Participant? _returning(PlayerId who) {
+    final saved = _remembered[who];
+    if (saved == null) return null;
+    return const GamePersistence().restorePlayer(saved, state.world);
   }
 
   /// Somebody who has never been in this world before.
@@ -134,7 +177,11 @@ class GameHost {
     if (participant == null) return null;
     // A world may not be left empty, so the caretaker comes back.
     if (state.participants.isEmpty) _hireCaretaker();
-    return const GamePersistence().capturePlayer(participant);
+
+    final saved = const GamePersistence().capturePlayer(participant);
+    _remembered[who] = saved;
+    _store?.savePlayer(saved);
+    return saved;
   }
 
   /// How long a client's last input keeps applying without a new one.
@@ -191,10 +238,35 @@ class GameHost {
     }
 
     _broadcastWorldChanges();
+    _saveOnSchedule();
     _sinceSnapshot++;
     if (_sinceSnapshot < snapshotEvery) return;
     _sinceSnapshot = 0;
     _broadcastSnapshot();
+  }
+
+  /// Writes the world down every so often.
+  ///
+  /// The world only: an autosave that also rewrote everybody's inventory
+  /// would be doing sixty times the work for something that changes when a
+  /// player does, not when a minute passes.
+  void _saveOnSchedule() {
+    final store = _store;
+    if (store == null) return;
+    if (++_sinceSave < saveEvery) return;
+    _sinceSave = 0;
+    store.saveWorld(const GamePersistence().captureWorld(state));
+  }
+
+  /// Writes everything down now — on the way out, say.
+  void saveNow() {
+    final store = _store;
+    if (store == null) return;
+    store.saveWorld(const GamePersistence().captureWorld(state));
+    for (final participant in state.participants.values) {
+      if (participant.id == caretaker) continue;
+      store.savePlayer(const GamePersistence().capturePlayer(participant));
+    }
   }
 
   void _publish(List<AddressedEvent> events) {

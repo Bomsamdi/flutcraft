@@ -1,59 +1,11 @@
 import 'dart:async';
-import 'dart:convert';
-import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:flutcraft_domain/flutcraft_domain.dart';
 import 'package:flutcraft_protocol/flutcraft_protocol.dart';
 import 'package:flutcraft_server/flutcraft_server.dart';
 import 'package:test/test.dart';
 
-/// A real socket behind the client's channel.
-///
-/// This adapter is the only thing between `RemoteGameSession` and the wire,
-/// and the app's own is the same twenty lines. Keeping it here as well means
-/// the end-to-end test exercises the whole path without the app in it.
-class SocketChannel implements MessageChannel {
-  SocketChannel(this.socket, {this.codec = const JsonMessageCodec()}) {
-    socket.listen(
-      (raw) => _incoming.add(codec.decodeServer(_bytes(raw))),
-      onDone: _incoming.close,
-    );
-  }
-
-  static Future<SocketChannel> connect(int port) async =>
-      SocketChannel(await WebSocket.connect('ws://127.0.0.1:$port'));
-
-  static Uint8List _bytes(Object? raw) => switch (raw) {
-    final Uint8List bytes => bytes,
-    final List<int> bytes => Uint8List.fromList(bytes),
-    _ => utf8.encode(raw! as String),
-  };
-
-  final WebSocket socket;
-  final MessageCodec codec;
-  final _incoming = StreamController<ServerMessage>.broadcast();
-
-  @override
-  Stream<ServerMessage> get incoming => _incoming.stream;
-
-  @override
-  void send(ClientMessage message) => socket.add(codec.encodeClient(message));
-
-  @override
-  Future<void> close() async {
-    await socket.close();
-    if (!_incoming.isClosed) await _incoming.close();
-  }
-}
-
-Future<bool> eventually(bool Function() until, {int tries = 300}) async {
-  for (var i = 0; i < tries; i++) {
-    if (until()) return true;
-    await Future<void>.delayed(const Duration(milliseconds: 10));
-  }
-  return until();
-}
+import 'socket_channel.dart';
 
 void main() {
   late GameHost host;
