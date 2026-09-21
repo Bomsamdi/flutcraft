@@ -86,10 +86,6 @@ class Player extends VoxelBody {
   }
 
   void update(double dt, MoveInput input) {
-    // A long frame — after a chunk rebuild, say — must not push the player
-    // through a wall.
-    final step = math.min(dt, 1 / 30);
-
     if (hurtCooldown > 0) hurtCooldown -= dt;
     if (hurtFlash > 0) hurtFlash -= dt;
     _regenerate(dt);
@@ -112,13 +108,13 @@ class Player extends VoxelBody {
       final vertical = (input.jump ? 1.0 : 0.0) - (input.crouch ? 1.0 : 0.0);
       velocity.y = vertical * flySpeed;
       onGround = false;
-      moveBy(velocity.x * step, velocity.y * step, velocity.z * step);
+      moveBy(velocity.x * dt, velocity.y * dt, velocity.z * dt);
     } else {
       if (input.jump && onGround) {
         velocity.y = jumpSpeed;
         onGround = false;
       }
-      stepPhysics(step, gravity: gravity);
+      stepPhysics(dt, gravity: gravity);
     }
 
     // A soft wall at the edges: the world is finite.
