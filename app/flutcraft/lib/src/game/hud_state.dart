@@ -1,29 +1,6 @@
 
 import 'package:flutcraft_domain/flutcraft_domain.dart';
 
-/// Który interfejs jest otwarty nad światem.
-enum UiScreen {
-  /// Tylko HUD - gra działa.
-  none,
-
-  /// Ekwipunek z siatką craftingu 2x2.
-  inventory,
-
-  /// Stół rzemieślniczy - siatka 3x3.
-  craftingTable,
-
-  /// Piec.
-  furnace,
-
-  /// Księga przepisów.
-  recipes,
-
-  /// Ekran śmierci.
-  dead;
-
-  bool get pausesInput => this != UiScreen.none;
-}
-
 /// Potwór aktualnie na celowniku.
 class TargetMob {
   const TargetMob({
@@ -90,7 +67,7 @@ class HudSnapshot {
   final double hurtFlash;
 
   final int mobCount;
-  final UiScreen screen;
+  final UiRoute screen;
 
   /// Potwór pod celownikiem - HUD pokazuje wtedy jego pasek życia.
   final TargetMob? targetMob;

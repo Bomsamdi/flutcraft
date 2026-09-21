@@ -1,6 +1,7 @@
 import 'dart:ui' as ui;
 
 import 'package:flutcraft/src/game/flutcraft_game.dart';
+import 'package:flutcraft_domain/flutcraft_domain.dart';
 import 'package:flutcraft/src/game/hud_state.dart';
 import 'package:flutcraft/src/ui/screens.dart';
 import 'package:flutcraft/src/ui/slots.dart';
@@ -46,7 +47,7 @@ class Hud extends StatelessWidget {
               ),
             ),
           ),
-        if (snapshot.screen == UiScreen.none) ...[
+        if (snapshot.screen == UiRoute.none) ...[
           Crosshair(
             progress: snapshot.breakProgress,
             hasTarget: snapshot.targetLabel.isNotEmpty,

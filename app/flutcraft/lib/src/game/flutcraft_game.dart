@@ -69,13 +69,12 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
   static const double reach = 5.5;
   static const double lookSensitivity = 0.0032;
   static const double placeCooldown = 0.22;
-  static const double attackCooldown = 0.42;
 
-  late final VoxelWorld voxels;
+  VoxelWorld get voxels => state.world;
   late final TextureAtlas atlas;
   late final ChunkManager chunkManager;
   @override
-  late final Player player;
+  Player get player => state.player;
   late final SelectionBox selection;
   late final HeldItem heldItem;
   late final ItemMeshes itemMeshes;
@@ -89,41 +88,45 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
 
   // --- ekwipunek i crafting -------------------------------------------------
 
-  final Inventory inventory = Inventory();
+  /// Cały stan symulacji. Klasa gry nim steruje, ale go nie posiada -
+  /// systemy domenowe operują na tym samym obiekcie.
+  late final GameState state;
 
-  /// Siatka 2x2 w ekwipunku i 3x3 przy stole - osobne, jak w oryginale.
-  final CraftingGrid smallGrid = CraftingGrid(2);
-  final CraftingGrid bigGrid = CraftingGrid(3);
+  Inventory get inventory => state.inventory;
+  CraftingGrid get smallGrid => state.smallGrid;
+  CraftingGrid get bigGrid => state.bigGrid;
+  FurnaceRegistry get furnaces => state.furnaces;
 
-  /// Przedmiot "trzymany na kursorze" podczas przekładania w UI.
-  ItemStack? cursor;
+  ItemStack? get cursor => state.cursor;
+  set cursor(ItemStack? value) => state.cursor = value;
 
-  UiScreen screen = UiScreen.none;
+  UiRoute get screen => state.route;
+  set screen(UiRoute value) => state.route = value;
 
   /// Ekran, do którego wraca księga przepisów po zamknięciu.
-  UiScreen? _screenBeforeRecipes;
+  UiRoute? _screenBeforeRecipes;
 
-  /// Piece w świecie, kluczowane pozycją bloku.
-  final FurnaceRegistry furnaces = FurnaceRegistry();
-  BlockPos? openFurnaceKey;
+  BlockPos? get openFurnaceKey => state.openFurnace;
+  set openFurnaceKey(BlockPos? value) => state.openFurnace = value;
 
-  int selected = 0;
+  int get selected => state.selectedSlot;
+  set selected(int value) => state.selectedSlot = value;
+
   int revision = 0;
 
-  CraftingGrid get activeGrid =>
-      screen == UiScreen.craftingTable ? bigGrid : smallGrid;
+  CraftingGrid get activeGrid => state.activeGrid;
 
   FurnaceState? get openFurnace {
     final pos = openFurnaceKey;
     return pos == null ? null : furnaces[pos];
   }
 
-  ItemType? get heldItemType => inventory[selected]?.type;
+  ItemType? get heldItemType => state.heldItem;
 
   // --- potwory --------------------------------------------------------------
 
-  final List<Mob> mobs = [];
-  final List<Arrow> arrows = [];
+  List<Mob> get mobs => state.mobs;
+  List<Arrow> get arrows => state.arrows;
   final Map<Mob, MobComponent> _mobComponents = {};
   final Map<Arrow, ArrowComponent> _arrowComponents = {};
 
@@ -132,15 +135,20 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
   final Set<LogicalKeyboardKey> _keys = {};
   final Vector2 _touchMove = Vector2.zero();
   bool _touchJump = false;
-  bool _mining = false;
+  /// Czy gracz trzyma przycisk kopania/ataku.
+  bool _isMining = false;
+
+  /// Kopanie i walka wręcz - cała logika czasu i obrażeń w domenie.
+  late final MiningSystem _mining = MiningSystem(random: spawner.rng);
   bool _placing = false;
 
   // --- stan gry -------------------------------------------------------------
 
-  AimResult _aim = const NoTarget();
-  double _breakProgress = 0;
+  AimResult get _aim => state.aim;
+  set _aim(AimResult value) => state.aim = value;
+  double get _breakProgress => state.breakProgress;
+  set _breakProgress(double value) => state.breakProgress = value;
   double _placeTimer = 0;
-  double _attackTimer = 0;
   double _swingTimer = 0;
   double _hudTimer = 0;
   double _fps = 0;
@@ -157,9 +165,18 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
     atlas = TextureAtlas.generate();
     atlasImage = await atlas.toImage();
 
-    voxels = VoxelWorld();
-    TerrainGenerator(seed: seed).generate(voxels);
-    voxels.markAllDirty();
+    final voxelWorld = VoxelWorld();
+    TerrainGenerator(seed: seed).generate(voxelWorld);
+    voxelWorld.markAllDirty();
+
+    final spawnedPlayer = Player(world: voxelWorld, spawn: Vector3.zero())
+      ..respawn()
+      ..pitch = -0.25;
+    state = GameState(
+      world: voxelWorld,
+      player: spawnedPlayer,
+      inventory: Inventory(),
+    );
 
     final terrainMaterial = UnlitMaterial(albedoTexture: atlas.texture)
       ..cullMode = CullMode.backFace;
@@ -170,9 +187,6 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
       material: terrainMaterial,
     );
 
-    player = Player(world: voxels, spawn: Vector3.zero())
-      ..respawn()
-      ..pitch = -0.25;
     chunkManager.focus.setFrom(player.position);
 
     final chunkComponents = chunkManager.createComponents();
@@ -213,9 +227,9 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
 
     _tickFurnaces(dt);
 
-    if (screen.pausesInput) {
+    if (screen.pausesWorld) {
       // Świat zamarza, gdy gracz grzebie w ekwipunku.
-      _mining = false;
+      _isMining = false;
       _placing = false;
       _updateHud(dt);
       return;
@@ -227,7 +241,7 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
     chunkManager.focus.setFrom(player.position);
 
     if (player.isDead) {
-      _openScreen(UiScreen.dead);
+      _openScreen(UiRoute.dead);
       _updateHud(dt);
       return;
     }
@@ -423,67 +437,14 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
   // --- kopanie i walka ------------------------------------------------------
 
   void _updateMining(double dt) {
-    if (_attackTimer > 0) _attackTimer -= dt;
-
-    if (!_mining) {
-      _breakProgress = 0;
-      return;
-    }
-
-    switch (_aim) {
-      case NoTarget():
-        return;
-      case MobTarget(:final mob):
-        if (_attackTimer > 0) return;
-        _attackTimer = attackCooldown;
-        _swingTimer = _swingDuration;
-        mob.damage((heldItemType?.damage ?? 1).toDouble(),
-            source: player.position);
-      case BlockTarget(:final hit):
-        if (!hit.block.breakable) return;
-        _breakProgress += dt / _breakTime(hit.block);
-        if (_breakProgress < 1) return;
-        _breakProgress = 0;
-        _breakBlock(hit);
-    }
-  }
-
-  void _breakBlock(RayHit hit) {
-    final block = hit.block;
-
-    if (block.hasLitVariant) {
-      final state = furnaces.remove(BlockPos(hit.x, hit.y, hit.z));
-      for (final stack in state?.contents() ?? const <ItemStack>[]) {
-        inventory.add(stack.type, stack.count);
+    for (final event in _mining.update(state, dt, active: _isMining)) {
+      _emit(event);
+      if (event is BlockBroken) {
+        selection.visible = false;
+        revision++;
       }
     }
-
-    voxels.setBlock(hit.x, hit.y, hit.z, BlockType.air);
-
-    final drops = blockDrops(block, heldItemType, spawner.rng);
-    if (drops.isEmpty) {
-      if (block.requiredTier > 0) {
-        _emit(ToolTooWeak(block));
-      }
-    } else {
-      for (final drop in drops) {
-        if (inventory.add(drop.type, drop.count) > 0) {
-          _emit(InventoryFull(drop.type));
-        }
-      }
-    }
-
-    _aim = const NoTarget();
-    selection.visible = false;
-    revision++;
-  }
-
-  /// Czas rozbicia bloku przy aktualnie trzymanym przedmiocie.
-  double _breakTime(BlockType block) {
-    final held = heldItemType;
-    final matches = held != null && held.tool == block.tool;
-    final speed = matches ? 2.0 + held.tier * 2.0 : 1.0;
-    return math.max(0.08, block.hardness * 1.2 / speed);
+    if (_isMining && _aim is MobTarget) _swingTimer = _swingDuration;
   }
 
   // --- stawianie i interakcja -----------------------------------------------
@@ -511,12 +472,12 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
       case null:
         return;
       case OpenCraftingTable():
-        _openScreen(UiScreen.craftingTable);
+        _openScreen(UiRoute.craftingTable);
       case OpenFurnace():
         final pos = hit.pos;
         furnaces.open(pos);
         openFurnaceKey = pos;
-        _openScreen(UiScreen.furnace);
+        _openScreen(UiRoute.furnace);
     }
   }
 
@@ -574,7 +535,7 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
   // --- przedmiot w ręce -----------------------------------------------------
 
   void _updateHeldItem(double dt) {
-    final swingingAtBlock = _mining && _aim is BlockTarget;
+    final swingingAtBlock = _isMining && _aim is BlockTarget;
     if (_swingTimer > 0) {
       _swingTimer -= dt;
       if (_swingTimer <= 0) {
@@ -597,7 +558,7 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
   // --- API dla warstwy UI ---------------------------------------------------
 
   void look(double dxPixels, double dyPixels) {
-    if (screen.pausesInput) return;
+    if (screen.pausesWorld) return;
     player.look(-dxPixels * lookSensitivity, -dyPixels * lookSensitivity);
   }
 
@@ -608,12 +569,12 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
   void setJump(bool value) => _touchJump = value;
 
   void setMining(bool value) {
-    _mining = value && !screen.pausesInput;
-    if (!_mining) _breakProgress = 0;
+    _isMining = value && !screen.pausesWorld;
+    if (!_isMining) _breakProgress = 0;
   }
 
   void setPlacing(bool value) {
-    _placing = value && !screen.pausesInput;
+    _placing = value && !screen.pausesWorld;
     if (_placing) _placeTimer = 0;
   }
 
@@ -640,25 +601,25 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
   /// Dzięki temu zerknięcie na przepis w trakcie układania na stole nie
   /// rozsypuje tego, co gracz już położył na siatce.
   void openRecipes() {
-    if (screen == UiScreen.recipes) {
+    if (screen == UiRoute.recipes) {
       closeScreen();
       return;
     }
-    _screenBeforeRecipes = screen == UiScreen.none ? null : screen;
-    _openScreen(UiScreen.recipes);
+    _screenBeforeRecipes = screen == UiRoute.none ? null : screen;
+    _openScreen(UiRoute.recipes);
   }
 
   void toggleInventory() {
-    if (screen == UiScreen.none) {
-      _openScreen(UiScreen.inventory);
-    } else if (screen != UiScreen.dead) {
+    if (screen == UiRoute.none) {
+      _openScreen(UiRoute.inventory);
+    } else if (screen != UiRoute.dead) {
       closeScreen();
     }
   }
 
-  void _openScreen(UiScreen value) {
+  void _openScreen(UiRoute value) {
     screen = value;
-    _mining = false;
+    _isMining = false;
     _placing = false;
     _touchMove.setZero();
     _publishHud();
@@ -667,10 +628,10 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
   /// Zamyka ekran, oddając graczowi to, co zostało w siatce i na kursorze.
   void closeScreen() {
     // Z księgi wracamy tam, skąd ją otwarto - siatka zostaje nietknięta.
-    if (screen == UiScreen.recipes) {
+    if (screen == UiRoute.recipes) {
       final previous = _screenBeforeRecipes;
       _screenBeforeRecipes = null;
-      screen = previous ?? UiScreen.none;
+      screen = previous ?? UiRoute.none;
       _publishHud();
       return;
     }
@@ -688,7 +649,7 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
       cursor = null;
     }
     openFurnaceKey = null;
-    screen = UiScreen.none;
+    screen = UiRoute.none;
     _syncHeldMesh();
     revision++;
     _publishHud();
@@ -704,7 +665,7 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
       arrows.remove(arrow);
       _arrowComponents.remove(arrow)?.removeFromParent();
     }
-    screen = UiScreen.none;
+    screen = UiRoute.none;
     _emit(const PlayerRespawned());
     _publishHud();
   }
@@ -829,26 +790,26 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
         LogicalKeyboardKey.digit9,
       ];
       final digit = digits.indexOf(event.logicalKey);
-      if (digit >= 0 && !screen.pausesInput) {
+      if (digit >= 0 && !screen.pausesWorld) {
         selectSlot(digit);
         return KeyEventResult.handled;
       }
 
       switch (event.logicalKey) {
         case LogicalKeyboardKey.keyE:
-          if (screen != UiScreen.dead) toggleInventory();
+          if (screen != UiRoute.dead) toggleInventory();
         case LogicalKeyboardKey.escape:
-          if (screen != UiScreen.none && screen != UiScreen.dead) {
+          if (screen != UiRoute.none && screen != UiRoute.dead) {
             closeScreen();
           }
         case LogicalKeyboardKey.keyB:
-          if (screen != UiScreen.dead) openRecipes();
+          if (screen != UiRoute.dead) openRecipes();
         case LogicalKeyboardKey.keyF:
-          if (!screen.pausesInput) toggleFly();
+          if (!screen.pausesWorld) toggleFly();
         case LogicalKeyboardKey.keyR:
-          if (screen == UiScreen.dead) {
+          if (screen == UiRoute.dead) {
             respawn();
-          } else if (!screen.pausesInput) {
+          } else if (!screen.pausesWorld) {
             interactOrPlace();
           }
       }
