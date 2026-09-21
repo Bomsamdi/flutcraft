@@ -289,4 +289,98 @@ class AppLocalizationsPl extends AppLocalizations {
   String cursorHolding(String stack) {
     return 'Trzymasz: $stack (przytrzymaj slot, aby położyć jedną sztukę)';
   }
+
+  @override
+  String get helpTitle => 'Sterowanie';
+
+  @override
+  String get helpCombatTitle => 'Walka';
+
+  @override
+  String get helpRecipesHint =>
+      'Pełna lista przepisów jest w księdze (klawisz B albo ikona książki).';
+
+  @override
+  String get helpCombatBody =>
+      'Wyceluj w potwora: celownik zmieni się w czerwony krzyżyk, a nad nim pojawi się pasek życia. Wtedy przytrzymaj ten sam przycisk co przy kopaniu. Miecz bije mocniej niż kilof, a kilof mocniej niż ręka.';
+
+  @override
+  String get helpFooter =>
+      'Kamienny kilof jest potrzebny do rudy żelaza. Uważaj na creepery — wybuch niszczy teren. Dotknij ekranu, aby zamknąć.';
+
+  @override
+  String get helpMove => 'WSAD / joystick';
+
+  @override
+  String get helpMoveAction => 'chodzenie';
+
+  @override
+  String get helpLook => 'Przeciągnij palcem lub myszą';
+
+  @override
+  String get helpLookAction => 'rozglądanie';
+
+  @override
+  String get helpMineKey => 'Przytrzymaj / KOP';
+
+  @override
+  String get helpMineAction => 'kopanie i bicie potworów';
+
+  @override
+  String get helpUseKey => 'Prawy przycisk / UŻYJ / R';
+
+  @override
+  String get helpUseAction => 'stawianie i otwieranie';
+
+  @override
+  String get helpInventoryKey => 'E / ikona plecaka';
+
+  @override
+  String get helpInventoryAction => 'ekwipunek i crafting';
+
+  @override
+  String get helpRecipesKey => 'B / ikona książki';
+
+  @override
+  String get helpRecipesAction => 'księga przepisów';
+
+  @override
+  String get helpHotbarKey => '1-9, scroll';
+
+  @override
+  String get helpHotbarAction => 'wybór przedmiotu';
+
+  @override
+  String get helpSplitKey => 'Prawy przycisk / przytrzymanie slotu';
+
+  @override
+  String get helpSplitAction => 'podział stosu na pół';
+
+  @override
+  String get helpJumpKey => 'Spacja / SKOK';
+
+  @override
+  String get helpJumpAction => 'skok';
+
+  @override
+  String get helpSprintKey => 'Shift';
+
+  @override
+  String get helpSprintAction => 'sprint (lub w dół w locie)';
+
+  @override
+  String get helpFlyKey => 'F / LOT';
+
+  @override
+  String get helpFlyAction => 'tryb latania';
+
+  @override
+  String get furnaceHint =>
+      'Paliwo: węgiel. Wytop: surowe żelazo, piasek, kłody.';
+
+  @override
+  String get respawnWithKey => 'Odrodź się  (R)';
+
+  @override
+  String get buttonMineHit => 'KOP/BIJ';
 }

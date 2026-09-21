@@ -286,4 +286,97 @@ class AppLocalizationsEn extends AppLocalizations {
   String cursorHolding(String stack) {
     return 'Holding: $stack (hold a slot to place one)';
   }
+
+  @override
+  String get helpTitle => 'Controls';
+
+  @override
+  String get helpCombatTitle => 'Combat';
+
+  @override
+  String get helpRecipesHint =>
+      'The full recipe list is in the book (press B or the book icon).';
+
+  @override
+  String get helpCombatBody =>
+      'Aim at a mob: the crosshair turns into a red cross and a health bar appears above it. Then hold the same button you use for mining. A sword hits harder than a pickaxe, a pickaxe harder than a fist.';
+
+  @override
+  String get helpFooter =>
+      'A stone pickaxe is required for iron ore. Beware of creepers — the blast destroys terrain. Tap anywhere to close.';
+
+  @override
+  String get helpMove => 'WASD / joystick';
+
+  @override
+  String get helpMoveAction => 'walk';
+
+  @override
+  String get helpLook => 'Drag with finger or mouse';
+
+  @override
+  String get helpLookAction => 'look around';
+
+  @override
+  String get helpMineKey => 'Hold / MINE';
+
+  @override
+  String get helpMineAction => 'mine blocks and hit mobs';
+
+  @override
+  String get helpUseKey => 'Right click / USE / R';
+
+  @override
+  String get helpUseAction => 'place and open';
+
+  @override
+  String get helpInventoryKey => 'E / backpack icon';
+
+  @override
+  String get helpInventoryAction => 'inventory and crafting';
+
+  @override
+  String get helpRecipesKey => 'B / book icon';
+
+  @override
+  String get helpRecipesAction => 'recipe book';
+
+  @override
+  String get helpHotbarKey => '1-9, scroll';
+
+  @override
+  String get helpHotbarAction => 'select item';
+
+  @override
+  String get helpSplitKey => 'Right click / hold a slot';
+
+  @override
+  String get helpSplitAction => 'split a stack in half';
+
+  @override
+  String get helpJumpKey => 'Space / JUMP';
+
+  @override
+  String get helpJumpAction => 'jump';
+
+  @override
+  String get helpSprintKey => 'Shift';
+
+  @override
+  String get helpSprintAction => 'sprint (or descend while flying)';
+
+  @override
+  String get helpFlyKey => 'F / FLY';
+
+  @override
+  String get helpFlyAction => 'flight mode';
+
+  @override
+  String get furnaceHint => 'Fuel: coal. Smelts: raw iron, sand, logs.';
+
+  @override
+  String get respawnWithKey => 'Respawn  (R)';
+
+  @override
+  String get buttonMineHit => 'MINE/HIT';
 }

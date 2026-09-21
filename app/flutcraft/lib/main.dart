@@ -154,12 +154,14 @@ class _GameScreenState extends State<GameScreen> {
               valueListenable: _game.hud,
               builder: (context, snapshot, _) {
                 if (snapshot == null) {
-                  return const ColoredBox(
-                    color: Color(0xFF88BBEE),
+                  return ColoredBox(
+                    color: const Color(0xFF88BBEE),
                     child: Center(
-                      child: Text(
-                        'Generowanie świata...',
-                        style: TextStyle(color: Colors.white),
+                      child: Builder(
+                        builder: (context) => Text(
+                          context.t.loadingWorld,
+                          style: const TextStyle(color: Colors.white),
+                        ),
                       ),
                     ),
                   );

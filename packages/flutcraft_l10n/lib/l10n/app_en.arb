@@ -380,5 +380,125 @@
         "type": "String"
       }
     }
+  },
+  "helpTitle": "Controls",
+  "@helpTitle": {
+    "description": "UI text"
+  },
+  "helpCombatTitle": "Combat",
+  "@helpCombatTitle": {
+    "description": "UI text"
+  },
+  "helpRecipesHint": "The full recipe list is in the book (press B or the book icon).",
+  "@helpRecipesHint": {
+    "description": "UI text"
+  },
+  "helpCombatBody": "Aim at a mob: the crosshair turns into a red cross and a health bar appears above it. Then hold the same button you use for mining. A sword hits harder than a pickaxe, a pickaxe harder than a fist.",
+  "@helpCombatBody": {
+    "description": "UI text"
+  },
+  "helpFooter": "A stone pickaxe is required for iron ore. Beware of creepers — the blast destroys terrain. Tap anywhere to close.",
+  "@helpFooter": {
+    "description": "UI text"
+  },
+  "helpMove": "WASD / joystick",
+  "@helpMove": {
+    "description": "UI text"
+  },
+  "helpMoveAction": "walk",
+  "@helpMoveAction": {
+    "description": "UI text"
+  },
+  "helpLook": "Drag with finger or mouse",
+  "@helpLook": {
+    "description": "UI text"
+  },
+  "helpLookAction": "look around",
+  "@helpLookAction": {
+    "description": "UI text"
+  },
+  "helpMineKey": "Hold / MINE",
+  "@helpMineKey": {
+    "description": "UI text"
+  },
+  "helpMineAction": "mine blocks and hit mobs",
+  "@helpMineAction": {
+    "description": "UI text"
+  },
+  "helpUseKey": "Right click / USE / R",
+  "@helpUseKey": {
+    "description": "UI text"
+  },
+  "helpUseAction": "place and open",
+  "@helpUseAction": {
+    "description": "UI text"
+  },
+  "helpInventoryKey": "E / backpack icon",
+  "@helpInventoryKey": {
+    "description": "UI text"
+  },
+  "helpInventoryAction": "inventory and crafting",
+  "@helpInventoryAction": {
+    "description": "UI text"
+  },
+  "helpRecipesKey": "B / book icon",
+  "@helpRecipesKey": {
+    "description": "UI text"
+  },
+  "helpRecipesAction": "recipe book",
+  "@helpRecipesAction": {
+    "description": "UI text"
+  },
+  "helpHotbarKey": "1-9, scroll",
+  "@helpHotbarKey": {
+    "description": "UI text"
+  },
+  "helpHotbarAction": "select item",
+  "@helpHotbarAction": {
+    "description": "UI text"
+  },
+  "helpSplitKey": "Right click / hold a slot",
+  "@helpSplitKey": {
+    "description": "UI text"
+  },
+  "helpSplitAction": "split a stack in half",
+  "@helpSplitAction": {
+    "description": "UI text"
+  },
+  "helpJumpKey": "Space / JUMP",
+  "@helpJumpKey": {
+    "description": "UI text"
+  },
+  "helpJumpAction": "jump",
+  "@helpJumpAction": {
+    "description": "UI text"
+  },
+  "helpSprintKey": "Shift",
+  "@helpSprintKey": {
+    "description": "UI text"
+  },
+  "helpSprintAction": "sprint (or descend while flying)",
+  "@helpSprintAction": {
+    "description": "UI text"
+  },
+  "helpFlyKey": "F / FLY",
+  "@helpFlyKey": {
+    "description": "UI text"
+  },
+  "helpFlyAction": "flight mode",
+  "@helpFlyAction": {
+    "description": "UI text"
+  },
+  "furnaceHint": "Fuel: coal. Smelts: raw iron, sand, logs.",
+  "@furnaceHint": {
+    "description": "UI text"
+  },
+  "respawnWithKey": "Respawn  (R)",
+  "@respawnWithKey": {
+    "description": "UI text"
+  },
+  "buttonMineHit": "MINE/HIT",
+  "@buttonMineHit": {
+    "description": "UI text"
   }
 }

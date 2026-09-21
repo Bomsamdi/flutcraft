@@ -4,6 +4,7 @@ import 'package:flutcraft/src/game/flutcraft_game.dart';
 import 'package:flutcraft/src/ui/recipe_book.dart';
 import 'package:flutcraft/src/ui/slots.dart';
 import 'package:flutcraft_domain/flutcraft_domain.dart';
+import 'package:flutcraft_l10n/flutcraft_l10n.dart';
 import 'package:flutter/material.dart';
 
 /// Na niskim ekranie (telefon w poziomie) sloty muszą być mniejsze,
@@ -67,18 +68,18 @@ class ScreenFrame extends StatelessWidget {
                             padding: const EdgeInsets.only(right: 14),
                             child: GestureDetector(
                               onTap: onRecipes,
-                              child: const Row(
+                              child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(
+                                  const Icon(
                                     Icons.menu_book,
                                     size: 18,
                                     color: Colors.lightBlueAccent,
                                   ),
-                                  SizedBox(width: 5),
+                                  const SizedBox(width: 5),
                                   Text(
-                                    'Przepisy',
-                                    style: TextStyle(
+                                    context.t.recipesLink,
+                                    style: const TextStyle(
                                       color: Colors.lightBlueAccent,
                                       fontSize: 12,
                                     ),
@@ -164,7 +165,7 @@ class CraftingScreen extends StatelessWidget {
     final preview = game.craftPreview;
 
     return ScreenFrame(
-      title: isTable ? 'Stół rzemieślniczy' : 'Ekwipunek',
+      title: isTable ? context.t.screenCraftingTable : context.t.screenInventory,
       onClose: game.closeScreen,
       onRecipes: game.openRecipes,
       child: Column(
@@ -199,11 +200,11 @@ class CraftingScreen extends StatelessWidget {
             ],
           ),
           if (!isTable)
-            const Padding(
-              padding: EdgeInsets.only(top: 6),
+            Padding(
+              padding: const EdgeInsets.only(top: 6),
               child: Text(
-                'Postaw stół rzemieślniczy, aby odblokować siatkę 3x3',
-                style: TextStyle(color: Colors.white38, fontSize: 11),
+                context.t.craftingTableHint,
+                style: const TextStyle(color: Colors.white38, fontSize: 11),
               ),
             ),
           Divider(
@@ -235,7 +236,7 @@ class FurnaceScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ScreenFrame(
-      title: 'Piec',
+      title: context.t.screenFurnace,
       onClose: game.closeScreen,
       onRecipes: game.openRecipes,
       child: Column(
@@ -254,9 +255,9 @@ class FurnaceScreen extends StatelessWidget {
                     onTap: () => game.clickFurnaceSlot(0),
                     onSplit: () => game.clickFurnaceSlot(0, split: true),
                   ),
-                  const Text(
-                    'wsad',
-                    style: TextStyle(color: Colors.white38, fontSize: 10),
+                  Text(
+                    context.t.furnaceInput,
+                    style: const TextStyle(color: Colors.white38, fontSize: 10),
                   ),
                   SizedBox(
                     height: 26,
@@ -280,9 +281,9 @@ class FurnaceScreen extends StatelessWidget {
                     onTap: () => game.clickFurnaceSlot(1),
                     onSplit: () => game.clickFurnaceSlot(1, split: true),
                   ),
-                  const Text(
-                    'paliwo',
-                    style: TextStyle(color: Colors.white38, fontSize: 10),
+                  Text(
+                    context.t.furnaceFuel,
+                    style: const TextStyle(color: Colors.white38, fontSize: 10),
                   ),
                 ],
               ),
@@ -315,11 +316,11 @@ class FurnaceScreen extends StatelessWidget {
               ),
             ],
           ),
-          const Padding(
-            padding: EdgeInsets.only(top: 8),
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
             child: Text(
-              'Paliwo: węgiel. Wytop: surowe żelazo, piasek, kłoda.',
-              style: TextStyle(color: Colors.white38, fontSize: 11),
+              context.t.furnaceHint,
+              style: const TextStyle(color: Colors.white38, fontSize: 11),
             ),
           ),
           Divider(
@@ -350,9 +351,9 @@ class DeathScreen extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
-                'Zginąłeś',
-                style: TextStyle(
+              Text(
+                context.t.youDied,
+                style: const TextStyle(
                   color: Colors.white,
                   fontSize: 34,
                   fontWeight: FontWeight.bold,
@@ -362,7 +363,7 @@ class DeathScreen extends StatelessWidget {
               FilledButton.icon(
                 onPressed: game.respawn,
                 icon: const Icon(Icons.refresh),
-                label: const Text('Odrodź się  (R)'),
+                label: Text(context.t.respawnWithKey),
               ),
             ],
           ),
@@ -382,7 +383,7 @@ class RecipeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ScreenFrame(
-      title: 'Księga przepisów',
+      title: context.t.screenRecipes,
       onClose: game.closeScreen,
       child: RecipeBook(image: image, inventory: game.inventory),
     );
