@@ -20,8 +20,12 @@ LoopGameSession createSession({int seed = 1337, SaveSink? saveSink}) {
     ..respawn()
     ..pitch = -0.25;
 
-  final state = GameState(world: world, player: player, inventory: Inventory());
-  _giveStartingItems(state.inventory);
+  final state = GameState.solo(
+    world: world,
+    player: player,
+    inventory: Inventory(),
+  );
+  _giveStartingItems(state.solo.inventory);
 
   return _sessionFor(state, seed: seed, saveSink: saveSink);
 }

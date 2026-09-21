@@ -4,6 +4,7 @@ import '../../actors/mob.dart';
 import '../../actors/mob_behavior.dart';
 import '../game_event.dart';
 import '../game_state.dart';
+import '../participant.dart';
 
 /// Spawning, ticking and retiring mobs.
 ///
@@ -19,21 +20,50 @@ class MobAiSystem {
   List<GameEvent> update(GameState state, double dt, MobTickContext context) {
     final events = <GameEvent>[];
 
-    final spawned = spawner.maybeSpawn(dt, state.player, state.mobs.length);
+    // One spawn attempt per tick, around one player chosen at random.
+    //
+    // The spawner keeps its own clock, so calling it once per player would
+    // advance that clock N times a frame: a world with four people in it
+    // would breed four times as fast as one with a single player.
+    final hosts = state.participants.values.toList();
+    final host = hosts[random.nextInt(hosts.length)];
+    final spawned = spawner.maybeSpawn(dt, host.player, state.mobs.length);
     if (spawned != null) state.mobs.add(spawned);
 
     for (final mob in List<Mob>.from(state.mobs)) {
-      mob.update(dt, state.player, context);
+      // A mob chases whoever is closest, not whoever happens to be first.
+      final target = state.nearestLivingTo(mob.position);
+      mob.update(
+        dt,
+        target?.player ?? state.participants.values.first.player,
+        context,
+      );
       if (!mob.isDead) continue;
 
       state.mobs.remove(mob);
       final loot = mob.kind.loot.roll(random);
+      final claimant = _claimantFor(state, mob);
       for (final drop in loot) {
-        state.inventory.add(drop.type, drop.count);
+        claimant.inventory.add(drop.type, drop.count);
       }
       events.add(MobKilled(mob.kind, loot));
     }
     return events;
+  }
+
+  /// Who collects what a mob dropped.
+  ///
+  /// Whoever landed the killing blow. A mob that died to something other than
+  /// a player — a creeper, a fall — has nobody to thank, so its drops go to
+  /// the nearest living player rather than evaporating.
+  Participant _claimantFor(GameState state, Mob mob) {
+    final killer = mob.lastHitBy;
+    if (killer != null) {
+      final participant = state.participants[killer];
+      if (participant != null) return participant;
+    }
+    return state.nearestLivingTo(mob.position) ??
+        state.participants.values.first;
   }
 
   /// Clears the world of mobs — used on respawn.

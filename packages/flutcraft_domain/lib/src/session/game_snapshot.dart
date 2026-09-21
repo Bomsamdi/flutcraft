@@ -6,6 +6,7 @@ import '../blocks/block_type.dart';
 import '../items/item_type.dart';
 import '../crafting/recipes.dart';
 import 'game_state.dart';
+import 'participant.dart';
 import 'ui_route.dart';
 
 /// What the crosshair is on, in a form the UI can render.
@@ -83,42 +84,51 @@ class GameSnapshot {
     required this.furnace,
   });
 
-  /// Builds a snapshot from live state, copying everything it needs.
-  factory GameSnapshot.of(GameState state) => GameSnapshot(
-    hotbar: List<ItemStack?>.unmodifiable(state.inventory.hotbar),
-    selectedSlot: state.selectedSlot,
-    health: state.player.health,
-    maxHealth: Player.maxHealth,
-    hurtFlash: state.player.hurtFlash,
-    breakProgress: state.breakProgress.clamp(0.0, 1.0),
-    aim: switch (state.aim) {
-      NoTarget() => const NoAimView(),
-      BlockTarget(:final hit) => BlockAimView(hit.block),
-      MobTarget(:final mob) => MobAimView(
-        mob.kind,
-        mob.health,
-        mob.kind.maxHealth,
-      ),
-    },
-    position: BlockPos.of(state.player.position),
-    route: state.route,
-    mobCount: state.mobs.length,
-    flying: state.player.flying,
-    inventory: List<ItemStack?>.unmodifiable(state.inventory.slots),
-    grid: List<ItemStack?>.unmodifiable(state.activeGrid.slots),
-    gridSize: state.activeGrid.size,
-    cursor: state.cursor,
-    craftPreview: _previewOf(state),
-    furnace: _furnaceOf(state),
-  );
+  /// Builds a snapshot for the only player of a single-player game.
+  factory GameSnapshot.of(GameState state) =>
+      GameSnapshot.forPlayer(state, state.solo);
 
-  static ItemStack? _previewOf(GameState state) {
-    final recipe = matchRecipe(state.activeGrid);
+  /// Builds the snapshot one player sees, copying everything it needs.
+  ///
+  /// A snapshot belongs to a player, not to the world: the hotbar, the open
+  /// screen and the crosshair are theirs. What is shared — mobs, blocks —
+  /// looks the same in everyone's.
+  factory GameSnapshot.forPlayer(GameState state, Participant it) =>
+      GameSnapshot(
+        hotbar: List<ItemStack?>.unmodifiable(it.inventory.hotbar),
+        selectedSlot: it.selectedSlot,
+        health: it.player.health,
+        maxHealth: Player.maxHealth,
+        hurtFlash: it.player.hurtFlash,
+        breakProgress: it.breakProgress.clamp(0.0, 1.0),
+        aim: switch (it.aim) {
+          NoTarget() => const NoAimView(),
+          BlockTarget(:final hit) => BlockAimView(hit.block),
+          MobTarget(:final mob) => MobAimView(
+            mob.kind,
+            mob.health,
+            mob.kind.maxHealth,
+          ),
+        },
+        position: BlockPos.of(it.player.position),
+        route: it.route,
+        mobCount: state.mobs.length,
+        flying: it.player.flying,
+        inventory: List<ItemStack?>.unmodifiable(it.inventory.slots),
+        grid: List<ItemStack?>.unmodifiable(it.activeGrid.slots),
+        gridSize: it.activeGrid.size,
+        cursor: it.cursor,
+        craftPreview: _previewOf(it),
+        furnace: _furnaceOf(state, it),
+      );
+
+  static ItemStack? _previewOf(Participant it) {
+    final recipe = matchRecipe(it.activeGrid);
     return recipe == null ? null : ItemStack(recipe.output, recipe.outputCount);
   }
 
-  static FurnaceView? _furnaceOf(GameState state) {
-    final pos = state.openFurnace;
+  static FurnaceView? _furnaceOf(GameState state, Participant it) {
+    final pos = it.openFurnace;
     if (pos == null) return null;
     final furnace = state.furnaces[pos];
     if (furnace == null) return null;

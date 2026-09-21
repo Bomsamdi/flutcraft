@@ -8,6 +8,7 @@ import '../../loot/block_loot.dart';
 import '../../world/voxel_world.dart';
 import '../game_event.dart';
 import '../game_state.dart';
+import '../participant.dart';
 
 /// Breaking blocks and hitting mobs — both are "the player holds the
 /// primary button while aiming at something".
@@ -26,47 +27,60 @@ class MiningSystem {
   /// Multiplier applied when the held tool matches the block's preference.
   static const double matchingToolBonus = 2;
 
-  double _attackTimer = 0;
-
-  /// Runs one frame. [active] is true while the player holds the button.
+  /// Runs one frame for one player. [active] is true while they hold the
+  /// button.
   ///
   /// Returns the events produced this frame.
-  List<GameEvent> update(GameState state, double dt, {required bool active}) {
-    if (_attackTimer > 0) _attackTimer -= dt;
+  List<GameEvent> update(
+    GameState state,
+    Participant participant,
+    double dt, {
+    required bool active,
+  }) {
+    if (participant.attackTimer > 0) participant.attackTimer -= dt;
 
     if (!active) {
-      state.breakProgress = 0;
+      participant.breakProgress = 0;
       return const [];
     }
 
-    return switch (state.aim) {
+    return switch (participant.aim) {
       NoTarget() => const [],
-      MobTarget(:final mob) => _hitMob(state, mob),
-      BlockTarget(:final hit) => _mineBlock(state, dt, hit),
+      MobTarget(:final mob) => _hitMob(participant, mob),
+      BlockTarget(:final hit) => _mineBlock(state, participant, dt, hit),
     };
   }
 
-  List<GameEvent> _hitMob(GameState state, Mob mob) {
-    if (_attackTimer > 0) return const [];
-    _attackTimer = attackCooldown;
-    final damage = (state.heldItem?.damage ?? 1).toDouble();
-    mob.damage(damage, source: state.player.position);
+  List<GameEvent> _hitMob(Participant participant, Mob mob) {
+    if (participant.attackTimer > 0) return const [];
+    participant.attackTimer = attackCooldown;
+    final damage = (participant.heldItem?.damage ?? 1).toDouble();
+    mob.damage(damage, source: participant.player.position, by: participant.id);
     return const [];
   }
 
-  List<GameEvent> _mineBlock(GameState state, double dt, RayHit hit) {
+  List<GameEvent> _mineBlock(
+    GameState state,
+    Participant participant,
+    double dt,
+    RayHit hit,
+  ) {
     final block = hit.block;
     if (!block.breakable) return const [];
 
-    state.breakProgress += dt / breakTime(block, state.heldItem);
-    if (state.breakProgress < 1) return const [];
+    participant.breakProgress += dt / breakTime(block, participant.heldItem);
+    if (participant.breakProgress < 1) return const [];
 
-    state.breakProgress = 0;
-    return breakBlockAt(state, hit);
+    participant.breakProgress = 0;
+    return breakBlockAt(state, participant, hit);
   }
 
   /// Removes the block, banks the drops and reports what happened.
-  List<GameEvent> breakBlockAt(GameState state, RayHit hit) {
+  List<GameEvent> breakBlockAt(
+    GameState state,
+    Participant participant,
+    RayHit hit,
+  ) {
     final block = hit.block;
     final pos = hit.pos;
     final events = <GameEvent>[];
@@ -74,18 +88,18 @@ class MiningSystem {
     if (block.hasLitVariant) state.furnaces.remove(pos);
     state.world.setBlock(pos.x, pos.y, pos.z, BlockType.air);
 
-    final drops = blockDrops(block, state.heldItem, random);
+    final drops = blockDrops(block, participant.heldItem, random);
     if (drops.isEmpty) {
       if (block.requiredTier > 0) events.add(ToolTooWeak(block));
     } else {
       for (final drop in drops) {
-        if (state.inventory.add(drop.type, drop.count) > 0) {
+        if (participant.inventory.add(drop.type, drop.count) > 0) {
           events.add(InventoryFull(drop.type));
         }
       }
     }
 
-    state.aim = const NoTarget();
+    participant.aim = const NoTarget();
     events.add(BlockBroken(pos, block, drops));
     return events;
   }

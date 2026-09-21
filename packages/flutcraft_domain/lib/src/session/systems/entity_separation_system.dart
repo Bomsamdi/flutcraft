@@ -32,7 +32,19 @@ class EntitySeparationSystem {
   void update(GameState state) {
     for (final mob in state.mobs) {
       if (mob.isDead) continue;
-      _separate(mob, state.player, share: playerShare);
+      for (final participant in state.participants.values) {
+        _separate(mob, participant.player, share: playerShare);
+      }
+    }
+
+    // Two players standing on one square is the same problem as two mobs.
+    final players = [
+      for (final participant in state.participants.values) participant.player,
+    ];
+    for (var i = 0; i < players.length; i++) {
+      for (var j = i + 1; j < players.length; j++) {
+        _separate(players[i], players[j], share: 0.5);
+      }
     }
 
     // Mobs push each other apart evenly: neither has a claim on the spot.
