@@ -140,6 +140,83 @@ void main() {
       expect(router.build(0.5).lookYaw, closeTo(1, 1e-9));
     });
 
+    test('the look stick turns right when pushed right', () {
+      final router = InputRouter()..setLookStick(x: 1, y: 0);
+
+      // Turning right means a falling yaw, the same as dragging right does.
+      expect(router.build(0.5).lookYaw, lessThan(0));
+    });
+
+    test('the look stick keeps turning while it is held', () {
+      final router = InputRouter()..setLookStick(x: 1, y: 0);
+
+      final first = router.build(0.5).lookYaw;
+      final second = router.build(0.5).lookYaw;
+
+      // A drag stops at the edge of the screen; a stick does not.
+      expect(second, closeTo(first, 1e-9));
+    });
+
+    test('a centred stick does not move the view', () {
+      final router = InputRouter()..setLookStick(x: 0, y: 0);
+
+      expect(router.build(0.5).lookYaw, 0);
+      expect(router.build(0.5).lookPitch, 0);
+    });
+
+    test('pushing up looks up', () {
+      final router = InputRouter()..setLookStick(x: 0, y: 1);
+
+      expect(router.build(0.5).lookPitch, greaterThan(0));
+    });
+
+    test('turning is a rate, so a longer frame turns further', () {
+      final slow = InputRouter()..setLookStick(x: 1, y: 0);
+      final fast = InputRouter()..setLookStick(x: 1, y: 0);
+
+      expect(
+        fast.build(0.5).lookYaw,
+        closeTo(slow.build(0.25).lookYaw * 2, 1e-9),
+      );
+    });
+
+    test('a small push turns much slower than a full one', () {
+      final gentle = InputRouter()..setLookStick(x: 0.5, y: 0);
+      final full = InputRouter()..setLookStick(x: 1, y: 0);
+
+      // Squared response: half the deflection is a quarter of the speed, so
+      // aiming at a mob does not need the same thumb precision as spinning.
+      expect(gentle.build(1).lookYaw, closeTo(full.build(1).lookYaw / 4, 1e-9));
+    });
+
+    test('the stick is clamped, however far the widget reports', () {
+      final overshoot = InputRouter()..setLookStick(x: 4, y: 0);
+      final full = InputRouter()..setLookStick(x: 1, y: 0);
+
+      expect(overshoot.build(0.5).lookYaw, full.build(0.5).lookYaw);
+    });
+
+    test('a drag and the stick add up rather than fight', () {
+      final router = InputRouter()
+        ..setLookStick(x: 1, y: 0)
+        ..look(-0.2, 0);
+
+      final stickOnly = (InputRouter()..setLookStick(x: 1, y: 0))
+          .build(0.5)
+          .lookYaw;
+
+      expect(router.build(0.5).lookYaw, closeTo(stickOnly - 0.2, 1e-9));
+    });
+
+    test('releasing everything centres the look stick too', () {
+      final router = InputRouter()
+        ..setLookStick(x: 1, y: 1)
+        ..releaseAll();
+
+      expect(router.build(0.5).lookYaw, 0);
+      expect(router.build(0.5).lookPitch, 0);
+    });
+
     test('releasing everything stops a key stuck down by lost focus', () {
       final router = InputRouter()
         ..press(GameAction.moveForward)

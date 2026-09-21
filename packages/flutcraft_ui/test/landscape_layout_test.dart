@@ -7,7 +7,7 @@ import 'package:flutcraft_domain/flutcraft_domain.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-/// iPhone 15 w poziomie (punkty logiczne).
+/// An iPhone 15 held sideways, in logical points.
 const Size kPhoneLandscape = Size(852, 393);
 
 void main() {

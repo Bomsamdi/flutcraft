@@ -18,6 +18,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   screen, renders in `flutter test` against a headless game loop.
 - One input pipeline: `GameAction`, a rebindable `Keymap` and an
   `InputRouter` that blends keyboard, pointer and touch into one frame.
+- A second on-screen stick for looking around, on the right of the screen
+  where a gamepad puts it. Dragging the screen still works.
 - Saving: the world is stored as a seed plus the blocks that differ from it,
   with a tolerant reader, autosave and a save when the app goes to the
   background.
