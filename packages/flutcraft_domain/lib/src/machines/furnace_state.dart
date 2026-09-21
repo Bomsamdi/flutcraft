@@ -1,6 +1,18 @@
 import '../items/item_type.dart';
 import '../crafting/recipes.dart';
 
+/// Which of the furnace's three slots a click refers to.
+enum FurnaceSlot {
+  /// What is being smelted.
+  input,
+
+  /// What keeps it burning.
+  fuel,
+
+  /// The finished product; items can only be taken out.
+  output,
+}
+
 /// Stan jednego pieca w świecie.
 ///
 /// Piece są indeksowane pozycją bloku, więc stan przeżywa przełączanie
@@ -27,6 +39,25 @@ class FurnaceState {
   static const double _epsilon = 1e-9;
 
   bool get isLit => burnLeft > 0;
+
+  /// Reads one of the three slots.
+  ItemStack? slot(FurnaceSlot which) => switch (which) {
+    FurnaceSlot.input => input,
+    FurnaceSlot.fuel => fuel,
+    FurnaceSlot.output => output,
+  };
+
+  /// Writes one of the three slots.
+  void setSlot(FurnaceSlot which, ItemStack? stack) {
+    switch (which) {
+      case FurnaceSlot.input:
+        input = stack;
+      case FurnaceSlot.fuel:
+        fuel = stack;
+      case FurnaceSlot.output:
+        output = stack;
+    }
+  }
 
   double get fuelFraction => burnTotal <= 0 ? 0 : burnLeft / burnTotal;
 
