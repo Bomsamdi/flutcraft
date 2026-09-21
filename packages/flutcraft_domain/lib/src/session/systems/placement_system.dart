@@ -11,7 +11,16 @@ import '../participant.dart';
 /// nothing living may be standing there. Each refusal has its own reason, so
 /// the player is told *why* rather than just seeing nothing happen.
 class PlacementSystem {
-  const PlacementSystem();
+  const PlacementSystem({this.consumesHeldItem = true});
+
+  /// Whether placing a block also takes it out of the player's hand.
+  ///
+  /// False on a client, which predicts the block so the mesh rebuilds in the
+  /// same frame, but leaves the count alone until the server says so. A block
+  /// that flickers for eighty milliseconds is a far better failure than an
+  /// item count that lies: one is obviously a guess, the other is not.
+
+  final bool consumesHeldItem;
 
   /// Seconds between placements while the button is held.
   static const double cooldown = 0.22;
@@ -61,7 +70,9 @@ class PlacementSystem {
     }
 
     state.world.setBlock(x, y, z, block);
-    participant.inventory.takeFrom(participant.selectedSlot, 1);
+    if (consumesHeldItem) {
+      participant.inventory.takeFrom(participant.selectedSlot, 1);
+    }
     return const [];
   }
 
