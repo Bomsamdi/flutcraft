@@ -31,7 +31,7 @@ LoopGameSession headlessGame() {
   }
   return LoopGameSession(
     GameLoop(
-      state: GameState(
+      state: GameState.solo(
         world: world,
         player: Player(world: world, spawn: Vector3(16.5, 1, 16.5)),
         inventory: Inventory(),
@@ -195,7 +195,7 @@ void main() {
   group('The look stick turns the player', () {
     testWidgets('pushing it right turns right', (tester) async {
       final (game, router) = await pumpTouchHud(tester);
-      final player = game.loop.state.player;
+      final player = game.loop.state.solo.player;
       final before = player.yaw;
 
       // Held, not dragged: a released stick springs back to centre, and the
@@ -213,7 +213,7 @@ void main() {
 
     testWidgets('pushing it up looks up', (tester) async {
       final (game, router) = await pumpTouchHud(tester);
-      final player = game.loop.state.player;
+      final player = game.loop.state.solo.player;
       final before = player.pitch;
 
       final stick = find.byType(VirtualJoystick).last;
@@ -228,7 +228,7 @@ void main() {
 
     testWidgets('holding it keeps turning, frame after frame', (tester) async {
       final (game, router) = await pumpTouchHud(tester);
-      final player = game.loop.state.player;
+      final player = game.loop.state.solo.player;
 
       final stick = find.byType(VirtualJoystick).last;
       final gesture = await tester.startGesture(tester.getCenter(stick));
@@ -250,7 +250,7 @@ void main() {
 
     testWidgets('letting go stops the turn', (tester) async {
       final (game, router) = await pumpTouchHud(tester);
-      final player = game.loop.state.player;
+      final player = game.loop.state.solo.player;
 
       final stick = find.byType(VirtualJoystick).last;
       await tester.dragFrom(tester.getCenter(stick), const Offset(60, 0));
@@ -264,7 +264,7 @@ void main() {
 
     testWidgets('the move stick walks and does not turn', (tester) async {
       final (game, router) = await pumpTouchHud(tester);
-      final player = game.loop.state.player;
+      final player = game.loop.state.solo.player;
       final yaw = player.yaw;
       final position = player.position.clone();
 

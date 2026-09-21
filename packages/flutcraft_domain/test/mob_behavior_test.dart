@@ -5,7 +5,8 @@ import 'package:vector_math/vector_math.dart';
 class RecordingContext implements MobTickContext {
   RecordingContext(this.player);
 
-  @override
+  /// Kept for the tests' convenience: the context no longer carries a
+  /// target, because with several players a mob picks its own.
   final Player player;
 
   final List<(Vector3, Vector3)> arrows = [];
@@ -52,15 +53,15 @@ void main() {
       final mob = mobOf(MobKind.zombie);
       final contact = behavior.contactDistance(mob, player);
 
-      expect(behavior.desiredSpeed(mob, 20, context), MobKind.zombie.speed);
+      expect(behavior.desiredSpeed(mob, 20, player), MobKind.zombie.speed);
       expect(
-        behavior.desiredSpeed(mob, contact + 0.5, context),
+        behavior.desiredSpeed(mob, contact + 0.5, player),
         MobKind.zombie.speed,
       );
       // Walking further would put it inside the player, where it cannot be
       // seen and is awkward to swing at.
-      expect(behavior.desiredSpeed(mob, contact, context), 0);
-      expect(behavior.desiredSpeed(mob, 0.1, context), 0);
+      expect(behavior.desiredSpeed(mob, contact, player), 0);
+      expect(behavior.desiredSpeed(mob, 0.1, player), 0);
     });
 
     test('it stops far enough out that it can still be hit', () {
@@ -74,22 +75,22 @@ void main() {
 
     test('it only hurts the player within arm\'s reach', () {
       final mob = mobOf(MobKind.zombie, x: 33.2);
-      behavior.act(mob, 1 / 60, 0.7, context);
+      behavior.act(mob, 1 / 60, 0.7, player, context);
       expect(player.health, lessThan(Player.maxHealth));
     });
 
     test('from a distance it does no harm', () {
       final mob = mobOf(MobKind.zombie, x: 40);
-      behavior.act(mob, 1 / 60, 7.5, context);
+      behavior.act(mob, 1 / 60, 7.5, player, context);
       expect(player.health, Player.maxHealth);
     });
 
     test('the cooldown blocks a second hit in the same moment', () {
       final mob = mobOf(MobKind.zombie, x: 33.2);
-      behavior.act(mob, 1 / 60, 0.7, context);
+      behavior.act(mob, 1 / 60, 0.7, player, context);
       final afterFirst = player.health;
       player.hurtCooldown = 0; // drop the player's invulnerability
-      behavior.act(mob, 1 / 60, 0.7, context);
+      behavior.act(mob, 1 / 60, 0.7, player, context);
       expect(player.health, afterFirst, reason: 'the mob cooldown holds');
     });
   });
@@ -101,23 +102,23 @@ void main() {
       'far off it closes in, up close it backs away, in the window it holds',
       () {
         final mob = mobOf(MobKind.skeleton);
-        expect(behavior.desiredSpeed(mob, 15, context), greaterThan(0));
-        expect(behavior.desiredSpeed(mob, 3, context), lessThan(0));
-        expect(behavior.desiredSpeed(mob, 8, context), 0);
+        expect(behavior.desiredSpeed(mob, 15, player), greaterThan(0));
+        expect(behavior.desiredSpeed(mob, 3, player), lessThan(0));
+        expect(behavior.desiredSpeed(mob, 8, player), 0);
       },
     );
 
     test('it shoots inside its range window', () {
       final mob = mobOf(MobKind.skeleton, z: 40);
-      behavior.act(mob, 1 / 60, 7.5, context);
+      behavior.act(mob, 1 / 60, 7.5, player, context);
       expect(context.arrows, hasLength(1));
     });
 
     test('it does not shoot from outside that window', () {
       final mob = mobOf(MobKind.skeleton, z: 40);
       behavior
-        ..act(mob, 1 / 60, 1.0, context)
-        ..act(mob, 1 / 60, 30.0, context);
+        ..act(mob, 1 / 60, 1.0, player, context)
+        ..act(mob, 1 / 60, 30.0, player, context);
       expect(context.arrows, isEmpty);
     });
 
@@ -128,13 +129,13 @@ void main() {
         }
       }
       final mob = mobOf(MobKind.skeleton, z: 40);
-      behavior.act(mob, 1 / 60, 7.5, context);
+      behavior.act(mob, 1 / 60, 7.5, player, context);
       expect(context.arrows, isEmpty);
     });
 
     test('it aims a little high, because the arrow drops', () {
       final mob = mobOf(MobKind.skeleton, z: 40);
-      behavior.act(mob, 1 / 60, 7.5, context);
+      behavior.act(mob, 1 / 60, 7.5, player, context);
       final (_, direction) = context.arrows.single;
       expect(direction.y, greaterThan(0));
     });
@@ -150,17 +151,17 @@ void main() {
 
     test('the fuse only lights up close', () {
       final mob = mobOf(MobKind.creeper);
-      behavior.act(mob, 1 / 60, 5, context);
+      behavior.act(mob, 1 / 60, 5, player, context);
       expect(mob.isPrimed, isFalse);
 
-      behavior.act(mob, 1 / 60, 2, context);
+      behavior.act(mob, 1 / 60, 2, player, context);
       expect(mob.isPrimed, isTrue);
     });
 
     test('po wypaleniu lontu wybucha raz i ginie', () {
       final mob = mobOf(MobKind.creeper);
       for (var i = 0; i < 200; i++) {
-        behavior.act(mob, 1 / 60, 2, context);
+        behavior.act(mob, 1 / 60, 2, player, context);
       }
       expect(context.explosions, hasLength(1));
       expect(mob.isDead, isTrue);
@@ -172,10 +173,10 @@ void main() {
 
     test('ucieczka gasi lont', () {
       final mob = mobOf(MobKind.creeper);
-      behavior.act(mob, 1 / 60, 2, context);
+      behavior.act(mob, 1 / 60, 2, player, context);
       expect(mob.isPrimed, isTrue);
 
-      behavior.act(mob, 1 / 60, 9, context);
+      behavior.act(mob, 1 / 60, 9, player, context);
       expect(mob.isPrimed, isFalse);
       expect(context.explosions, isEmpty);
     });

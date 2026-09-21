@@ -7,7 +7,8 @@ import 'package:vector_math/vector_math.dart';
 class SilentContext implements MobTickContext {
   SilentContext(this.player);
 
-  @override
+  /// Kept for the tests' convenience: the context no longer carries a
+  /// target, because with several players a mob picks its own.
   final Player player;
 
   @override
@@ -25,7 +26,7 @@ GameState flatState({int size = 96}) {
       world.setRaw(x, 1, z, BlockType.stone);
     }
   }
-  return GameState(
+  return GameState.solo(
     world: world,
     player: Player(world: world, spawn: Vector3(48.5, 2, 48.5)),
     inventory: Inventory(),
@@ -40,7 +41,7 @@ void main() {
 
     setUp(() {
       state = flatState();
-      context = SilentContext(state.player);
+      context = SilentContext(state.solo.player);
       system = MobAiSystem(
         spawner: MobSpawner(world: state.world, seed: 3),
         random: Random(3),
@@ -65,7 +66,7 @@ void main() {
 
       expect(state.mobs, isNot(contains(mob)));
       expect(events.whereType<MobKilled>(), hasLength(1));
-      expect(state.inventory.countOf(ItemType.bone), greaterThan(0));
+      expect(state.solo.inventory.countOf(ItemType.bone), greaterThan(0));
     });
 
     test('the event carries the species and the loot', () {
@@ -149,7 +150,7 @@ void main() {
         system.update(state, 1 / 60);
       }
       expect(state.arrows, isEmpty);
-      expect(state.player.health, lessThan(Player.maxHealth));
+      expect(state.solo.player.health, lessThan(Player.maxHealth));
     });
 
     test('clear removes every arrow', () {

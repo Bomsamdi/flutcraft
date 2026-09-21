@@ -4,6 +4,7 @@ import '../actors/player.dart';
 import '../inventory/inventory.dart';
 import '../items/item_type.dart';
 import '../session/game_state.dart';
+import '../session/participant.dart';
 import '../world/terrain_generator.dart';
 import '../world/voxel_world.dart';
 import 'save_data.dart';
@@ -18,20 +19,27 @@ class GamePersistence {
   const GamePersistence();
 
   /// Reads [state] into a save. Pure: nothing in the running game changes.
-  SaveData capture(GameState state) => SaveData(
+  ///
+  /// The format still holds a single player. A world with several of them
+  /// saves the host's view of it, which is a decision to revisit when the
+  /// series gets to servers — not a limit of what is stored here.
+  SaveData capture(GameState state) => captureOf(state, state.solo);
+
+  /// Reads the world plus one player's belongings.
+  SaveData captureOf(GameState state, Participant participant) => SaveData(
     seed: state.world.seed,
     edits: Map.of(state.world.edits),
     player: SavedPlayer(
-      x: state.player.position.x,
-      y: state.player.position.y,
-      z: state.player.position.z,
-      yaw: state.player.yaw,
-      pitch: state.player.pitch,
-      health: state.player.health,
-      flying: state.player.flying,
+      x: participant.player.position.x,
+      y: participant.player.position.y,
+      z: participant.player.position.z,
+      yaw: participant.player.yaw,
+      pitch: participant.player.pitch,
+      health: participant.player.health,
+      flying: participant.player.flying,
     ),
-    inventory: _inventoryWithLooseItems(state),
-    selectedSlot: state.selectedSlot,
+    inventory: _inventoryWithLooseItems(participant),
+    selectedSlot: participant.selectedSlot,
     furnaces: [
       for (final entry in state.furnaces.entries)
         SavedFurnace(
@@ -75,7 +83,7 @@ class GamePersistence {
       inventory[i] = data.inventory[i];
     }
 
-    final state = GameState(
+    final state = GameState.solo(
       world: world,
       player: player,
       inventory: inventory,
@@ -101,22 +109,23 @@ class GamePersistence {
 
   /// The inventory as it should be saved: a copy, with whatever sits in the
   /// crafting grids or on the cursor merged back in.
-  List<ItemStack?> _inventoryWithLooseItems(GameState state) {
+  List<ItemStack?> _inventoryWithLooseItems(Participant participant) {
+    final inventory = participant.inventory;
     final copy = Inventory(
-      hotbarSize: state.inventory.hotbarSize,
-      backpackSize: state.inventory.backpackSize,
+      hotbarSize: inventory.hotbarSize,
+      backpackSize: inventory.backpackSize,
     );
-    for (var i = 0; i < state.inventory.length; i++) {
-      copy[i] = state.inventory[i];
+    for (var i = 0; i < inventory.length; i++) {
+      copy[i] = inventory[i];
     }
 
-    for (final grid in [state.smallGrid, state.bigGrid]) {
+    for (final grid in [participant.smallGrid, participant.bigGrid]) {
       for (var i = 0; i < grid.length; i++) {
         final stack = grid[i];
         if (stack != null) copy.add(stack.type, stack.count);
       }
     }
-    final held = state.cursor;
+    final held = participant.cursor;
     if (held != null) copy.add(held.type, held.count);
 
     return List.of(copy.slots);

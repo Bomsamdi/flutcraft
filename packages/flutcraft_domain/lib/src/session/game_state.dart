@@ -1,61 +1,85 @@
+import '../actors/player_id.dart';
+import 'package:vector_math/vector_math.dart';
+
 import '../actors/mob.dart';
 import '../actors/player.dart';
-import '../aiming/aim_result.dart';
-import '../blocks/block_pos.dart';
-import '../crafting/recipes.dart';
 import '../inventory/inventory.dart';
-import '../items/item_type.dart';
 import '../machines/furnace_registry.dart';
 import '../world/voxel_world.dart';
-import 'ui_route.dart';
+import 'participant.dart';
 
 /// Everything the simulation knows.
 ///
 /// One aggregate passed to every system, so that systems stay free functions
 /// over state rather than methods on an object that owns half the game. It
 /// holds no rendering, no textures and no widgets — those read from it.
+///
+/// The world, the mobs and the furnaces are shared by everyone in it; what
+/// belongs to one player lives in their [Participant].
 class GameState {
-  GameState({
-    required this.world,
-    required this.player,
-    required this.inventory,
+  GameState({required this.world, required Iterable<Participant> players})
+    : participants = {for (final player in players) player.id: player} {
+    assert(participants.isNotEmpty, 'a game needs at least one player');
+  }
+
+  /// A game with a single player — what the app runs, and what most tests
+  /// want. The id is fixed because there is nobody to tell it apart from.
+  factory GameState.solo({
+    required VoxelWorld world,
+    required Player player,
+    required Inventory inventory,
     int hotbarSlot = 0,
-  }) : selectedSlot = hotbarSlot;
+  }) => GameState(
+    world: world,
+    players: [
+      Participant(
+        id: soloId,
+        player: player,
+        inventory: inventory,
+        selectedSlot: hotbarSlot,
+      ),
+    ],
+  );
+
+  /// The id given to the only player of a single-player game.
+  static const PlayerId soloId = PlayerId('solo');
 
   final VoxelWorld world;
-  final Player player;
-  final Inventory inventory;
+
+  /// Everyone in this world, by id.
+  final Map<PlayerId, Participant> participants;
 
   final List<Mob> mobs = [];
   final List<Arrow> arrows = [];
   final FurnaceRegistry furnaces = FurnaceRegistry();
 
-  /// 2x2 grid in the inventory, 3x3 at a crafting table.
-  final CraftingGrid smallGrid = CraftingGrid(2);
-  final CraftingGrid bigGrid = CraftingGrid(3);
+  /// The only player, for a game that has only one.
+  ///
+  /// Throws where several are present, which is the point: code written for
+  /// one player should not quietly pick a winner.
+  Participant get solo => participants.values.single;
 
-  /// The stack the player is dragging between slots.
-  ItemStack? cursor;
+  /// Adds a player to a world that is already running.
+  void join(Participant player) => participants[player.id] = player;
 
-  /// Which hotbar slot is active.
-  int selectedSlot;
+  /// Removes a player. Returns them, so a caller can save what they carried.
+  Participant? leave(PlayerId id) => participants.remove(id);
 
-  /// Where the player is in the interface.
-  UiRoute route = UiRoute.none;
+  /// The living player nearest to [point], or `null` when everyone is dead.
+  ///
+  /// What a mob chases. With one player it is that player; with several it is
+  /// whoever wandered too close.
+  Participant? nearestLivingTo(Vector3 point) {
+    Participant? best;
+    var bestDistance = double.infinity;
 
-  /// The furnace whose screen is open, if any.
-  BlockPos? openFurnace;
-
-  /// What the player is looking at right now.
-  AimResult aim = const NoTarget();
-
-  /// Progress on breaking the aimed block, 0..1.
-  double breakProgress = 0;
-
-  /// The grid the player is currently working on.
-  CraftingGrid get activeGrid =>
-      route == UiRoute.craftingTable ? bigGrid : smallGrid;
-
-  /// The item in the player's hand, or `null` for a bare fist.
-  ItemType? get heldItem => inventory[selectedSlot]?.type;
+    for (final participant in participants.values) {
+      if (participant.player.isDead) continue;
+      final distance = participant.player.position.distanceToSquared(point);
+      if (distance >= bestDistance) continue;
+      best = participant;
+      bestDistance = distance;
+    }
+    return best;
+  }
 }

@@ -24,7 +24,7 @@ class ExplosionSystem {
     int maxDamage,
   ) {
     _destroyTerrain(state, at, radius);
-    _hurtPlayer(state, at, radius, maxDamage);
+    _hurtPlayers(state, at, radius, maxDamage);
     _hurtMobs(state, at, radius, maxDamage);
     return const [CreeperExploded()];
   }
@@ -51,13 +51,20 @@ class ExplosionSystem {
     }
   }
 
-  void _hurtPlayer(GameState state, Vector3 at, double radius, int maxDamage) {
+  /// A blast does not pick a victim: everyone standing in it is hurt.
+  void _hurtPlayers(GameState state, Vector3 at, double radius, int maxDamage) {
     final blastRadius = radius + 1;
-    final distance = state.player.center.distanceTo(at);
-    if (distance >= blastRadius) return;
 
-    final falloff = 1 - (distance / blastRadius).clamp(0.0, 1.0);
-    state.player.damage(max(1, (maxDamage * falloff).round()), source: at);
+    for (final participant in state.participants.values) {
+      final distance = participant.player.center.distanceTo(at);
+      if (distance >= blastRadius) continue;
+
+      final falloff = 1 - (distance / blastRadius).clamp(0.0, 1.0);
+      participant.player.damage(
+        max(1, (maxDamage * falloff).round()),
+        source: at,
+      );
+    }
   }
 
   void _hurtMobs(GameState state, Vector3 at, double radius, int maxDamage) {

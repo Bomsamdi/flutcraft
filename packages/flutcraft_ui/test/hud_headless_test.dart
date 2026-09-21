@@ -19,7 +19,7 @@ LoopGameSession headlessGame({int size = 32}) {
       world.setRaw(x, 1, z, BlockType.stone);
     }
   }
-  final state = GameState(
+  final state = GameState.solo(
     world: world,
     player: Player(world: world, spawn: Vector3(16.5, 2, 16.5)),
     inventory: Inventory(),
@@ -86,7 +86,7 @@ void main() {
 
     testWidgets('the hotbar mirrors the inventory', (tester) async {
       final game = headlessGame();
-      game.loop.state.inventory
+      game.loop.state.solo.inventory
         ..add(ItemType.planks, 8)
         ..add(ItemType.coal, 3);
       await pumpHud(tester, session: game);
@@ -97,18 +97,18 @@ void main() {
 
     testWidgets('tapping a slot reaches the real simulation', (tester) async {
       final game = headlessGame();
-      game.loop.state.inventory
+      game.loop.state.solo.inventory
         ..add(ItemType.planks, 5)
         ..add(ItemType.coal, 5);
       await pumpHud(tester, session: game);
 
-      expect(game.loop.state.selectedSlot, 0);
+      expect(game.loop.state.solo.selectedSlot, 0);
 
       await tester.tap(find.text('2'));
       await tester.pump();
 
-      expect(game.loop.state.selectedSlot, 1);
-      expect(game.loop.state.heldItem, ItemType.coal);
+      expect(game.loop.state.solo.selectedSlot, 1);
+      expect(game.loop.state.solo.heldItem, ItemType.coal);
     });
 
     testWidgets('the backpack icon opens the inventory screen', (tester) async {
@@ -117,7 +117,7 @@ void main() {
       await tester.tap(find.byIcon(Icons.backpack));
       await tester.pump();
 
-      expect(game.loop.state.route, UiRoute.inventory);
+      expect(game.loop.state.solo.route, UiRoute.inventory);
       expect(find.byType(CraftingScreen), findsOneWidget);
     });
 
@@ -125,7 +125,7 @@ void main() {
       final game = await pumpHud(tester);
       expect(find.byIcon(Icons.favorite), findsNWidgets(10));
 
-      game.loop.state.player.damage(6);
+      game.loop.state.solo.player.damage(6);
       game.dispatch(const SelectHotbarSlot(0));
       await tester.pump();
 
@@ -142,7 +142,7 @@ void main() {
           spawn: Vector3(16.5, 2, 14.0),
         ),
       );
-      state.player.yaw = 0; // looking down -Z
+      state.solo.player.yaw = 0; // looking down -Z
       game.tick(1 / 60, InputFrame.idle);
       game.dispatch(const SelectHotbarSlot(0));
 
@@ -162,14 +162,14 @@ void main() {
       await tester.pump();
 
       expect(tester.takeException(), isNull);
-      expect(game.loop.state.player.position.y, closeTo(2, 0.2));
+      expect(game.loop.state.solo.player.position.y, closeTo(2, 0.2));
     });
   });
 
   group('Screens, also without a GPU', () {
     testWidgets('crafting in the inventory reaches the grid', (tester) async {
       final game = headlessGame();
-      game.loop.state.inventory.add(ItemType.log, 3);
+      game.loop.state.solo.inventory.add(ItemType.log, 3);
       game.dispatch(const OpenRoute(UiRoute.inventory));
       await pumpHud(tester, session: game);
 
@@ -179,7 +179,7 @@ void main() {
         ..dispatch(const ClickSlot(GridSlotRef(0)));
       await tester.pump();
 
-      expect(game.loop.state.smallGrid[0]?.type, ItemType.log);
+      expect(game.loop.state.solo.smallGrid[0]?.type, ItemType.log);
       expect(find.byType(CraftingScreen), findsOneWidget);
     });
 
@@ -191,7 +191,7 @@ void main() {
         ItemType.rawIron,
         12,
       );
-      state.openFurnace = const BlockPos(16, 2, 16);
+      state.solo.openFurnace = const BlockPos(16, 2, 16);
       game.dispatch(const OpenRoute(UiRoute.furnace));
 
       await pumpHud(tester, session: game);
@@ -202,7 +202,7 @@ void main() {
 
     testWidgets('the death screen respawns the player', (tester) async {
       final game = headlessGame();
-      game.loop.state.player.damage(Player.maxHealth);
+      game.loop.state.solo.player.damage(Player.maxHealth);
       // Snapshots are published at 20 Hz, so one frame is not enough for the
       // interface to have heard about it.
       for (var i = 0; i < 4; i++) {
@@ -215,8 +215,8 @@ void main() {
       await tester.tap(find.byType(FilledButton));
       await tester.pump();
 
-      expect(game.loop.state.route, UiRoute.none);
-      expect(game.loop.state.player.isDead, isFalse);
+      expect(game.loop.state.solo.route, UiRoute.none);
+      expect(game.loop.state.solo.player.isDead, isFalse);
     });
 
     testWidgets('the recipe book opens from the top bar', (tester) async {
@@ -225,7 +225,7 @@ void main() {
       await tester.tap(find.byIcon(Icons.menu_book));
       await tester.pump();
 
-      expect(game.loop.state.route, UiRoute.recipes);
+      expect(game.loop.state.solo.route, UiRoute.recipes);
       expect(find.byType(RecipeScreen), findsOneWidget);
     });
   });

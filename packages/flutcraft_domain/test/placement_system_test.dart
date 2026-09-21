@@ -12,7 +12,7 @@ GameState flatState({ItemType? held}) {
   }
   final inventory = Inventory();
   if (held != null) inventory.add(held, 10);
-  return GameState(
+  return GameState.solo(
     world: world,
     player: Player(world: world, spawn: Vector3(8.5, 2, 8.5)),
     inventory: inventory,
@@ -38,20 +38,20 @@ void main() {
 
   test('the block lands on the side of the face that was hit', () {
     final state = flatState(held: ItemType.planks);
-    state.aim = BlockTarget(topOf(state, 5, 1, 5));
+    state.solo.aim = BlockTarget(topOf(state, 5, 1, 5));
 
-    final events = system.placeNow(state);
+    final events = system.placeNow(state, state.solo);
 
     expect(events, isEmpty);
     expect(state.world.blockAt(5, 2, 5), BlockType.planks);
-    expect(state.inventory.countOf(ItemType.planks), 9);
+    expect(state.solo.inventory.countOf(ItemType.planks), 9);
   });
 
   test('a tool in hand is not a block', () {
     final state = flatState(held: ItemType.ironPickaxe);
-    state.aim = BlockTarget(topOf(state, 5, 1, 5));
+    state.solo.aim = BlockTarget(topOf(state, 5, 1, 5));
 
-    final events = system.placeNow(state);
+    final events = system.placeNow(state, state.solo);
 
     expect(
       events.single,
@@ -66,16 +66,16 @@ void main() {
 
   test('an empty slot refuses too', () {
     final state = flatState();
-    state.aim = BlockTarget(topOf(state, 5, 1, 5));
-    expect(system.placeNow(state).single, isA<PlacementRejected>());
+    state.solo.aim = BlockTarget(topOf(state, 5, 1, 5));
+    expect(system.placeNow(state, state.solo).single, isA<PlacementRejected>());
   });
 
   test('a block cannot be placed inside yourself', () {
     final state = flatState(held: ItemType.planks);
     // Gracz stoi na (8, 2, 8); celujemy w blok pod nim.
-    state.aim = BlockTarget(topOf(state, 8, 1, 8));
+    state.solo.aim = BlockTarget(topOf(state, 8, 1, 8));
 
-    final events = system.placeNow(state);
+    final events = system.placeNow(state, state.solo);
 
     expect(
       events.single,
@@ -96,10 +96,10 @@ void main() {
         spawn: Vector3(5.5, 2, 5.5),
       ),
     );
-    state.aim = BlockTarget(topOf(state, 5, 1, 5));
+    state.solo.aim = BlockTarget(topOf(state, 5, 1, 5));
 
     expect(
-      system.placeNow(state).single,
+      system.placeNow(state, state.solo).single,
       isA<PlacementRejected>().having(
         (e) => e.reason,
         'reason',
@@ -111,15 +111,15 @@ void main() {
   test('an occupied cell simply does nothing', () {
     final state = flatState(held: ItemType.planks);
     state.world.setBlock(5, 2, 5, BlockType.dirt);
-    state.aim = BlockTarget(topOf(state, 5, 1, 5));
+    state.solo.aim = BlockTarget(topOf(state, 5, 1, 5));
 
-    expect(system.placeNow(state), isEmpty);
+    expect(system.placeNow(state, state.solo), isEmpty);
     expect(state.world.blockAt(5, 2, 5), BlockType.dirt);
   });
 
   test('nothing is placed outside the world', () {
     final state = flatState(held: ItemType.planks);
-    state.aim = BlockTarget(
+    state.solo.aim = BlockTarget(
       RayHit(
         x: 5,
         y: 15,
@@ -131,7 +131,7 @@ void main() {
         distance: 2,
       ),
     );
-    expect(system.placeNow(state), isEmpty);
+    expect(system.placeNow(state, state.solo), isEmpty);
   });
 
   test('aiming at a mob places no blocks', () {
@@ -141,31 +141,31 @@ void main() {
       world: state.world,
       spawn: Vector3(5.5, 2, 5.5),
     );
-    state.aim = MobTarget(mob, 3);
-    expect(system.placeNow(state), isEmpty);
+    state.solo.aim = MobTarget(mob, 3);
+    expect(system.placeNow(state, state.solo), isEmpty);
   });
 
   test('a held button places at intervals, not every frame', () {
     final state = flatState(held: ItemType.planks);
-    state.aim = BlockTarget(topOf(state, 5, 1, 5));
+    state.solo.aim = BlockTarget(topOf(state, 5, 1, 5));
 
-    system.update(state, 1 / 60, active: true);
-    expect(state.inventory.countOf(ItemType.planks), 9);
+    system.update(state, state.solo, 1 / 60, active: true);
+    expect(state.solo.inventory.countOf(ItemType.planks), 9);
 
     // Kolejna klatka: cooldown jeszcze trwa.
-    state.aim = BlockTarget(topOf(state, 6, 1, 6));
-    system.update(state, 1 / 60, active: true);
-    expect(state.inventory.countOf(ItemType.planks), 9);
+    state.solo.aim = BlockTarget(topOf(state, 6, 1, 6));
+    system.update(state, state.solo, 1 / 60, active: true);
+    expect(state.solo.inventory.countOf(ItemType.planks), 9);
 
     // Once the cooldown passes it is allowed again.
-    system.update(state, PlacementSystem.cooldown, active: true);
-    expect(state.inventory.countOf(ItemType.planks), 8);
+    system.update(state, state.solo, PlacementSystem.cooldown, active: true);
+    expect(state.solo.inventory.countOf(ItemType.planks), 8);
   });
 
   test('a released button places nothing', () {
     final state = flatState(held: ItemType.planks);
-    state.aim = BlockTarget(topOf(state, 5, 1, 5));
-    system.update(state, 1, active: false);
+    state.solo.aim = BlockTarget(topOf(state, 5, 1, 5));
+    system.update(state, state.solo, 1, active: false);
     expect(state.world.blockAt(5, 2, 5), BlockType.air);
   });
 }
