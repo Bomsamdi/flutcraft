@@ -47,6 +47,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Mobs no longer walk inside the player. Bodies push each other apart, and a
   melee mob stops where the two boxes touch instead of pressing on — you can
   see what is hitting you, and swing at it.
+- A socket adapter no longer throws when a frame arrives while the connection
+  is closing: the listener still fires after the stream behind it is closed.
 - Joining a server no longer arrives empty-handed. The client waited for the
   welcome on one subscription and listened for the rest on another, and a
   broadcast stream keeps nothing for whoever is not listening yet — the
@@ -54,6 +56,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- Mobs chase on a leash. Aggro range is measured to the player and so never
+  runs out while the player walks away, which left a tail of every mob that
+  ever noticed you. A mob now remembers where its chase began, gives up
+  thirty-two blocks from there and walks back; hit it on the way and it turns
+  round. Mobs left far from everybody are retired, so the population cap does
+  not fill up with stranded ones.
 - The simulation is pure Dart and runs without Flutter, Flame or a GPU.
 - `ItemStack` is immutable, which is what makes a snapshot a snapshot and
   removed the hand-maintained revision counter.

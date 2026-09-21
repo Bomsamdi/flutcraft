@@ -158,7 +158,7 @@ void main() {
       expect(mob.isPrimed, isTrue);
     });
 
-    test('po wypaleniu lontu wybucha raz i ginie', () {
+    test('the fuse burns down once, and that is the end of it', () {
       final mob = mobOf(MobKind.creeper);
       for (var i = 0; i < 200; i++) {
         behavior.act(mob, 1 / 60, 2, player, context);

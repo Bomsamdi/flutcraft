@@ -20,7 +20,8 @@ final _polishWords = RegExp(
   r'\b(nie|jest|przez|oraz|tylko|wiec|czyli|dla|sie|jako|ale|zawsze|' // polish-ok
   r'kiedy|prototyp|silnik|gra|gry|bloku|bloki|swiat|potwor|potwory|' // polish-ok
   r'ruch|krok|cios|ciosy|chwili|blokuje|trzyma|drugi|tej|samej|' // polish-ok
-  r'prosty|standardowy|pozycja|przeszkoda|podskok|fizyki|gracza)\b', // polish-ok
+  r'prosty|standardowy|pozycja|przeszkoda|podskok|fizyki|gracza|' // polish-ok
+  r'oznacza|faza|animacji|strzela|dystansu|zapala|wybucha)\b', // polish-ok
   caseSensitive: false,
 );
 
