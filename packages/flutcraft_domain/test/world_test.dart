@@ -18,6 +18,28 @@ void main() {
       expect(world.dirtyChunks, {0, 1});
     });
 
+    test('changed blocks are collected until they are drained', () {
+      final world = VoxelWorld(sizeX: 32, sizeY: 16, sizeZ: 32);
+      world
+        ..setBlock(4, 2, 4, BlockType.planks)
+        ..setBlock(5, 2, 4, BlockType.planks);
+
+      final first = world.drainChanges();
+
+      expect(first, hasLength(2));
+      expect(first, contains(const BlockPos(4, 2, 4)));
+      // Draining starts a new batch, so a tick that changed nothing sends
+      // nothing.
+      expect(world.drainChanges(), isEmpty);
+    });
+
+    test('generating terrain is not a batch of changes', () {
+      final world = VoxelWorld(sizeX: 32, sizeY: 16, sizeZ: 32);
+      world.setRaw(4, 2, 4, BlockType.stone);
+
+      expect(world.drainChanges(), isEmpty);
+    });
+
     test('outside the bounds you read air and cannot write', () {
       final world = VoxelWorld(sizeX: 16, sizeY: 16, sizeZ: 16);
       expect(world.blockAt(-1, 0, 0), BlockType.air);

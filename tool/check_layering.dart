@@ -12,6 +12,14 @@ const forbiddenDependencies = <String, List<String>>{
   'flutcraft_ui': ['flame', 'flame_3d', 'flutcraft_engine'],
   'flutcraft_engine': ['flutcraft_ui', 'flutcraft_l10n'],
   'flutcraft_l10n': ['flame', 'flame_3d', 'flutcraft_ui'],
+  'flutcraft_server': [
+    'flutter',
+    'flame',
+    'flame_3d',
+    'flutcraft_ui',
+    'flutcraft_engine',
+    'flutcraft_l10n',
+  ],
   'flutcraft_protocol': [
     'flutter',
     'flame',
@@ -34,6 +42,11 @@ const forbiddenImports = <String, Map<String, String>>{
     'package:flame': 'atlas generation must not touch the GPU',
   },
   'flutcraft_ui': {'package:flame': 'every screen must render without a GPU'},
+  'flutcraft_server': {
+    'package:flutter/': 'a server has no screen',
+    'package:flame': 'a server draws nothing',
+    'package:flutcraft_l10n': 'a server never formats a sentence',
+  },
   'flutcraft_protocol': {
     'package:flutter/': 'the protocol has to compile into a server binary',
     'package:flame': 'a message is data, not something that draws',

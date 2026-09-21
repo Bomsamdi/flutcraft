@@ -58,6 +58,7 @@ by good intentions.
 | `flutcraft_ui` | Every widget and every Riverpod provider. |
 | `flutcraft_engine` | Meshing, chunk streaming, mob models and the Flame game that drives the loop. |
 | `flutcraft_protocol` | What a client and a server say to each other, and how it is spelled. No sockets: a message decodes in a test that opens nothing. |
+| `flutcraft_server` | An authoritative world over WebSockets, in plain `dart:io`. Compiles to one self-contained binary. |
 | `app/flutcraft` | The composition root, the platform folders and the save file adapter. |
 
 **Three rules do most of the work:**
@@ -165,6 +166,19 @@ melos run test --no-select            # every package
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for how the repository is organised and
 what a change is expected to come with.
+
+## Running a server
+
+```bash
+dart run packages/flutcraft_server/bin/server.dart --port 8787 --seed 1337
+# or, as it ships:
+dart compile exe packages/flutcraft_server/bin/server.dart -o flutcraft-server
+./flutcraft-server
+```
+
+One world, many players, no dependencies beyond `dart:io`. The client is not
+wired up to it yet — that is the next few chapters — but two clients can
+already join, move around and see each other.
 
 ## Known limits
 

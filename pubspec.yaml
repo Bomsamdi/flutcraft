@@ -14,6 +14,7 @@ workspace:
   - packages/flutcraft_engine
   - packages/flutcraft_l10n
   - packages/flutcraft_protocol
+  - packages/flutcraft_server
   - packages/flutcraft_ui
 
 # Melos 7 requires this to be declared here, in the workspace root.

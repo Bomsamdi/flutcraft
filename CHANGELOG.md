@@ -26,6 +26,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   version 1 files still open, and become a world with one player in them.
 - `flutcraft_protocol`: sealed client and server messages with a JSON codec,
   ready for a server to speak. The world travels as a seed plus its edits.
+- `flutcraft_server`: an authoritative world over WebSockets that compiles to
+  a 6 MB self-contained binary. Two players can join one world and see each
+  other move.
 - `tool/check_layering.dart`, `tool/check_english.dart` and
   `tool/check_platform_config.dart`, all wired into CI.
 

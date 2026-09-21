@@ -49,6 +49,15 @@ jobs:
         working-directory: packages/flutcraft_atlas
       - run: dart test
         working-directory: packages/flutcraft_protocol
+      - run: dart test
+        working-directory: packages/flutcraft_server
+      # The artefact that ships is the compiled one, and AOT is not a faster
+      # JIT: asserts are gone from it. So the same test runs against it.
+      - name: The server as it ships
+        working-directory: packages/flutcraft_server
+        run: |
+          dart compile exe bin/server.dart -o /tmp/flutcraft_server
+          FLUTCRAFT_SERVER=/tmp/flutcraft_server dart test test/compiled_server_test.dart
 
   test-flutter:
     name: Test (Flutter)
@@ -99,6 +108,12 @@ jobs:
             --out=coverage/lcov.info --report-on=lib
       - name: Atlas
         working-directory: packages/flutcraft_atlas
+        run: |
+          dart test --coverage=coverage
+          dart run coverage:format_coverage --lcov --in=coverage \
+            --out=coverage/lcov.info --report-on=lib
+      - name: Server
+        working-directory: packages/flutcraft_server
         run: |
           dart test --coverage=coverage
           dart run coverage:format_coverage --lcov --in=coverage \
