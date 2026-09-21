@@ -31,7 +31,7 @@ class ItemSlot extends StatelessWidget {
   /// Numer klawisza albo podpis slotu (np. "paliwo").
   final String? label;
 
-  /// Kolor obwódki dla slotów specjalnych (wynik craftingu, wytop).
+  /// Border colour for the special slots: craft result, smelt output.
   final Color? highlight;
 
   @override
@@ -95,7 +95,7 @@ class ItemSlot extends StatelessWidget {
   }
 }
 
-/// Siatka slotów o zadanej liczbie kolumn.
+/// A grid of slots with a given number of columns.
 class SlotGrid extends StatelessWidget {
   const SlotGrid({
     required this.image,
@@ -147,7 +147,7 @@ class SlotGrid extends StatelessWidget {
   }
 }
 
-/// Pasek pokazujący, co gracz trzyma "na kursorze" podczas przekładania.
+/// Shows what the player is carrying on the cursor while rearranging.
 class CursorBar extends StatelessWidget {
   const CursorBar({required this.image, required this.stack, super.key});
 

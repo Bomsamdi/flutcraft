@@ -6,70 +6,67 @@ Recipe recipeFor(ItemType output) =>
 
 void main() {
   group('Koszt przepisu', () {
-    test('kilof to trzy materiały i dwa patyki', () {
+    test('a pickaxe is three of the material and two sticks', () {
       expect(recipeFor(ItemType.stonePickaxe).cost, {
         ItemType.cobblestone: 3,
         ItemType.stick: 2,
       });
     });
 
-    test('piec to osiem bruku, bo środek zostaje pusty', () {
+    test('a furnace is eight cobble, since the middle stays empty', () {
       expect(recipeFor(ItemType.furnace).cost, {ItemType.cobblestone: 8});
     });
 
-    test('przepis bezkształtowy też liczy składniki', () {
+    test('a shapeless recipe counts its ingredients too', () {
       expect(recipeFor(ItemType.planks).cost, {ItemType.log: 1});
     });
 
-    test('patyki potrzebują dwóch desek', () {
+    test('sticks need two planks', () {
       expect(recipeFor(ItemType.stick).cost, {ItemType.planks: 2});
     });
   });
 
   group('needsTable', () {
-    test('stół i patyki mieszczą się w ekwipunku', () {
+    test('table and sticks fit in the inventory grid', () {
       expect(recipeFor(ItemType.craftingTable).needsTable, isFalse);
       expect(recipeFor(ItemType.stick).needsTable, isFalse);
       expect(recipeFor(ItemType.planks).needsTable, isFalse);
     });
 
-    test('narzędzia i piec wymagają stołu', () {
+    test('tools and the furnace need a table', () {
       expect(recipeFor(ItemType.woodenPickaxe).needsTable, isTrue);
       expect(recipeFor(ItemType.furnace).needsTable, isTrue);
       expect(recipeFor(ItemType.ironSword).needsTable, isTrue);
     });
 
-    test(
-      'miecz drewniany mieści się w słupku 3 pól, więc potrzebuje stołu',
-      () {
-        // Wzór ma trzy wiersze, a siatka w ekwipunku ma tylko dwa.
-        expect(recipeFor(ItemType.woodenSword).height, 3);
-        expect(recipeFor(ItemType.woodenSword).needsTable, isTrue);
-      },
-    );
+    test('a wooden sword is three cells tall, so it needs a table', () {
+      // The pattern has three rows; the inventory grid has two.
+      expect(recipeFor(ItemType.woodenSword).height, 3);
+      expect(recipeFor(ItemType.woodenSword).needsTable, isTrue);
+    });
   });
 
   group('canCraft', () {
-    test('widzi, że składników brakuje', () {
+    test('it sees when ingredients are missing', () {
       final inventory = Inventory()..add(ItemType.cobblestone, 2);
       expect(canCraft(recipeFor(ItemType.stonePickaxe), inventory), isFalse);
     });
 
-    test('dokładnie tyle ile trzeba wystarczy', () {
+    test('exactly enough is enough', () {
       final inventory = Inventory()
         ..add(ItemType.cobblestone, 3)
         ..add(ItemType.stick, 2);
       expect(canCraft(recipeFor(ItemType.stonePickaxe), inventory), isTrue);
     });
 
-    test('jeden składnik mniej blokuje przepis', () {
+    test('one ingredient short blocks the recipe', () {
       final inventory = Inventory()
         ..add(ItemType.cobblestone, 3)
         ..add(ItemType.stick, 1);
       expect(canCraft(recipeFor(ItemType.stonePickaxe), inventory), isFalse);
     });
 
-    test('składniki rozbite na kilka stosów też się liczą', () {
+    test('ingredients spread over several stacks still count', () {
       final inventory = Inventory()..add(ItemType.cobblestone, 70);
       expect(inventory.countOf(ItemType.cobblestone), 70);
       expect(canCraft(recipeFor(ItemType.furnace), inventory), isTrue);
@@ -90,21 +87,21 @@ void main() {
   _noSelfLoopTest();
   _missingTests();
 
-  group('Spójność księgi', () {
-    test('każdy przepis ma dodatni wynik i niepusty koszt', () {
+  group('The book is consistent', () {
+    test('every recipe has a positive output and a non-empty cost', () {
       for (final recipe in kRecipes) {
         expect(recipe.outputCount, greaterThan(0), reason: recipe.output.name);
         expect(recipe.cost, isNotEmpty, reason: recipe.output.name);
       }
     });
 
-    test('wszystkie wypisane wytopy faktycznie coś dają', () {
+    test('every listed smelt actually produces something', () {
       for (final input in kSmeltable) {
         expect(smeltResult(input), isNotNull, reason: input.name);
       }
     });
 
-    test('każdy przepis da się rzeczywiście złożyć na siatce', () {
+    test('every recipe can really be laid out on a grid', () {
       for (final recipe in kRecipes) {
         final size = recipe.needsTable ? 3 : 2;
         final grid = CraftingGrid(size);
@@ -125,7 +122,7 @@ void main() {
         expect(
           matchRecipe(grid)?.output,
           recipe.output,
-          reason: 'przepis na ${recipe.output.name} nie dopasował się',
+          reason: 'the recipe for ${recipe.output.name} did not match',
         );
       }
     });
@@ -133,7 +130,7 @@ void main() {
 }
 
 void _noSelfLoopTest() {
-  test('żaden przepis nie robi przedmiotu z niego samego', () {
+  test('no recipe makes an item out of itself', () {
     for (final recipe in kRecipes) {
       expect(
         recipe.cost.containsKey(recipe.output),
@@ -156,7 +153,7 @@ void _missingTests() {
       );
     });
 
-    test('podaje brakującą różnicę, nie całe zapotrzebowanie', () {
+    test('it reports the shortfall, not the whole requirement', () {
       final inventory = Inventory()
         ..add(ItemType.cobblestone, 2)
         ..add(ItemType.stick, 2);
@@ -165,14 +162,14 @@ void _missingTests() {
       });
     });
 
-    test('wypisuje kilka braków naraz', () {
+    test('it lists several shortfalls at once', () {
       expect(missingFor(recipeFor(ItemType.stonePickaxe), Inventory().slots), {
         ItemType.cobblestone: 3,
         ItemType.stick: 2,
       });
     });
 
-    test('nadmiar nie pojawia się na liście braków', () {
+    test('a surplus does not show up as missing', () {
       final inventory = Inventory()..add(ItemType.log, 64);
       expect(missingFor(recipeFor(ItemType.planks), inventory.slots), isEmpty);
     });

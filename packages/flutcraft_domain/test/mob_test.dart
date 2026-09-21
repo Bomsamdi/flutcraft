@@ -4,7 +4,7 @@ import 'package:vector_math/vector_math.dart';
 import 'package:flutcraft_domain/flutcraft_domain.dart';
 import 'package:test/test.dart';
 
-/// Podstawia się pod świat gry i zapisuje, co potwory próbowały zrobić.
+/// Stands in for the game world and records what the mobs tried to do.
 class FakeContext implements MobTickContext {
   FakeContext(this.player);
 
@@ -36,7 +36,7 @@ VoxelWorld flatWorld({int size = 64}) {
 
 void main() {
   group('Mob', () {
-    test('zombie zbliża się do gracza', () {
+    test('a zombie closes in on the player', () {
       final world = flatWorld();
       final player = Player(world: world, spawn: Vector3(32.5, 2, 32.5));
       final mob = Mob(
@@ -55,7 +55,7 @@ void main() {
       expect(after, lessThan(before - 2));
     });
 
-    test('poza zasięgiem agresji potwór stoi w miejscu', () {
+    test('out of aggro range a mob stays put', () {
       final world = flatWorld(size: 128);
       final player = Player(world: world, spawn: Vector3(10.5, 2, 10.5));
       final mob = Mob(
@@ -73,7 +73,7 @@ void main() {
       expect(mob.position.z, closeTo(start.z, 0.01));
     });
 
-    test('zombie w zwarciu rani gracza, ale nie co klatkę', () {
+    test('a zombie in reach hurts the player, but not every frame', () {
       final world = flatWorld();
       final player = Player(world: world, spawn: Vector3(32.5, 2, 32.5));
       final mob = Mob(
@@ -103,12 +103,12 @@ void main() {
       mob.update(1 / 60, player, context);
       expect(context.arrows, hasLength(1));
 
-      // Strzała leci w stronę gracza.
+      // The arrow flies towards the player.
       final (_, direction) = context.arrows.first;
       expect(direction.z, lessThan(0));
     });
 
-    test('szkielet nie strzela przez ścianę', () {
+    test('a skeleton does not shoot through a wall', () {
       final world = flatWorld();
       for (var y = 1; y <= 6; y++) {
         for (var x = 28; x <= 38; x++) {
@@ -149,7 +149,7 @@ void main() {
       expect(mob.isDead, isTrue);
     });
 
-    test('lont gaśnie, gdy gracz ucieknie', () {
+    test('the fuse goes out when the player runs away', () {
       final world = flatWorld();
       final player = Player(world: world, spawn: Vector3(32.5, 2, 32.5));
       final mob = Mob(
@@ -169,7 +169,7 @@ void main() {
       expect(context.explosions, isEmpty);
     });
 
-    test('obrażenia zabijają potwora i odrzucają go', () {
+    test('damage kills a mob and knocks it back', () {
       final world = flatWorld();
       final mob = Mob(
         kind: MobKind.spider,
@@ -185,7 +185,7 @@ void main() {
       expect(mob.isDead, isTrue);
     });
 
-    test('promień z oka gracza trafia w bryłę potwora', () {
+    test('a ray from the eye hits the mob box', () {
       final world = flatWorld();
       final mob = Mob(
         kind: MobKind.zombie,
@@ -224,7 +224,7 @@ void main() {
       expect(player.health, lessThan(Player.maxHealth));
     });
 
-    test('znika po wbiciu w ziemię', () {
+    test('it disappears once stuck in the ground', () {
       final world = flatWorld();
       final player = Player(world: world, spawn: Vector3(10.5, 2, 10.5));
       final arrow = Arrow(
@@ -243,7 +243,7 @@ void main() {
   });
 
   group('MobSpawner', () {
-    test('tworzy potwory dopiero po upływie interwału', () {
+    test('it spawns only once the interval has passed', () {
       final world = flatWorld(size: 96);
       final player = Player(world: world, spawn: Vector3(48.5, 2, 48.5));
       final spawner = MobSpawner(world: world);
@@ -266,7 +266,7 @@ void main() {
   });
 
   group('Player', () {
-    test('nietykalność blokuje kolejne ciosy', () {
+    test('invulnerability absorbs the next hits', () {
       final world = flatWorld();
       final player = Player(world: world, spawn: Vector3(32.5, 2, 32.5));
 
@@ -275,7 +275,7 @@ void main() {
       expect(player.health, Player.maxHealth - 3);
     });
 
-    test('zero życia to śmierć, respawn przywraca pełne', () {
+    test('zero health is death; respawn restores it fully', () {
       final world = flatWorld();
       final player = Player(world: world, spawn: Vector3(32.5, 2, 32.5));
 
@@ -287,14 +287,14 @@ void main() {
       expect(player.isDead, isFalse);
     });
 
-    test('cios odrzuca gracza od źródła', () {
+    test('a hit knocks the player away from its source', () {
       final world = flatWorld();
       final player = Player(world: world, spawn: Vector3(32.5, 2, 32.5));
       player.damage(2, source: Vector3(32.5, 2, 34.5));
       expect(player.velocity.z, lessThan(0));
     });
 
-    test('kierunek patrzenia zgadza się z yaw', () {
+    test('the look direction agrees with yaw', () {
       final world = flatWorld();
       final player = Player(world: world, spawn: Vector3(32.5, 2, 32.5));
 
@@ -307,13 +307,13 @@ void main() {
 
 void _balanceTests() {
   group('Regeneracja i balans', () {
-    test('gracz odzyskuje życie po chwili spokoju', () {
+    test('the player heals after a quiet spell', () {
       final world = flatWorld();
       final player = Player(world: world, spawn: Vector3(32.5, 2, 32.5))
         ..damage(6);
       final wounded = player.health;
 
-      // Regeneracja rusza dopiero po przerwie bez obrażeń.
+      // Healing only starts after a break without damage.
       for (var i = 0; i < 60 * 5; i++) {
         player.update(1 / 60, MoveInput());
       }
@@ -325,7 +325,7 @@ void _balanceTests() {
       expect(player.health, greaterThan(wounded));
     });
 
-    test('cios przerywa regenerację', () {
+    test('a hit interrupts healing', () {
       final world = flatWorld();
       final player = Player(world: world, spawn: Vector3(32.5, 2, 32.5))
         ..damage(6);
@@ -343,7 +343,7 @@ void _balanceTests() {
       expect(player.health, healed - 1);
     });
 
-    test('regeneracja nie przekracza pełnego życia', () {
+    test('healing stops at full health', () {
       final world = flatWorld();
       final player = Player(world: world, spawn: Vector3(32.5, 2, 32.5));
       for (var i = 0; i < 60 * 60; i++) {
@@ -352,13 +352,13 @@ void _balanceTests() {
       expect(player.health, Player.maxHealth);
     });
 
-    test('creepery są rzadsze niż zombie', () {
+    test('creepers are rarer than zombies', () {
       expect(MobKind.creeper.weight, lessThan(MobKind.zombie.weight));
       final total = MobKind.values.fold(0, (sum, k) => sum + k.weight);
       expect(total, 100);
     });
 
-    test('pojedynczy zombie nie zabija gracza w minutę', () {
+    test('a single zombie does not kill the player within a minute', () {
       final world = flatWorld();
       final player = Player(world: world, spawn: Vector3(32.5, 2, 32.5));
       final mob = Mob(
@@ -370,7 +370,7 @@ void _balanceTests() {
 
       for (var i = 0; i < 60 * 60; i++) {
         mob.update(1 / 60, player, context);
-        // Gracz stoi w miejscu, więc zombie bije bez przerwy.
+        // The player stands still, so the zombie keeps hitting.
         player.update(1 / 60, MoveInput());
         if (player.isDead) break;
       }
@@ -378,7 +378,7 @@ void _balanceTests() {
       expect(
         player.isDead,
         isTrue,
-        reason: 'stanie bezczynnie przy zombie ma boleć',
+        reason: 'standing idle next to a zombie is meant to hurt',
       );
       expect(mob.position.distanceTo(player.position), lessThan(6));
     });
@@ -386,8 +386,8 @@ void _balanceTests() {
 }
 
 void _spawnRangeTest() {
-  test('potwory pojawiają się w zasięgu agresji', () {
-    // Gdyby spawn był dalej niż aggro, potwory stałyby w miejscu.
+  test('mobs spawn within aggro range', () {
+    // If mobs spawned beyond aggro range they would just stand there.
     expect(MobSpawner.minDistance, lessThan(Mob.aggroRange));
     expect(MobSpawner.maxDistance, greaterThan(MobSpawner.minDistance));
   });

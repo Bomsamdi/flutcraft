@@ -18,7 +18,7 @@ void main() {
   });
 
   setUp(() {
-    // Testy sprawdzają, czy UI mieści się w niskim, szerokim kadrze.
+    // These tests check the interface fits a short, wide frame.
     TestWidgetsFlutterBinding.instance.platformDispatcher.views.first
       ..physicalSize = kPhoneLandscape * 3
       ..devicePixelRatio = 3;
@@ -29,7 +29,7 @@ void main() {
         .resetPhysicalSize();
   });
 
-  testWidgets('pasek 9 slotów mieści się w szerokości ekranu', (tester) async {
+  testWidgets('a nine-slot bar fits the width of the screen', (tester) async {
     final inventory = Inventory()..add(ItemType.planks, 5);
 
     await tester.pumpWidget(
@@ -56,9 +56,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('księga przepisów przewija się zamiast przepełniać', (
-    tester,
-  ) async {
+  testWidgets('the recipe book scrolls instead of overflowing', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -72,7 +70,7 @@ void main() {
     );
 
     expect(tester.takeException(), isNull);
-    // Treść jest wyższa niż ekran, więc musi dać się przewinąć.
+    // The content is taller than the screen, so it has to scroll.
     await tester.drag(
       find.byType(SingleChildScrollView),
       const Offset(0, -200),
@@ -81,7 +79,9 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('księga jest węższa niż poziomy kadr telefonu', (tester) async {
+  testWidgets('the book is narrower than a phone held sideways', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,

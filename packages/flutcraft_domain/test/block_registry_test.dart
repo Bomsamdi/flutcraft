@@ -5,7 +5,7 @@ void main() {
   group('BlockRegistry', () {
     const registry = BlockRegistry.standard;
 
-    test('stół otwiera crafting, piec otwiera piec', () {
+    test('a table opens crafting, a furnace opens the furnace', () {
       expect(
         registry.interactionFor(BlockType.craftingTable),
         isA<OpenCraftingTable>(),
@@ -13,23 +13,23 @@ void main() {
       expect(registry.interactionFor(BlockType.furnace), isA<OpenFurnace>());
     });
 
-    test('oba warianty pieca prowadzą do tego samego ekranu', () {
+    test('both furnace variants lead to the same screen', () {
       expect(registry.interactionFor(BlockType.furnaceLit), isA<OpenFurnace>());
     });
 
-    test('zwykłe bloki nic nie robią', () {
+    test('ordinary blocks do nothing', () {
       for (final block in [BlockType.stone, BlockType.dirt, BlockType.log]) {
         expect(registry.isInteractive(block), isFalse, reason: block.name);
         expect(registry.interactionFor(block), isNull);
       }
     });
 
-    test('pusty rejestr nie ma żadnych interakcji', () {
+    test('an empty registry has no interactions at all', () {
       const empty = BlockRegistry({});
       expect(empty.isInteractive(BlockType.furnace), isFalse);
     });
 
-    test('wyczerpujący switch po interakcji', () {
+    test('an exhaustive switch over the interactions', () {
       String describe(BlockInteraction i) => switch (i) {
         OpenCraftingTable() => 'crafting',
         OpenFurnace() => 'furnace',
@@ -43,7 +43,7 @@ void main() {
   });
 
   group('Warianty pieca opisane danymi', () {
-    test('piec wskazuje na swój zapalony wariant i z powrotem', () {
+    test('a furnace points at its lit variant and back', () {
       expect(BlockType.furnace.litVariant, BlockType.furnaceLit);
       expect(BlockType.furnaceLit.unlitVariant, BlockType.furnace);
     });
@@ -60,7 +60,7 @@ void main() {
       expect(withVariants, {BlockType.furnace, BlockType.furnaceLit});
     });
 
-    test('zwykłe bloki nie mają wariantów', () {
+    test('ordinary blocks have no variants', () {
       expect(BlockType.stone.litVariant, isNull);
       expect(BlockType.stone.unlitVariant, isNull);
       expect(BlockType.stone.hasLitVariant, isFalse);

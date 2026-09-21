@@ -1,7 +1,7 @@
 // ignore_for_file: prefer_initializing_formals
 import 'tile.dart';
 
-/// Rodzaj narzędzia, które przyspiesza kopanie danego bloku.
+/// The kind of tool that speeds up mining a block.
 enum ToolType { none, pickaxe, axe, shovel, sword }
 
 /// Wszystkie bloki prototypu. `air` jest blokiem "pustym" i nigdy nie
@@ -91,21 +91,21 @@ enum BlockType {
        _bottom = bottom,
        _front = front;
 
-  /// Czas bazowy kopania (sekundy). Ujemna wartość = bloku nie da się zbić.
+  /// Base mining time in seconds; a negative value means unbreakable.
   final double hardness;
 
-  /// Narzędzie, które daje bonus prędkości.
+  /// The tool that gives a speed bonus.
   final ToolType tool;
 
-  /// Czy blok blokuje ruch i zasłania sąsiadów.
+  /// Whether the block stops movement and hides its neighbours.
   final bool solid;
 
-  /// Minimalny poziom kilofa potrzebny, żeby blok cokolwiek upuścił.
-  /// 0 = ręka wystarczy, 1 = drewniany, 2 = kamienny, 3 = żelazny.
+  /// The lowest pickaxe tier that makes this block drop anything:
+  /// 0 a bare hand, 1 wooden, 2 stone, 3 iron.
   final int requiredTier;
 
-  // Warianty trzymamy po nazwie, bo enum nie może odwoływać się do własnych
-  // wartości w konstruktorze const.
+  // Variants are held by name, because an enum cannot refer to its own
+  // values in a const constructor.
   final String? _litVariantName;
   final String? _unlitVariantName;
 
@@ -118,14 +118,14 @@ enum BlockType {
   Tile get sideTile => _side ?? _top;
   Tile get bottomTile => _bottom ?? _side ?? _top;
 
-  /// Wyróżniona ściana (front pieca); `null` gdy blok wygląda tak samo
+  /// The distinguished face, such as a furnace front; `null` when the block looks the same
   /// ze wszystkich stron.
   Tile? get frontTile => _front;
 
   bool get breakable => hardness >= 0;
 
-  /// Czy blok otwiera jakiś interfejs po kliknięciu.
-  /// Wariant tego bloku z zapalonym paleniskiem; `null`, gdy blok nie płonie.
+  /// Whether using the block opens an interface.
+  /// This block's lit variant; `null` when it does not burn.
   BlockType? get litVariant => _byName(_litVariantName);
 
   /// Wariant wygaszony; `null`, gdy blok nie ma takiego stanu.

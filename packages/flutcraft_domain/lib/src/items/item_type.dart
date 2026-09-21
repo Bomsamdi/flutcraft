@@ -3,10 +3,10 @@ import 'package:meta/meta.dart';
 import '../blocks/block_type.dart';
 import '../blocks/tile.dart';
 
-/// Wszystko, co może leżeć w ekwipunku: bloki, surowce i narzędzia.
+/// Anything that can sit in the inventory: blocks, materials and tools.
 ///
-/// Przedmiot z ustawionym [block] da się postawić w świecie; pozostałe
-/// służą tylko do craftingu albo walki.
+/// An item with a [block] can be placed in the world; the rest are only
+/// good for crafting or fighting.
 enum ItemType {
   // --- bloki ---
   grass(block: BlockType.grass),
@@ -34,7 +34,7 @@ enum ItemType {
   gunpowder(icon: Tile.gunpowderIcon),
   arrow(icon: Tile.arrowIcon),
 
-  // --- narzędzia ---
+  // --- tools ---
   woodenPickaxe(
     icon: Tile.woodPickIcon,
     tool: ToolType.pickaxe,
@@ -88,25 +88,25 @@ enum ItemType {
     this.burnTime = 0,
   }) : _icon = icon;
 
-  /// Blok, który ten przedmiot stawia; `null` dla surowców i narzędzi.
+  /// The block this item places; `null` for materials and tools.
   final BlockType? block;
   final Tile? _icon;
 
-  /// Narzędzie, jakim ten przedmiot jest (kilof, miecz...).
+  /// Which kind of tool this item is, if any.
   final ToolType tool;
 
-  /// Poziom materiału: 1 drewno, 2 kamień, 3 żelazo.
+  /// Material tier: 1 wood, 2 stone, 3 iron.
   final int tier;
 
-  /// Obrażenia zadawane potworom.
+  /// Damage dealt to mobs.
   final int damage;
 
   final int maxStack;
 
-  /// Ile sekund wytopu daje ten przedmiot jako paliwo (0 = nie pali się).
+  /// Seconds of smelting this item gives as fuel; 0 means it does not burn.
   final double burnTime;
 
-  /// Kafelek używany jako ikona w ekwipunku.
+  /// The tile used as its inventory icon.
   Tile get icon => _icon ?? block!.sideTile;
 
   bool get isBlock => block != null;
@@ -115,7 +115,7 @@ enum ItemType {
 
   bool get isFuel => burnTime > 0;
 
-  /// Przedmiot odpowiadający blokowi - do stawiania i podnoszenia.
+  /// The item that corresponds to a block, for placing and picking up.
   static ItemType? forBlock(BlockType block) {
     for (final item in ItemType.values) {
       if (item.block == block) return item;
@@ -124,12 +124,12 @@ enum ItemType {
   }
 }
 
-/// Stos przedmiotów w jednym slocie.
+/// A stack of items in one slot.
 ///
-/// Niemutowalny celowo. Gdy stos można było zmieniać w miejscu, migawka
-/// stanu dla UI nie była migawką — trzeba było ręcznie podbijać licznik
-/// zmian w ośmiu miejscach, a zapomnienie jednego dawało nieaktualny
-/// ekwipunek bez żadnego sygnału.
+/// Immutable on purpose. While a stack could be changed in place, the
+/// snapshot handed to the UI was not really a snapshot: a revision counter
+/// had to be bumped by hand in eight places, and forgetting one left a stale
+/// inventory on screen with nothing to signal it.
 @immutable
 final class ItemStack {
   const ItemStack(this.type, [this.count = 1]);
@@ -139,13 +139,13 @@ final class ItemStack {
 
   bool get isEmpty => count <= 0;
 
-  /// Ile jeszcze sztuk zmieści się w tym stosie.
+  /// How many more items fit in this stack.
   int get space => type.maxStack - count;
 
-  /// Ten sam przedmiot w innej ilości.
+  /// The same item, a different count.
   ItemStack withCount(int value) => ItemStack(type, value);
 
-  /// Ten sam przedmiot, ilość zmieniona o [delta] (może być ujemna).
+  /// The same item, count changed by [delta], which may be negative.
   ItemStack plus(int delta) => ItemStack(type, count + delta);
 
   @override

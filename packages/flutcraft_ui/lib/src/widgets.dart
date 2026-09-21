@@ -6,7 +6,7 @@ import 'package:flutcraft_l10n/flutcraft_l10n.dart';
 import 'package:flutcraft_atlas/flutcraft_atlas.dart';
 import 'package:flutter/material.dart';
 
-/// Rysuje kafelek z atlasu tekstur - ta sama grafika co w świecie 3D.
+/// Draws one tile from the atlas — the same pixels the 3D world uses.
 class TilePainter extends CustomPainter {
   TilePainter({
     required this.image,
@@ -35,7 +35,7 @@ class TilePainter extends CustomPainter {
       old.image != image || old.tile != tile || old.shade != shade;
 }
 
-/// Ikona bloku w pasku: ścianka boczna + skos góry, żeby czytać bryłę.
+/// A block icon: the side face plus a slanted top, so the shape reads.
 class BlockIcon extends StatelessWidget {
   const BlockIcon({required this.image, required this.block, super.key});
 
@@ -69,7 +69,7 @@ class BlockIcon extends StatelessWidget {
   }
 }
 
-/// Ikona dowolnego przedmiotu: bloki jako bryłka, reszta jako płaska ikona.
+/// Any item: blocks as a little solid, everything else as a flat icon.
 class ItemIcon extends StatelessWidget {
   const ItemIcon({required this.image, required this.item, super.key});
 
@@ -88,7 +88,7 @@ class ItemIcon extends StatelessWidget {
   }
 }
 
-/// Pasek zdrowia w serduszkach - każde serce to 2 punkty życia.
+/// Health as hearts — each heart is two points.
 class HeartsBar extends StatelessWidget {
   const HeartsBar({required this.health, required this.maxHealth, super.key});
 
@@ -120,7 +120,7 @@ class HeartsBar extends StatelessWidget {
   }
 }
 
-/// Celownik z pierścieniem postępu kopania.
+/// The crosshair, with a ring showing mining progress.
 class Crosshair extends StatelessWidget {
   const Crosshair({
     required this.progress,
@@ -132,7 +132,7 @@ class Crosshair extends StatelessWidget {
   final double progress;
   final bool hasTarget;
 
-  /// Na celowniku jest potwór - celownik zmienia się w czerwony krzyżyk.
+  /// A mob is under the crosshair, which turns into a red cross.
   final bool hostile;
 
   @override
@@ -177,7 +177,7 @@ class _CrosshairPainter extends CustomPainter {
     const gap = 3.0;
 
     if (hostile) {
-      // Skośny krzyżyk czytelnie mówi "tu można uderzyć".
+      // A diagonal cross reads as "this can be hit".
       canvas
         ..drawLine(c.translate(-arm, -arm), c.translate(-gap, -gap), paint)
         ..drawLine(c.translate(gap, gap), c.translate(arm, arm), paint)
@@ -213,7 +213,7 @@ class _CrosshairPainter extends CustomPainter {
       old.hostile != hostile;
 }
 
-/// Pasek życia potwora na celowniku.
+/// The health bar of the mob under the crosshair.
 class TargetHealthBar extends StatelessWidget {
   const TargetHealthBar({required this.target, super.key});
 
@@ -264,7 +264,7 @@ class TargetHealthBar extends StatelessWidget {
   }
 }
 
-/// Wirtualny drążek - zwraca wektor -1..1 na obu osiach.
+/// A virtual stick: reports -1..1 on both axes.
 class VirtualJoystick extends StatefulWidget {
   const VirtualJoystick({required this.onChanged, this.size = 132, super.key});
 
@@ -342,7 +342,7 @@ class _VirtualJoystickState extends State<VirtualJoystick> {
   }
 }
 
-/// Przycisk reagujący na przytrzymanie (kopanie, skok, stawianie).
+/// A button that reports being held down: mining, jumping, placing.
 class HoldButton extends StatefulWidget {
   const HoldButton({
     required this.label,

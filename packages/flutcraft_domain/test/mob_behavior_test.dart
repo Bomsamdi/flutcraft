@@ -48,13 +48,13 @@ void main() {
   group('MeleeBehavior', () {
     const behavior = MeleeBehavior();
 
-    test('zawsze prze naprzód, niezależnie od dystansu', () {
+    test('it always pushes forward, whatever the distance', () {
       final mob = mobOf(MobKind.zombie);
       expect(behavior.desiredSpeed(mob, 20), MobKind.zombie.speed);
       expect(behavior.desiredSpeed(mob, 1), MobKind.zombie.speed);
     });
 
-    test('rani gracza dopiero w zasięgu ramienia', () {
+    test('it only hurts the player within arm\'s reach', () {
       final mob = mobOf(MobKind.zombie, x: 33.2);
       behavior.act(mob, 1 / 60, 0.7, context);
       expect(player.health, lessThan(Player.maxHealth));
@@ -70,7 +70,7 @@ void main() {
       final mob = mobOf(MobKind.zombie, x: 33.2);
       behavior.act(mob, 1 / 60, 0.7, context);
       final afterFirst = player.health;
-      player.hurtCooldown = 0; // zdejmujemy nietykalność gracza
+      player.hurtCooldown = 0; // drop the player's invulnerability
       behavior.act(mob, 1 / 60, 0.7, context);
       expect(player.health, afterFirst, reason: 'cooldown potwora trzyma');
     });
@@ -79,20 +79,23 @@ void main() {
   group('RangedBehavior', () {
     const behavior = RangedBehavior();
 
-    test('z daleka podchodzi, z bliska się cofa, w oknie stoi', () {
-      final mob = mobOf(MobKind.skeleton);
-      expect(behavior.desiredSpeed(mob, 15), greaterThan(0));
-      expect(behavior.desiredSpeed(mob, 3), lessThan(0));
-      expect(behavior.desiredSpeed(mob, 8), 0);
-    });
+    test(
+      'far off it closes in, up close it backs away, in the window it holds',
+      () {
+        final mob = mobOf(MobKind.skeleton);
+        expect(behavior.desiredSpeed(mob, 15), greaterThan(0));
+        expect(behavior.desiredSpeed(mob, 3), lessThan(0));
+        expect(behavior.desiredSpeed(mob, 8), 0);
+      },
+    );
 
-    test('strzela w oknie zasięgu', () {
+    test('it shoots inside its range window', () {
       final mob = mobOf(MobKind.skeleton, z: 40);
       behavior.act(mob, 1 / 60, 7.5, context);
       expect(context.arrows, hasLength(1));
     });
 
-    test('nie strzela z odległości poza oknem', () {
+    test('it does not shoot from outside that window', () {
       final mob = mobOf(MobKind.skeleton, z: 40);
       behavior
         ..act(mob, 1 / 60, 1.0, context)
@@ -100,7 +103,7 @@ void main() {
       expect(context.arrows, isEmpty);
     });
 
-    test('nie strzela przez ścianę', () {
+    test('it does not shoot through a wall', () {
       for (var y = 1; y <= 6; y++) {
         for (var x = 28; x <= 38; x++) {
           world.setRaw(x, y, 36, BlockType.stone);
@@ -111,7 +114,7 @@ void main() {
       expect(context.arrows, isEmpty);
     });
 
-    test('celuje nieco wyżej, bo strzała opada', () {
+    test('it aims a little high, because the arrow drops', () {
       final mob = mobOf(MobKind.skeleton, z: 40);
       behavior.act(mob, 1 / 60, 7.5, context);
       final (_, direction) = context.arrows.single;
@@ -127,7 +130,7 @@ void main() {
       damage: 14,
     );
 
-    test('lont zapala się dopiero blisko', () {
+    test('the fuse only lights up close', () {
       final mob = mobOf(MobKind.creeper);
       behavior.act(mob, 1 / 60, 5, context);
       expect(mob.isPrimed, isFalse);
@@ -160,8 +163,8 @@ void main() {
     });
   });
 
-  group('Gatunki mają przypisane zachowania', () {
-    test('każdy gatunek ma zachowanie', () {
+  group('Every species has a behaviour', () {
+    test('each species has one assigned', () {
       for (final kind in MobKind.values) {
         expect(kind.behavior, isNotNull, reason: kind.name);
       }

@@ -3,11 +3,11 @@ import 'dart:math' as math;
 import 'package:vector_math/vector_math.dart';
 import '../world/voxel_world.dart';
 
-/// Bryła AABB poruszająca się po siatce wokseli.
+/// An AABB body moving through the voxel grid.
 ///
-/// [position] to środek podstawy (stopy), nie środek bryły - dzięki temu
-/// stawianie na gruncie jest trywialne. Ruch jest rozbijany na osie, więc
-/// ciało ślizga się po ścianie zamiast się o nią zatrzymywać.
+/// [position] is the centre of the base — the feet — not the centre of the
+/// box, which makes standing on ground trivial. Movement is resolved one
+/// axis at a time, so a body slides along a wall instead of sticking to it.
 class VoxelBody {
   VoxelBody({
     required this.world,
@@ -26,8 +26,8 @@ class VoxelBody {
 
   bool onGround = false;
 
-  /// Czy ciało w tej klatce uderzyło w przeszkodę w poziomie - moby
-  /// wykorzystują to jako sygnał "podskocz".
+  /// Whether the body hit something horizontally this frame; mobs read it
+  /// as "time to jump".
   bool blockedHorizontally = false;
 
   static const double _eps = 1e-3;
@@ -37,7 +37,7 @@ class VoxelBody {
   Vector3 get center =>
       Vector3(position.x, position.y + height / 2, position.z);
 
-  /// Przesuwa ciało o zadany wektor, rozwiązując kolizje.
+  /// Moves the body by a vector, resolving collisions.
   void moveBy(double dx, double dy, double dz) {
     blockedHorizontally = false;
     _axis(0, dx);
@@ -53,7 +53,7 @@ class VoxelBody {
     moveBy(velocity.x * dt, velocity.y * dt, velocity.z * dt);
   }
 
-  /// Czy bryła zajmuje przestrzeń bloku (x, y, z)?
+  /// Whether the box occupies the cell (x, y, z).
   bool occupies(int bx, int by, int bz) {
     return bx + 1 > position.x - halfWidth &&
         bx < position.x + halfWidth &&
@@ -66,7 +66,7 @@ class VoxelBody {
   void _axis(int axis, double delta) {
     if (delta == 0) return;
 
-    // Dzielimy duże przesunięcia, żeby nie przeskoczyć cienkiej ściany.
+    // Long moves are split, so a thin wall cannot be skipped over.
     final steps = math.max(1, (delta.abs() / 0.45).ceil());
     final part = delta / steps;
 
@@ -74,7 +74,7 @@ class VoxelBody {
       _set(axis, _get(axis) + part);
       if (!collides()) continue;
 
-      // Przyklejamy się dokładnie do krawędzi bloku.
+      // Snap exactly to the block's edge.
       if (part > 0) {
         final maxEdge = _get(axis) + (axis == 1 ? height : halfWidth);
         _set(
@@ -121,7 +121,7 @@ class VoxelBody {
     }
   }
 
-  /// Czy bryła przecina jakikolwiek blok stały.
+  /// Whether the box intersects any solid block.
   bool collides() {
     final minX = (position.x - halfWidth + _eps).floor();
     final maxX = (position.x + halfWidth - _eps).floor();
@@ -140,7 +140,7 @@ class VoxelBody {
     return false;
   }
 
-  /// Przecięcie promienia z bryłą (slab test); `null` gdy brak trafienia.
+  /// Ray against box (slab test); `null` when it misses.
   double? rayDistance(Vector3 origin, Vector3 dir, double maxDistance) {
     final minX = position.x - halfWidth;
     final maxX = position.x + halfWidth;

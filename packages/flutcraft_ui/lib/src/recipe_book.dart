@@ -5,7 +5,7 @@ import 'package:flutcraft_domain/flutcraft_domain.dart';
 import 'package:flutcraft_l10n/flutcraft_l10n.dart';
 import 'package:flutter/material.dart';
 
-/// Mała komórka siatki przepisu - bez licznika i bez klikania.
+/// One cell of a recipe grid: no count, no tapping.
 class _Cell extends StatelessWidget {
   const _Cell({required this.image, required this.item});
 
@@ -32,7 +32,7 @@ class _Cell extends StatelessWidget {
   }
 }
 
-/// Jeden wiersz księgi: układ składników, strzałka i wynik.
+/// One row of the book: the ingredient layout, an arrow and the result.
 class RecipeRow extends StatelessWidget {
   const RecipeRow({
     required this.image,
@@ -44,7 +44,7 @@ class RecipeRow extends StatelessWidget {
   final ui.Image image;
   final Recipe recipe;
 
-  /// Czego i ile brakuje; pusta mapa znaczy "można robić".
+  /// What is missing and how much of it; an empty map means it can be made.
   final Map<ItemType, int> missing;
 
   bool get available => missing.isEmpty;
@@ -109,7 +109,7 @@ class RecipeRow extends StatelessWidget {
           ? context.t.haveIngredientsTable
           : context.t.haveIngredients;
     }
-    // Konkret jest bardziej użyteczny niż samo "nie da się".
+    // Naming what is missing helps more than a bare "cannot craft".
     final parts = missing.entries
         .take(2)
         .map((e) => strings.stack(ItemStack(e.key, e.value)))
@@ -122,7 +122,7 @@ class RecipeRow extends StatelessWidget {
 
   Widget _pattern() {
     if (recipe.shapeless) {
-      // Bezkształtowy: kolejność nie ma znaczenia, więc rysujemy rządek.
+      // Shapeless: the order does not matter, so draw a simple row.
       return Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -192,7 +192,7 @@ class SmeltRow extends StatelessWidget {
   }
 }
 
-/// Zawartość księgi przepisów.
+/// The contents of the recipe book.
 class RecipeBook extends StatelessWidget {
   const RecipeBook({required this.image, required this.inventory, super.key});
 

@@ -6,17 +6,17 @@ import 'package:flame_3d/core.dart';
 import 'package:flame_3d/graphics.dart';
 import 'package:flame_3d/resources.dart';
 
-/// Przedmiot trzymany w ręce, rysowany tuż przed kamerą.
+/// The item in hand, drawn just in front of the camera.
 ///
-/// Nie przechodzi przez frustum culling - zawsze jest w kadrze, więc
-/// [renderTree] od razu zgłasza go do rysowania (jako najbliższy obiekt
-/// trafia na koniec posortowanej listy).
+/// It skips frustum culling — it is always on screen, so [renderTree]
+/// submits it straight away; being the nearest object, it lands at the end
+/// of the sorted list.
 class HeldItem extends Object3D {
   HeldItem();
 
   Mesh? mesh;
 
-  /// Postęp zamachu 0..1; 0 = ręka w spoczynku.
+  /// Swing progress, 0..1; 0 is a hand at rest.
   double swing = 0;
 
   @override
@@ -32,13 +32,13 @@ class HeldItem extends Object3D {
       ..drawMesh(mesh!);
   }
 
-  /// Ustawia przedmiot względem kamery opisanej przez oko i kierunek patrzenia.
+  /// Places the item relative to the camera's eye and look direction.
   void follow(Vector3 eye, Vector3 forward) {
     final right = forward.cross(Vector3(0, 1, 0))..normalize();
     final up = right.cross(forward)..normalize();
     final back = -forward;
 
-    // Zamach: przedmiot cofa się i opada, po czym wraca.
+    // The swing: the item pulls back and drops, then returns.
     final s = math.sin(swing * math.pi);
     final offsetRight = 0.34 - s * 0.10;
     final offsetUp = -0.32 - s * 0.10;

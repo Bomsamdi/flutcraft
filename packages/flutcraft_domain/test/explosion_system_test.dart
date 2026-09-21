@@ -25,7 +25,7 @@ void main() {
     final state = solidState();
     system.explode(state, Vector3(16.5, 5.5, 16.5), 3, 10);
 
-    expect(state.world.blockAt(16, 5, 16), BlockType.air, reason: 'środek');
+    expect(state.world.blockAt(16, 5, 16), BlockType.air, reason: 'the centre');
     expect(
       state.world.blockAt(18, 5, 16),
       BlockType.air,
@@ -38,13 +38,13 @@ void main() {
     );
   });
 
-  test('bedrock przeżywa wybuch', () {
+  test('bedrock survives an explosion', () {
     final state = solidState();
     system.explode(state, Vector3(16.5, 0.5, 16.5), 4, 20);
     expect(state.world.blockAt(16, 0, 16), BlockType.bedrock);
   });
 
-  test('piec w zasięgu znika też z rejestru', () {
+  test('a furnace in range leaves the registry too', () {
     final state = solidState();
     state.world.setBlock(16, 5, 16, BlockType.furnace);
     state.furnaces.open(const BlockPos(16, 5, 16));
@@ -54,7 +54,7 @@ void main() {
     expect(state.furnaces.isEmpty, isTrue);
   });
 
-  test('rani gracza tym mocniej, im bliżej', () {
+  test('it hurts the player more the closer they are', () {
     int damageAt(double distance) {
       final state = solidState();
       final at = Vector3(16.5 + distance, 8.5, 16.5);
@@ -68,13 +68,13 @@ void main() {
     expect(far, greaterThan(0));
   });
 
-  test('poza zasięgiem gracz nie obrywa', () {
+  test('out of range the player is untouched', () {
     final state = solidState();
     system.explode(state, Vector3(16.5 + 12, 8.5, 16.5), 3, 14);
     expect(state.player.health, Player.maxHealth);
   });
 
-  test('rani też inne potwory', () {
+  test('it hurts other mobs as well', () {
     final state = solidState();
     final near = Mob(
       kind: MobKind.zombie,
@@ -94,16 +94,16 @@ void main() {
     expect(far.health, MobKind.zombie.maxHealth);
   });
 
-  test('zgłasza dokładnie jedno zdarzenie', () {
+  test('it reports exactly one event', () {
     final state = solidState();
     final events = system.explode(state, Vector3(16.5, 5.5, 16.5), 3, 10);
     expect(events, hasLength(1));
     expect(events.single, isA<CreeperExploded>());
   });
 
-  test('minimalne obrażenia to jeden punkt, nie zero', () {
+  test('the minimum damage is one point, not zero', () {
     final state = solidState();
-    // Na samej krawędzi zasięgu falloff jest bliski zeru.
+    // Right at the edge of the radius the falloff is nearly zero.
     system.explode(state, Vector3(16.5 + 3.9, 8.5, 16.5), 3, 14);
     expect(state.player.health, lessThan(Player.maxHealth));
   });

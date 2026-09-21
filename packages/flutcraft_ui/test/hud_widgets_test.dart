@@ -12,7 +12,9 @@ Widget wrap(Widget child) => MaterialApp(
 
 void main() {
   group('Celownik', () {
-    testWidgets('rysuje się w trybie zwykłym i bojowym', (tester) async {
+    testWidgets('it draws in both the plain and the hostile state', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         wrap(const Crosshair(progress: 0, hasTarget: true)),
       );
@@ -25,7 +27,7 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('pierścień postępu nie wywraca się na skrajnych wartościach', (
+    testWidgets('the progress ring survives the extreme values', (
       tester,
     ) async {
       for (final progress in [0.0, 0.5, 1.0, 1.5]) {
@@ -37,15 +39,15 @@ void main() {
     });
   });
 
-  group('Pasek życia potwora', () {
-    testWidgets('pokazuje nazwę potwora', (tester) async {
+  group('The mob health bar', () {
+    testWidgets('it shows the mob name', (tester) async {
       await tester.pumpWidget(
         wrap(const TargetHealthBar(target: MobAimView(MobKind.creeper, 9, 18))),
       );
       expect(find.text('Creeper'), findsOneWidget);
     });
 
-    testWidgets('szerokość paska odpowiada ułamkowi życia', (tester) async {
+    testWidgets('the bar width follows the health fraction', (tester) async {
       await tester.pumpWidget(
         wrap(const TargetHealthBar(target: MobAimView(MobKind.zombie, 5, 20))),
       );
@@ -56,7 +58,9 @@ void main() {
       expect(box.widthFactor, closeTo(0.25, 1e-9));
     });
 
-    testWidgets('ujemne życie nie daje ujemnej szerokości', (tester) async {
+    testWidgets('negative health does not give a negative width', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         wrap(const TargetHealthBar(target: MobAimView(MobKind.spider, -3, 14))),
       );
@@ -69,20 +73,18 @@ void main() {
   });
 
   group('Serca', () {
-    testWidgets('rysuje dziesięć ikon dla dwudziestu punktów życia', (
-      tester,
-    ) async {
+    testWidgets('ten icons for twenty points of health', (tester) async {
       await tester.pumpWidget(wrap(const HeartsBar(health: 20, maxHealth: 20)));
       expect(find.byIcon(Icons.favorite), findsNWidgets(10));
     });
 
-    testWidgets('połowa życia to pięć pełnych serc', (tester) async {
+    testWidgets('half health is five full hearts', (tester) async {
       await tester.pumpWidget(wrap(const HeartsBar(health: 10, maxHealth: 20)));
       expect(find.byIcon(Icons.favorite), findsNWidgets(5));
       expect(find.byIcon(Icons.favorite_border), findsNWidgets(5));
     });
 
-    testWidgets('nieparzyste życie pokazuje pęknięte serce', (tester) async {
+    testWidgets('odd health shows a broken heart', (tester) async {
       await tester.pumpWidget(wrap(const HeartsBar(health: 9, maxHealth: 20)));
       expect(find.byIcon(Icons.favorite), findsNWidgets(4));
       expect(find.byIcon(Icons.heart_broken), findsOneWidget);

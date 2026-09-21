@@ -3,7 +3,7 @@ import 'dart:math' as math;
 import 'package:vector_math/vector_math.dart';
 import '../physics/voxel_body.dart';
 
-/// Stan wejścia przekazywany do gracza w każdej klatce.
+/// The movement the player is asking for this frame.
 class MoveInput {
   MoveInput({
     this.forward = 0,
@@ -13,10 +13,10 @@ class MoveInput {
     this.sprint = false,
   });
 
-  /// -1 (do tyłu) .. 1 (do przodu)
+  /// -1 (backwards) .. 1 (forwards)
   final double forward;
 
-  /// -1 (w lewo) .. 1 (w prawo)
+  /// -1 (left) .. 1 (right)
   final double strafe;
 
   final bool jump;
@@ -24,7 +24,7 @@ class MoveInput {
   final bool sprint;
 }
 
-/// Gracz: bryła AABB plus kamera, zdrowie i sterowanie.
+/// The player: an AABB body, plus a camera, health and controls.
 class Player extends VoxelBody {
   Player({required super.world, required super.spawn})
     : super(width: 0.6, height: 1.8);
@@ -38,32 +38,32 @@ class Player extends VoxelBody {
 
   static const int maxHealth = 20;
 
-  /// Obrót w poziomie (radiany). 0 = patrzenie w -Z.
+  /// Horizontal rotation in radians; 0 looks down -Z.
   double yaw = 0;
 
-  /// Obrót w pionie, ograniczony do +/- 89 stopni.
+  /// Vertical rotation, clamped to +/- 89 degrees.
   double pitch = 0;
 
   bool flying = false;
 
   int health = maxHealth;
 
-  /// Chwilowa nietykalność po otrzymaniu ciosu (jak w oryginale).
+  /// Brief invulnerability after taking a hit, as in the original.
   double hurtCooldown = 0;
 
-  /// Rośnie przy trafieniu, żeby HUD mógł mrugnąć na czerwono.
+  /// Rises on a hit, so the HUD can flash red.
   double hurtFlash = 0;
 
-  /// Ile sekund minęło od ostatniego ciosu - po chwili spokoju gracz
-  /// się regeneruje (w prototypie nie ma jedzenia).
+  /// Seconds since the last hit: after a quiet spell the player heals,
+  /// since this prototype has no food.
   double timeSinceHurt = 999;
 
   double _regenTimer = 0;
 
-  /// Po tylu sekundach bez obrażeń zaczyna się regeneracja.
+  /// Healing starts after this many seconds without damage.
   static const double regenDelay = 6.0;
 
-  /// Co ile sekund wraca jeden punkt życia.
+  /// Seconds per point of health regained.
   static const double regenInterval = 3.0;
 
   bool get isDead => health <= 0;
@@ -77,7 +77,7 @@ class Player extends VoxelBody {
       ..normalize();
   }
 
-  /// Kierunek "w prawo" w płaszczyźnie poziomej.
+  /// The "right" direction in the horizontal plane.
   Vector3 get rightDirection => Vector3(math.cos(yaw), 0, -math.sin(yaw));
 
   void look(double deltaYaw, double deltaPitch) {
@@ -86,8 +86,8 @@ class Player extends VoxelBody {
   }
 
   void update(double dt, MoveInput input) {
-    // Długie klatki (np. po przebudowie chunków) nie mogą przepchnąć
-    // gracza przez ścianę.
+    // A long frame — after a chunk rebuild, say — must not push the player
+    // through a wall.
     final step = math.min(dt, 1 / 30);
 
     if (hurtCooldown > 0) hurtCooldown -= dt;
@@ -121,7 +121,7 @@ class Player extends VoxelBody {
       stepPhysics(step, gravity: gravity);
     }
 
-    // Miękki mur na granicach mapy - świat jest skończony.
+    // A soft wall at the edges: the world is finite.
     position.x = position.x.clamp(halfWidth, world.sizeX - halfWidth);
     position.z = position.z.clamp(halfWidth, world.sizeZ - halfWidth);
     if (position.y < -20) {
@@ -141,9 +141,9 @@ class Player extends VoxelBody {
     health++;
   }
 
-  /// Zadaje graczowi obrażenia i odrzuca go od [source].
+  /// Damages the player and knocks them back from [source].
   ///
-  /// Zwraca `false`, jeśli cios nie przeszedł przez nietykalność.
+  /// Returns `false` when the hit was absorbed by invulnerability.
   bool damage(int amount, {Vector3? source}) {
     if (hurtCooldown > 0 || isDead) return false;
     health = math.max(0, health - amount);

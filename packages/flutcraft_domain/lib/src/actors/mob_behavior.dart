@@ -106,8 +106,8 @@ final class ExplodeBehavior implements MobBehavior {
 
   @override
   void act(Mob mob, double dt, double distance, MobTickContext context) {
-    // Wybuch jest nieodwracalny, więc strategia pilnuje tego sama zamiast
-    // liczyć na to, że wywołujący sprawdzi isDead przed każdym tickiem.
+    // An explosion cannot be undone, so the strategy checks this itself
+    // rather than trusting every caller to test isDead first.
     if (mob.isDead) return;
 
     if (distance < primeDistance) {

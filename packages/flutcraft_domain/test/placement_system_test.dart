@@ -19,7 +19,7 @@ GameState flatState({ItemType? held}) {
   );
 }
 
-/// Trafienie w górną ścianę bloku (x, y, z) — blok stanie nad nim.
+/// A hit on the top face of (x, y, z) — a block would go above it.
 RayHit topOf(GameState state, int x, int y, int z) => RayHit(
   x: x,
   y: y,
@@ -36,7 +36,7 @@ void main() {
 
   setUp(() => system = PlacementSystem());
 
-  test('blok ląduje po stronie trafionej ściany', () {
+  test('the block lands on the side of the face that was hit', () {
     final state = flatState(held: ItemType.planks);
     state.aim = BlockTarget(topOf(state, 5, 1, 5));
 
@@ -47,7 +47,7 @@ void main() {
     expect(state.inventory.countOf(ItemType.planks), 9);
   });
 
-  test('narzędzie w ręce nie jest blokiem', () {
+  test('a tool in hand is not a block', () {
     final state = flatState(held: ItemType.ironPickaxe);
     state.aim = BlockTarget(topOf(state, 5, 1, 5));
 
@@ -64,13 +64,13 @@ void main() {
     expect(state.world.blockAt(5, 2, 5), BlockType.air);
   });
 
-  test('pusty slot też odmawia', () {
+  test('an empty slot refuses too', () {
     final state = flatState();
     state.aim = BlockTarget(topOf(state, 5, 1, 5));
     expect(system.placeNow(state).single, isA<PlacementRejected>());
   });
 
-  test('nie da się postawić bloku w sobie', () {
+  test('a block cannot be placed inside yourself', () {
     final state = flatState(held: ItemType.planks);
     // Gracz stoi na (8, 2, 8); celujemy w blok pod nim.
     state.aim = BlockTarget(topOf(state, 8, 1, 8));
@@ -87,7 +87,7 @@ void main() {
     );
   });
 
-  test('nie da się postawić bloku w potworze', () {
+  test('a block cannot be placed inside a mob', () {
     final state = flatState(held: ItemType.planks);
     state.mobs.add(
       Mob(
@@ -108,7 +108,7 @@ void main() {
     );
   });
 
-  test('zajęte miejsce po prostu nic nie robi', () {
+  test('an occupied cell simply does nothing', () {
     final state = flatState(held: ItemType.planks);
     state.world.setBlock(5, 2, 5, BlockType.dirt);
     state.aim = BlockTarget(topOf(state, 5, 1, 5));
@@ -117,7 +117,7 @@ void main() {
     expect(state.world.blockAt(5, 2, 5), BlockType.dirt);
   });
 
-  test('poza granicami świata nic nie stawiamy', () {
+  test('nothing is placed outside the world', () {
     final state = flatState(held: ItemType.planks);
     state.aim = BlockTarget(
       RayHit(
@@ -134,7 +134,7 @@ void main() {
     expect(system.placeNow(state), isEmpty);
   });
 
-  test('celowanie w potwora nie stawia bloków', () {
+  test('aiming at a mob places no blocks', () {
     final state = flatState(held: ItemType.planks);
     final mob = Mob(
       kind: MobKind.zombie,
@@ -145,7 +145,7 @@ void main() {
     expect(system.placeNow(state), isEmpty);
   });
 
-  test('trzymany przycisk stawia w odstępach, nie co klatkę', () {
+  test('a held button places at intervals, not every frame', () {
     final state = flatState(held: ItemType.planks);
     state.aim = BlockTarget(topOf(state, 5, 1, 5));
 
@@ -157,7 +157,7 @@ void main() {
     system.update(state, 1 / 60, active: true);
     expect(state.inventory.countOf(ItemType.planks), 9);
 
-    // Po upływie cooldownu znowu wolno.
+    // Once the cooldown passes it is allowed again.
     system.update(state, PlacementSystem.cooldown, active: true);
     expect(state.inventory.countOf(ItemType.planks), 8);
   });

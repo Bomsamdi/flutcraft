@@ -12,7 +12,7 @@ void main() {
       expect(stack?.count, 1);
     });
 
-    test('zakres trzyma się granic', () {
+    test('a range stays within its bounds', () {
       final rng = Random(7);
       for (var i = 0; i < 200; i++) {
         final stack = const LootEntry(ItemType.bone, min: 1, max: 3).roll(rng);
@@ -20,7 +20,7 @@ void main() {
       }
     });
 
-    test('szansa poniżej jedynki czasem nie daje nic', () {
+    test('a chance below one sometimes gives nothing', () {
       final rng = Random(3);
       final rolls = List.generate(
         400,
@@ -53,13 +53,13 @@ void main() {
       expect(LootTable.empty.isEmpty, isTrue);
     });
 
-    test('single daje dokładnie jedną sztukę', () {
+    test('single gives exactly one item', () {
       final drops = LootTable.single(ItemType.planks).roll(Random(1));
       expect(drops, hasLength(1));
       expect(drops.single.count, 1);
     });
 
-    test('kilka wpisów rzuca się niezależnie', () {
+    test('several entries roll independently', () {
       final table = LootTable([
         const LootEntry(ItemType.bone),
         const LootEntry(ItemType.arrow, chance: 0.001),
@@ -69,14 +69,14 @@ void main() {
     });
   });
 
-  group('Dropy potworów i bloków dzielą jeden typ', () {
-    test('każdy gatunek ma tabelę lootu', () {
+  group('Mob drops and block drops share one type', () {
+    test('every species has a loot table', () {
       for (final kind in MobKind.values) {
         expect(kind.loot, isA<LootTable>(), reason: kind.name);
       }
     });
 
-    test('szkielet gubi kości, pająk nić', () {
+    test('a skeleton drops bones, a spider string', () {
       final rng = Random(2);
       final bones = MobKind.skeleton.loot.roll(rng).map((d) => d.type);
       expect(bones, contains(ItemType.bone));
@@ -86,13 +86,17 @@ void main() {
       );
     });
 
-    test('zombie gubi żelazo rzadko, ale gubi', () {
+    test('a zombie drops iron rarely, but it does', () {
       final rng = Random(11);
       final drops = [
         for (var i = 0; i < 400; i++) ...MobKind.zombie.loot.roll(rng),
       ];
       expect(drops, isNotEmpty);
-      expect(drops.length, lessThan(120), reason: 'szansa ma być niska');
+      expect(
+        drops.length,
+        lessThan(120),
+        reason: 'the chance is meant to be low',
+      );
       expect(drops.every((d) => d.type == ItemType.ironIngot), isTrue);
     });
   });

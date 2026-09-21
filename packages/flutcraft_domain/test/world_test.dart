@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 
 void main() {
   group('VoxelWorld', () {
-    test('zapis bloku oznacza chunk i sąsiadów na granicy', () {
+    test('writing a block marks its chunk, and its neighbours on a border', () {
       final world = VoxelWorld(sizeX: 32, sizeY: 16, sizeZ: 32)
         ..dirtyChunks.clear();
 
@@ -13,12 +13,12 @@ void main() {
       expect(world.dirtyChunks, {0});
 
       world.dirtyChunks.clear();
-      // x == 0 dotyka chunku po lewej (poza mapą) i własnego.
+      // x == 0 touches the chunk to the left, off the map, and its own.
       world.setBlock(16, 5, 5, BlockType.stone);
       expect(world.dirtyChunks, {0, 1});
     });
 
-    test('poza granicami czyta się powietrze i nie da się pisać', () {
+    test('outside the bounds you read air and cannot write', () {
       final world = VoxelWorld(sizeX: 16, sizeY: 16, sizeZ: 16);
       expect(world.blockAt(-1, 0, 0), BlockType.air);
       expect(world.blockAt(0, 99, 0), BlockType.air);
@@ -26,7 +26,7 @@ void main() {
       expect(world.blockAt(-1, 0, 0), BlockType.air);
     });
 
-    test('raycast trafia blok i zwraca normalną ściany', () {
+    test('a raycast hits a block and reports the face normal', () {
       final world = VoxelWorld(sizeX: 16, sizeY: 16, sizeZ: 16)
         ..setRaw(5, 2, 2, BlockType.stone);
 
@@ -35,31 +35,31 @@ void main() {
       expect(hit, isNotNull);
       expect((hit!.x, hit.y, hit.z), (5, 2, 2));
       expect(hit.block, BlockType.stone);
-      // Weszliśmy od strony -X, więc blok stawiamy o jeden w lewo.
+      // It came in from -X, so a block would go one to the left.
       expect((hit.nx, hit.ny, hit.nz), (-1, 0, 0));
       expect(hit.placement, (4, 2, 2));
       expect(hit.distance, closeTo(4.5, 1e-9));
     });
 
-    test('raycast nie trafia nic poza zasięgiem', () {
+    test('a raycast hits nothing beyond its reach', () {
       final world = VoxelWorld(sizeX: 16, sizeY: 16, sizeZ: 16)
         ..setRaw(10, 2, 2, BlockType.stone);
       final hit = world.raycast(Vector3(0.5, 2.5, 2.5), Vector3(1, 0, 0), 5);
       expect(hit, isNull);
     });
 
-    test('raycast po skosie trafia w ścianę od właściwej strony', () {
+    test('a diagonal raycast hits the face from the right side', () {
       final world = VoxelWorld(sizeX: 16, sizeY: 16, sizeZ: 16)
         ..setRaw(3, 3, 3, BlockType.stone);
       final dir = Vector3(1, 1, 1)..normalize();
       final hit = world.raycast(Vector3(0.5, 0.5, 0.5), dir, 20);
       expect(hit, isNotNull);
       expect((hit!.x, hit.y, hit.z), (3, 3, 3));
-      // Normalna zawsze wskazuje na dokładnie jedną oś.
+      // The normal always points along exactly one axis.
       expect(hit.nx.abs() + hit.ny.abs() + hit.nz.abs(), 1);
     });
 
-    test('surfaceHeight zwraca najwyższy blok stały', () {
+    test('surfaceHeight returns the highest solid block', () {
       final world = VoxelWorld(sizeX: 16, sizeY: 16, sizeZ: 16)
         ..setRaw(1, 0, 1, BlockType.stone)
         ..setRaw(1, 7, 1, BlockType.grass);
@@ -79,7 +79,7 @@ void main() {
       return world;
     }
 
-    test('grawitacja sadza gracza dokładnie na podłożu', () {
+    test('gravity settles the player exactly on the ground', () {
       final world = flatWorld();
       final player = Player(world: world, spawn: Vector3(8.5, 6, 8.5));
 
@@ -92,25 +92,25 @@ void main() {
       expect(player.velocity.y, 0);
     });
 
-    test('ściana zatrzymuje ruch w poziomie', () {
+    test('a wall stops horizontal movement', () {
       final world = flatWorld();
       for (var y = 1; y <= 3; y++) {
         world.setRaw(12, y, 8, BlockType.stone);
       }
       final player = Player(world: world, spawn: Vector3(8.5, 1, 8.5))..yaw = 0;
 
-      // yaw = 0 to kierunek -Z; obracamy o -90 stopni, żeby iść w +X.
+      // yaw = 0 faces -Z; turn -90 degrees to walk towards +X.
       player.yaw = -1.5707963267948966;
       for (var i = 0; i < 240; i++) {
         player.update(1 / 60, MoveInput(forward: 1));
       }
 
-      // 12 - połowa szerokości gracza = 11.7.
+      // 12 minus half the player's width is 11.7.
       expect(player.position.x, lessThan(11.71));
       expect(player.position.x, greaterThan(11.6));
     });
 
-    test('skok podnosi gracza i wraca na ziemię', () {
+    test('a jump lifts the player and comes back down', () {
       final world = flatWorld();
       final player = Player(world: world, spawn: Vector3(8.5, 1, 8.5));
       player.update(1 / 60, MoveInput());
@@ -127,7 +127,7 @@ void main() {
       expect(player.position.y, closeTo(1, 0.01));
     });
 
-    test('occupies wykrywa blok wewnątrz bryły gracza', () {
+    test('occupies finds a block inside the player box', () {
       final world = flatWorld();
       final player = Player(world: world, spawn: Vector3(8.5, 1, 8.5));
       expect(player.occupies(8, 1, 8), isTrue);
@@ -136,7 +136,7 @@ void main() {
       expect(player.occupies(10, 1, 8), isFalse);
     });
 
-    test('lot ignoruje grawitację', () {
+    test('flight ignores gravity', () {
       final world = flatWorld();
       final player = Player(world: world, spawn: Vector3(8.5, 5, 8.5))
         ..flying = true;
@@ -164,7 +164,7 @@ void main() {
       }
     });
 
-    test('każda kolumna ma bedrock na dole i powierzchnię nad nim', () {
+    test('every column has bedrock at the bottom and a surface above it', () {
       final world = VoxelWorld(sizeX: 32, sizeY: 48, sizeZ: 32);
       TerrainGenerator(seed: 7).generate(world);
 
@@ -186,7 +186,7 @@ void main() {
       return drops.isEmpty ? null : drops.single.type;
     }
 
-    test('kamień i trawa dają inny drop niż same siebie', () {
+    test('stone and grass drop something other than themselves', () {
       expect(
         dropType(BlockType.stone, ItemType.woodenPickaxe),
         ItemType.cobblestone,
@@ -204,14 +204,14 @@ void main() {
       );
     });
 
-    test('piec zawsze wraca jako zwykły piec', () {
+    test('a furnace always comes back as a plain furnace', () {
       expect(
         dropType(BlockType.furnaceLit, ItemType.stonePickaxe),
         ItemType.furnace,
       );
     });
 
-    test('liście i bedrock nie dają nic', () {
+    test('leaves and bedrock drop nothing', () {
       expect(blockDrops(BlockType.leaves, null, rng), isEmpty);
       expect(blockDrops(BlockType.bedrock, ItemType.ironPickaxe, rng), isEmpty);
     });
@@ -221,7 +221,7 @@ void main() {
       expect(BlockType.stone.breakable, isTrue);
     });
 
-    test('trawa ma trzy różne tekstury ścian', () {
+    test('grass has three different face textures', () {
       expect(BlockType.grass.topTile, isNot(BlockType.grass.sideTile));
       expect(BlockType.grass.sideTile, isNot(BlockType.grass.bottomTile));
     });

@@ -4,7 +4,7 @@ import 'package:flutcraft_domain/flutcraft_domain.dart';
 import 'package:test/test.dart';
 import 'package:vector_math/vector_math.dart';
 
-/// Pełna gra bez GPU: świat, gracz, ekwipunek i pętla.
+/// The whole game without a GPU: world, player, inventory and loop.
 ({GameLoop loop, GameState state}) newGame({int size = 32}) {
   final world = VoxelWorld(sizeX: size, sizeY: 16, sizeZ: size);
   for (var z = 0; z < size; z++) {
@@ -28,7 +28,7 @@ import 'package:vector_math/vector_math.dart';
 
 void main() {
   group('GameLoop tyka bez GPU', () {
-    test('tysiąc klatek przechodzi bez wyjątku', () {
+    test('a thousand frames run without throwing', () {
       final game = newGame();
       for (var i = 0; i < 1000; i++) {
         game.loop.tick(1 / 60, InputFrame.idle);
@@ -45,7 +45,7 @@ void main() {
       expect(game.state.player.position.y, closeTo(2, 0.1));
     });
 
-    test('otwarty ekran zamraża świat', () {
+    test('an open screen freezes the world', () {
       final game = newGame();
       game.state.player.position.setValues(16.5, 10, 16.5);
       game.loop.dispatch(const OpenRoute(UiRoute.inventory));
@@ -53,10 +53,10 @@ void main() {
       for (var i = 0; i < 300; i++) {
         game.loop.tick(1 / 60, InputFrame.idle);
       }
-      expect(game.state.player.position.y, 10, reason: 'nie spadł');
+      expect(game.state.player.position.y, 10, reason: 'it did not fall');
     });
 
-    test('śmierć gracza przełącza trasę', () {
+    test('the player dying switches the route', () {
       final game = newGame();
       game.state.player.damage(100);
       game.loop.tick(1 / 60, InputFrame.idle);
@@ -65,7 +65,7 @@ void main() {
   });
 
   group('Komendy', () {
-    test('wybór slotu zmienia trzymany przedmiot', () {
+    test('selecting a slot changes the held item', () {
       final game = newGame();
       game.state.inventory
         ..add(ItemType.planks, 5)
@@ -76,19 +76,19 @@ void main() {
       expect(game.state.heldItem, ItemType.coal);
     });
 
-    test('poza zakresem slot się nie zmienia', () {
+    test('out of range the slot does not change', () {
       final game = newGame();
       game.loop.dispatch(const SelectHotbarSlot(99));
       expect(game.state.selectedSlot, 0);
     });
 
-    test('scroll zawija się na końcach paska', () {
+    test('scrolling wraps around the ends of the hotbar', () {
       final game = newGame();
       game.loop.dispatch(const CycleHotbarSlot(-1));
       expect(game.state.selectedSlot, game.state.inventory.hotbarSize - 1);
     });
 
-    test('przekładanie przedmiotu przez kursor', () {
+    test('moving an item through the cursor', () {
       final game = newGame();
       game.state.inventory.add(ItemType.planks, 5);
 
@@ -101,7 +101,7 @@ void main() {
       expect(game.state.inventory[3]?.count, 5);
     });
 
-    test('kliknięcie dzielące bierze połowę', () {
+    test('a split click takes half', () {
       final game = newGame();
       game.state.inventory.add(ItemType.planks, 8);
 
@@ -112,7 +112,7 @@ void main() {
       expect(game.state.inventory[0]?.count, 4);
     });
 
-    test('zamknięcie ekranu oddaje zawartość siatki', () {
+    test('closing a screen gives the grid contents back', () {
       final game = newGame();
       game.loop.dispatch(const OpenRoute(UiRoute.inventory));
       game.state.activeGrid[0] = const ItemStack(ItemType.log, 3);
@@ -126,7 +126,7 @@ void main() {
       expect(game.state.inventory.countOf(ItemType.coal), 2);
     });
 
-    test('crafting: kłoda daje cztery deski', () {
+    test('crafting: a log gives four planks', () {
       final game = newGame();
       game.loop.dispatch(const OpenRoute(UiRoute.inventory));
       game.state.activeGrid[0] = const ItemStack(ItemType.log, 2);
@@ -135,10 +135,10 @@ void main() {
 
       expect(game.state.cursor?.type, ItemType.planks);
       expect(game.state.cursor?.count, 4);
-      expect(game.state.activeGrid[0]?.count, 1, reason: 'zużyła się jedna');
+      expect(game.state.activeGrid[0]?.count, 1, reason: 'one was consumed');
     });
 
-    test('księga wraca tam, skąd ją otwarto', () {
+    test('the book returns to wherever it was opened from', () {
       final game = newGame();
       game.loop.dispatch(const OpenRoute(UiRoute.craftingTable));
       game.state.activeGrid[0] = const ItemStack(ItemType.planks, 4);
@@ -151,18 +151,18 @@ void main() {
       expect(
         game.state.activeGrid[0]?.count,
         4,
-        reason: 'zerknięcie do księgi nie rozsypuje siatki',
+        reason: 'a glance at the book does not disturb the grid',
       );
     });
 
-    test('latanie przełącza się i zgłasza zdarzenie', () {
+    test('flight toggles and reports an event', () {
       final game = newGame();
       final events = game.loop.dispatch(const ToggleFlight());
       expect(game.state.player.flying, isTrue);
       expect(events.single, isA<FlightToggled>());
     });
 
-    test('respawn leczy gracza i czyści potwory', () {
+    test('respawning heals the player and clears the mobs', () {
       final game = newGame();
       game.state.mobs.add(
         Mob(
@@ -181,9 +181,9 @@ void main() {
       expect(events.single, isA<PlayerRespawned>());
     });
 
-    test('użycie stołu otwiera crafting 3x3', () {
+    test('using a table opens the 3x3 crafting screen', () {
       final game = newGame();
-      // Stół na wysokości oczu gracza, żeby promień w niego trafił.
+      // The table sits at eye level, so the ray hits it.
       game.state.world.setBlock(16, 3, 14, BlockType.craftingTable);
       game.state.player.yaw = 0; // patrzy w -Z
       game.loop.tick(1 / 60, InputFrame.idle);
@@ -194,7 +194,7 @@ void main() {
       expect(game.state.activeGrid.size, 3);
     });
 
-    test('użycie zwykłego bloku stawia blok z ręki', () {
+    test('using an ordinary block places the held one', () {
       final game = newGame();
       game.state.inventory.add(ItemType.planks, 4);
       game.state.player

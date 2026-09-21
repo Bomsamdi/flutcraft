@@ -6,7 +6,7 @@ import 'package:flutcraft_l10n/flutcraft_l10n.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-/// Wszystkie warianty zdarzeń, jakie gra potrafi wyprodukować.
+/// Every event variant the game can produce.
 const sampleEvents = <GameEvent>[
   BlockBroken(BlockPos(0, 0, 0), BlockType.stone, []),
   ToolTooWeak(BlockType.ironOre),
@@ -23,7 +23,7 @@ const sampleEvents = <GameEvent>[
 ];
 
 void main() {
-  group('Każdy język ma komplet tłumaczeń', () {
+  group('Every language is complete', () {
     for (final locale in AppLocalizations.supportedLocales) {
       group(locale.languageCode, () {
         late GameStrings strings;
@@ -32,25 +32,25 @@ void main() {
           strings = GameStrings(await AppLocalizations.delegate.load(locale));
         });
 
-        test('każdy blok ma nazwę', () {
+        test('every block has a name', () {
           for (final block in BlockType.values) {
             expect(strings.blockName(block), isNotEmpty, reason: block.name);
           }
         });
 
-        test('każdy przedmiot ma nazwę', () {
+        test('every item has a name', () {
           for (final item in ItemType.values) {
             expect(strings.itemName(item), isNotEmpty, reason: item.name);
           }
         });
 
-        test('każdy gatunek potwora ma nazwę', () {
+        test('every mob species has a name', () {
           for (final kind in MobKind.values) {
             expect(strings.mobName(kind), isNotEmpty, reason: kind.name);
           }
         });
 
-        test('każde zdarzenie da się opisać', () {
+        test('every event can be worded', () {
           for (final event in sampleEvents) {
             expect(
               () => strings.event(event),
@@ -60,14 +60,14 @@ void main() {
           }
         });
 
-        test('każda trasa poza grą ma tytuł', () {
+        test('every route but the game itself has a title', () {
           for (final route in UiRoute.values) {
             if (route == UiRoute.none) continue;
             expect(strings.route(route), isNotEmpty, reason: route.name);
           }
         });
 
-        test('nazwy przedmiotów-bloków zgadzają się z nazwami bloków', () {
+        test('block items are named the same as their blocks', () {
           for (final item in ItemType.values) {
             final block = item.block;
             if (block == null) continue;
@@ -82,7 +82,7 @@ void main() {
     }
   });
 
-  group('Higiena plików ARB', () {
+  group('ARB hygiene', () {
     Map<String, dynamic> arb(String lang) =>
         json.decode(File('lib/l10n/app_$lang.arb').readAsStringSync())
             as Map<String, dynamic>;
@@ -90,15 +90,15 @@ void main() {
     Set<String> keysOf(Map<String, dynamic> data) =>
         data.keys.where((k) => !k.startsWith('@')).toSet();
 
-    test('polski ma dokładnie te same klucze co angielski', () {
+    test('Polish has exactly the same keys as English', () {
       final en = keysOf(arb('en'));
       final pl = keysOf(arb('pl'));
       expect(pl.difference(en), isEmpty, reason: 'nadmiarowe w pl');
-      expect(en.difference(pl), isEmpty, reason: 'brakujące w pl');
+      expect(en.difference(pl), isEmpty, reason: 'missing from pl');
     });
 
-    test('żaden tekst nie zawiera twardego łamania linii', () {
-      // Łamanie dopasowane do jednego języka rozjeżdża się w drugim.
+    test('no string contains a hard line break', () {
+      // A break tuned to one language falls apart in the other.
       for (final lang in ['en', 'pl']) {
         for (final entry in arb(lang).entries) {
           if (entry.key.startsWith('@')) continue;
@@ -118,9 +118,9 @@ void main() {
       }
     });
 
-    test('każdy zadeklarowany placeholder występuje w obu językach', () {
-      // Czytamy deklaracje z metadanych, a nie z treści: wzorzec {nazwa}
-      // łapałby też słowa wewnątrz form liczby mnogiej, np. =0{No mobs}.
+    test('every declared placeholder appears in both languages', () {
+      // Declarations come from the metadata, not the text: a {name} pattern
+      // would also match words inside plural forms, such as =0{No mobs}.
       final en = arb('en');
       final pl = arb('pl');
       for (final key in keysOf(en)) {
@@ -138,9 +138,9 @@ void main() {
   group('Liczba mnoga', () {
     test('polski odmienia potwory przez trzy formy', () async {
       final t = await AppLocalizations.delegate.load(const Locale('pl'));
-      expect(t.hudMobs(1), contains('potwór'));
+      expect(t.hudMobs(1), contains('potwór')); // polish-ok
       expect(t.hudMobs(2), contains('potwory'));
-      expect(t.hudMobs(5), contains('potworów'));
+      expect(t.hudMobs(5), contains('potworów')); // polish-ok
     });
 
     test('angielski ma dwie formy', () async {

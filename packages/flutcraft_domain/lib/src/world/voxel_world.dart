@@ -22,28 +22,28 @@ class RayHit {
   final int z;
   final BlockType block;
 
-  /// Normalna trafionej ściany - wskazuje, gdzie postawić nowy blok.
+  /// The normal of the face that was hit: where a new block would go.
   final int nx;
   final int ny;
   final int nz;
 
   final double distance;
 
-  /// Pozycja bloku stawianego "na" trafionej ścianie.
+  /// The cell a block placed on that face would occupy.
   (int, int, int) get placement => (x + nx, y + ny, z + nz);
 
   /// Pozycja trafionego bloku.
   BlockPos get pos => BlockPos(x, y, z);
 
-  /// Czy oba trafienia wskazują ten sam blok (ściana może być inna).
+  /// Whether both hits are on the same block, face aside.
   bool samePosition(RayHit other) =>
       other.x == x && other.y == y && other.z == z;
 }
 
-/// Siatka wokseli trzymana w jednej ciągłej tablicy bajtów.
+/// The voxel grid, kept in one contiguous byte array.
 ///
-/// Świat jest skończony (bez streamingu chunków z dysku) - to prototyp,
-/// więc cała mapa mieści się w pamięci i generuje się raz na starcie.
+/// The world is finite — no chunk streaming from disk — because this is a
+/// prototype: the whole map fits in memory and is generated once at start.
 class VoxelWorld {
   VoxelWorld({this.sizeX = 128, this.sizeY = 48, this.sizeZ = 128})
     : _blocks = Uint8List(sizeX * sizeY * sizeZ);
@@ -53,7 +53,7 @@ class VoxelWorld {
   final int sizeZ;
   final Uint8List _blocks;
 
-  /// Chunki, które wymagają przebudowy siatki.
+  /// Chunks whose mesh needs rebuilding.
   final Set<int> dirtyChunks = <int>{};
 
   /// Which seed produced this terrain.
@@ -62,11 +62,11 @@ class VoxelWorld {
   /// instead of the block array and regenerates the terrain on load.
   int seed = 0;
 
-  /// Bloki zmienione względem wygenerowanego terenu.
+  /// Blocks that differ from the generated terrain.
   ///
-  /// Zapis gry trzyma ziarno i tę mapę zamiast 786 432 bajtów tablicy:
-  /// teren jest deterministyczny, więc da się go odtworzyć, a edycji
-  /// bywa zwykle kilkaset.
+  /// A save keeps the seed and this map instead of 786,432 bytes of array:
+  /// the terrain is deterministic and can be regenerated, and there are
+  /// usually only a few hundred edits.
   final Map<BlockPos, BlockType> edits = {};
 
   static const int chunkSize = 16;
@@ -86,14 +86,14 @@ class VoxelWorld {
 
   bool isSolid(int x, int y, int z) => blockAt(x, y, z).solid;
 
-  /// Zapis bez oznaczania chunku - używane tylko przez generator terenu.
+  /// Writes without marking the chunk — only the terrain generator does this.
   void setRaw(int x, int y, int z, BlockType block) {
     if (!inBounds(x, y, z)) return;
     _blocks[_index(x, y, z)] = block.index;
   }
 
-  /// Zapis w trakcie gry: oznacza chunk (i sąsiadów na granicy) do
-  /// przebudowy siatki i zapamiętuje zmianę na potrzeby zapisu.
+  /// A write during play: marks the chunk — and its neighbours on a border —
+  /// for a mesh rebuild, and records the change for the save.
   void setBlock(int x, int y, int z, BlockType block) {
     if (!inBounds(x, y, z)) return;
     _blocks[_index(x, y, z)] = block.index;
@@ -119,7 +119,7 @@ class VoxelWorld {
     }
   }
 
-  /// Najwyższy niepusty blok w kolumnie (-1 jeśli kolumna jest pusta).
+  /// The highest non-empty block in a column, or -1 when it is empty.
   int surfaceHeight(int x, int z) {
     for (var y = sizeY - 1; y >= 0; y--) {
       if (blockAt(x, y, z).solid) return y;
@@ -127,9 +127,9 @@ class VoxelWorld {
     return -1;
   }
 
-  /// Przejście promienia po wokselach (Amanatides & Woo).
+  /// Walks a ray through the voxels (Amanatides & Woo).
   ///
-  /// [dir] musi być znormalizowany. Zwraca pierwszy napotkany blok stały.
+  /// [dir] must be normalised. Returns the first solid block met.
   RayHit? raycast(Vector3 origin, Vector3 dir, double maxDistance) {
     var x = origin.x.floor();
     var y = origin.y.floor();
@@ -159,8 +159,8 @@ class VoxelWorld {
     var nz = 0;
     var travelled = 0.0;
 
-    // Gracz może stać wewnątrz bloku tylko w razie błędu - i tak sprawdzamy
-    // komórkę startową, żeby nie przebić promieniem ściany.
+    // The player can only be inside a block by mistake, but the starting
+    // cell is checked anyway so the ray cannot shoot through a wall.
     while (travelled <= maxDistance) {
       final block = blockAt(x, y, z);
       if (block.solid) {
@@ -199,7 +199,7 @@ class VoxelWorld {
         nz = -stepZ;
       }
 
-      // Promień opuścił świat w pionie - dalej nic nie będzie.
+      // The ray left the world vertically; there is nothing further out.
       if (y < 0 || y >= sizeY) return null;
     }
     return null;

@@ -8,10 +8,10 @@ import 'package:flutcraft_engine/src/render/atlas_texture.dart';
 import 'package:flutcraft_engine/src/render/mesh_builder.dart';
 import 'package:flutcraft_domain/flutcraft_domain.dart';
 
-/// Jeden chunk świata jako obiekt renderowany.
+/// One chunk of the world as a rendered object.
 ///
-/// W odróżnieniu od [MeshComponent] siatka jest wymienialna - po zbiciu
-/// lub postawieniu bloku podmieniamy ją bez usuwania komponentu z drzewa.
+/// Unlike [MeshComponent] the mesh can be swapped: breaking or placing a
+/// block replaces it without taking the component out of the tree.
 class ChunkComponent extends Object3D {
   ChunkComponent({required this.cx, required this.cz, required int worldHeight})
     : _localAabb = Aabb3.minMax(
@@ -64,11 +64,11 @@ class ChunkComponent extends Object3D {
   }
 }
 
-/// Buduje siatki chunków i rozkłada tę pracę na klatki.
+/// Builds chunk meshes, spreading the work across frames.
 ///
-/// Pełne przemielenie mapy 128x128 na raz zajmuje kilkaset ms, więc
-/// kolejka przerabia [chunksPerFrame] chunków na klatkę, zaczynając od
-/// tych najbliżej gracza.
+/// Grinding through a 128x128 map at once costs a few hundred milliseconds,
+/// so the queue does [chunksPerFrame] chunks per frame, nearest the player
+/// first.
 class ChunkManager extends Component {
   ChunkManager({
     required this.world,
@@ -98,7 +98,7 @@ class ChunkManager extends Component {
 
   Iterable<ChunkComponent> get chunks => _chunks.values;
 
-  /// Tworzy puste komponenty dla całej mapy; siatki dojdą w kolejce.
+  /// Creates empty components for the whole map; meshes arrive via the queue.
   List<ChunkComponent> createComponents() {
     for (var cz = 0; cz < world.chunksZ; cz++) {
       for (var cx = 0; cx < world.chunksX; cx++) {
@@ -109,10 +109,10 @@ class ChunkManager extends Component {
     return _chunks.values.toList();
   }
 
-  /// Buduje od razu [count] chunków najbliższych [focus] - używane na
-  /// starcie, żeby gracz nie pojawił się w pustce.
+  /// Builds the [count] chunks closest to [focus] immediately — used at
+  /// startup, so the player does not appear inside nothing.
   ///
-  /// Wymaga wcześniejszego [createComponents].
+  /// Requires [createComponents] to have run first.
   void prebuild(int count) {
     for (var i = 0; i < count && world.dirtyChunks.isNotEmpty; i++) {
       _rebuildNearest();
@@ -164,7 +164,7 @@ class ChunkManager extends Component {
           if (!block.solid) continue;
 
           for (final face in Face.values) {
-            // Ściana jest widoczna tylko wtedy, gdy sąsiad jej nie zasłania.
+            // A face is visible only when its neighbour does not cover it.
             if (world.isSolid(wx + face.dx, y + face.dy, wz + face.dz)) {
               continue;
             }

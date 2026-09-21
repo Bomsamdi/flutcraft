@@ -47,13 +47,13 @@ void main() {
       );
     });
 
-    test('po upływie interwału dokłada potwora', () {
+    test('it adds a mob once the interval has passed', () {
       expect(state.mobs, isEmpty);
       system.update(state, MobSpawner.interval, context);
       expect(state.mobs, hasLength(1));
     });
 
-    test('martwy potwór znika i zostawia łup', () {
+    test('a dead mob disappears and leaves loot', () {
       final mob = Mob(
         kind: MobKind.skeleton,
         world: state.world,
@@ -68,7 +68,7 @@ void main() {
       expect(state.inventory.countOf(ItemType.bone), greaterThan(0));
     });
 
-    test('zdarzenie niesie gatunek i łup', () {
+    test('the event carries the species and the loot', () {
       state.mobs.add(
         Mob(
           kind: MobKind.spider,
@@ -86,7 +86,7 @@ void main() {
       expect(killed.loot.map((d) => d.type), contains(ItemType.string));
     });
 
-    test('żywe potwory zostają', () {
+    test('living mobs stay', () {
       state.mobs.add(
         Mob(
           kind: MobKind.zombie,
@@ -98,7 +98,7 @@ void main() {
       expect(state.mobs, hasLength(1));
     });
 
-    test('despawnAll czyści świat', () {
+    test('despawnAll clears the world', () {
       state.mobs.addAll([
         Mob(
           kind: MobKind.zombie,
@@ -119,7 +119,7 @@ void main() {
   group('ProjectileSystem', () {
     const system = ProjectileSystem();
 
-    test('strzała wbita w ziemię znika', () {
+    test('an arrow stuck in the ground disappears', () {
       final state = flatState();
       state.arrows.add(
         Arrow(
@@ -135,7 +135,7 @@ void main() {
       expect(state.arrows, isEmpty);
     });
 
-    test('strzała trafiająca gracza rani go i znika', () {
+    test('an arrow that hits the player hurts them and vanishes', () {
       final state = flatState();
       state.arrows.add(
         Arrow(
@@ -152,7 +152,7 @@ void main() {
       expect(state.player.health, lessThan(Player.maxHealth));
     });
 
-    test('clear usuwa wszystkie strzały', () {
+    test('clear removes every arrow', () {
       final state = flatState();
       state.arrows.add(
         Arrow(
@@ -169,7 +169,7 @@ void main() {
   group('FurnaceSystem', () {
     const system = FurnaceSystem();
 
-    test('rozpalony piec zmienia blok na świecący', () {
+    test('a lit furnace swaps the block for the glowing one', () {
       final state = flatState(size: 16);
       state.world.setBlock(8, 2, 8, BlockType.furnace);
       state.furnaces.open(const BlockPos(8, 2, 8))
@@ -181,7 +181,7 @@ void main() {
       expect(state.world.blockAt(8, 2, 8), BlockType.furnaceLit);
     });
 
-    test('wygaszony piec wraca do zwykłego bloku', () {
+    test('a furnace that goes out returns to the plain block', () {
       final state = flatState(size: 16);
       state.world.setBlock(8, 2, 8, BlockType.furnace);
       state.furnaces.open(const BlockPos(8, 2, 8))
@@ -194,7 +194,7 @@ void main() {
       expect(state.world.blockAt(8, 2, 8), BlockType.furnace);
     });
 
-    test('bez pieców nic nie robi', () {
+    test('with no furnaces it does nothing', () {
       final state = flatState(size: 16);
       expect(() => system.update(state, 0.1), returnsNormally);
     });

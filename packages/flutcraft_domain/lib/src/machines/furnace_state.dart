@@ -13,29 +13,29 @@ enum FurnaceSlot {
   output,
 }
 
-/// Stan jednego pieca w świecie.
+/// The state of one furnace in the world.
 ///
-/// Piece są indeksowane pozycją bloku, więc stan przeżywa przełączanie
-/// tekstury między [BlockType.furnace] a [BlockType.furnaceLit].
+/// Furnaces are keyed by block position, so the state survives the texture
+/// swap between [BlockType.furnace] and [BlockType.furnaceLit].
 class FurnaceState {
   ItemStack? input;
   ItemStack? fuel;
   ItemStack? output;
 
-  /// Ile sekund palenia zostało z bieżącej porcji paliwa.
+  /// Seconds of burning left from the current portion of fuel.
   double burnLeft = 0;
 
-  /// Ile sekund dawała ta porcja - potrzebne do paska płomienia.
+  /// How many seconds that portion gave, for the flame gauge.
   double burnTotal = 0;
 
-  /// Postęp wytopu bieżącej sztuki (0..1).
+  /// Progress on the current item, 0..1.
   double progress = 0;
 
   /// Ile sekund trwa wytopienie jednej sztuki.
   static const double smeltTime = 4.0;
 
-  /// Tolerancja porównań: sumowanie dt po setkach klatek gubi ostatnie
-  /// bity, przez co ostatni cykl porcji paliwa przepadał.
+  /// Comparison tolerance: adding up dt over hundreds of frames loses the
+  /// last bits, which used to cost the fuel's final cycle.
   static const double _epsilon = 1e-9;
 
   bool get isLit => burnLeft > 0;
@@ -63,7 +63,7 @@ class FurnaceState {
 
   bool get isEmpty => input == null && fuel == null && output == null;
 
-  /// Czy da się teraz coś wytapiać (jest wsad i miejsce na wynik).
+  /// Whether anything can be smelted right now: input present, room for output.
   bool get canSmelt {
     final source = input;
     if (source == null) return false;
@@ -81,7 +81,7 @@ class FurnaceState {
     if (burnLeft <= 0 && smelting) _consumeFuel();
 
     if (burnLeft <= 0) {
-      // Zimny piec powoli traci postęp, jak w oryginale.
+      // A cold furnace loses progress slowly, as in the original.
       progress = (progress - dt / smeltTime).clamp(0.0, 1.0);
       burnTotal = 0;
       return;
@@ -97,8 +97,8 @@ class FurnaceState {
       progress = (progress - dt / smeltTime).clamp(0.0, 1.0);
     }
 
-    // Paliwo zużywamy dopiero po wykonaniu pracy w tym kroku - inaczej
-    // ostatni cykl porcji paliwa przepadałby tuż przed końcem.
+    // Fuel is consumed after the work of this step, not before: otherwise
+    // the last cycle of a portion was lost right at the end.
     burnLeft -= dt;
     if (burnLeft <= 0) burnTotal = 0;
   }
@@ -123,7 +123,7 @@ class FurnaceState {
     output = slot == null ? ItemStack(result) : slot.plus(1);
   }
 
-  /// Zawartość do zwrócenia graczowi po zbiciu pieca.
+  /// What to give back to the player when the furnace is broken.
   List<ItemStack> contents() =>
       [input, fuel, output].whereType<ItemStack>().toList();
 }

@@ -34,7 +34,7 @@ RayHit hitAt(GameState state, int x, int y, int z) => RayHit(
 
 void main() {
   group('breakTime', () {
-    test('pasujące narzędzie kopie szybciej niż ręka', () {
+    test('the right tool digs faster than a bare hand', () {
       final bare = MiningSystem.breakTime(BlockType.stone, null);
       final wooden = MiningSystem.breakTime(
         BlockType.stone,
@@ -43,7 +43,7 @@ void main() {
       expect(wooden, lessThan(bare));
     });
 
-    test('lepszy poziom narzędzia kopie szybciej', () {
+    test('a higher tier digs faster', () {
       final wooden = MiningSystem.breakTime(
         BlockType.stone,
         ItemType.woodenPickaxe,
@@ -55,20 +55,20 @@ void main() {
       expect(iron, lessThan(wooden));
     });
 
-    test('niepasujące narzędzie nie pomaga', () {
+    test('the wrong tool does not help', () {
       final bare = MiningSystem.breakTime(BlockType.stone, null);
       final sword = MiningSystem.breakTime(BlockType.stone, ItemType.ironSword);
       expect(sword, bare);
     });
 
-    test('twardszy blok trwa dłużej', () {
+    test('a harder block takes longer', () {
       expect(
         MiningSystem.breakTime(BlockType.dirt, null),
         lessThan(MiningSystem.breakTime(BlockType.stone, null)),
       );
     });
 
-    test('nawet najlepsze narzędzie ma dolny próg', () {
+    test('even the best tool has a floor', () {
       expect(
         MiningSystem.breakTime(BlockType.leaves, ItemType.ironPickaxe),
         greaterThanOrEqualTo(0.08),
@@ -81,7 +81,7 @@ void main() {
 
     setUp(() => system = MiningSystem(random: Random(1)));
 
-    test('bez trzymania przycisku postęp wraca do zera', () {
+    test('letting go of the button resets progress', () {
       final state = stateWith()
         ..aim = BlockTarget(hitAt(stateWith(), 8, 1, 8))
         ..breakProgress = 0.7;
@@ -89,7 +89,7 @@ void main() {
       expect(state.breakProgress, 0);
     });
 
-    test('kopanie postępuje i w końcu usuwa blok', () {
+    test('mining progresses and eventually removes the block', () {
       final state = stateWith(held: ItemType.woodenPickaxe);
       state.aim = BlockTarget(hitAt(state, 8, 1, 8));
 
@@ -102,19 +102,22 @@ void main() {
       expect(events.whereType<BlockBroken>(), hasLength(1));
     });
 
-    test('kamień bity ręką znika bez dropu i zgłasza słabe narzędzie', () {
-      final state = stateWith();
-      state.aim = BlockTarget(hitAt(state, 8, 1, 8));
+    test(
+      'stone punched by hand breaks with no drop and reports a weak tool',
+      () {
+        final state = stateWith();
+        state.aim = BlockTarget(hitAt(state, 8, 1, 8));
 
-      var events = <GameEvent>[];
-      for (var i = 0; i < 600 && state.world.isSolid(8, 1, 8); i++) {
-        events = system.update(state, 1 / 60, active: true);
-      }
+        var events = <GameEvent>[];
+        for (var i = 0; i < 600 && state.world.isSolid(8, 1, 8); i++) {
+          events = system.update(state, 1 / 60, active: true);
+        }
 
-      expect(state.world.blockAt(8, 1, 8), BlockType.air);
-      expect(events.whereType<ToolTooWeak>(), hasLength(1));
-      expect(state.inventory.isEmpty, isTrue);
-    });
+        expect(state.world.blockAt(8, 1, 8), BlockType.air);
+        expect(events.whereType<ToolTooWeak>(), hasLength(1));
+        expect(state.inventory.isEmpty, isTrue);
+      },
+    );
 
     test('drop trafia do ekwipunku', () {
       final state = stateWith(held: ItemType.stonePickaxe);
@@ -147,7 +150,7 @@ void main() {
       expect(mob.health, lessThan(afterFirst));
     });
 
-    test('lepsza broń zadaje więcej obrażeń', () {
+    test('a better weapon deals more damage', () {
       double damageWith(ItemType? weapon) {
         final state = stateWith(held: weapon);
         final mob = Mob(
@@ -172,7 +175,7 @@ void main() {
       expect(system.update(state, 1 / 60, active: true), isEmpty);
     });
 
-    test('bedrock nie daje się zbić', () {
+    test('bedrock cannot be broken', () {
       final state = stateWith(held: ItemType.ironPickaxe);
       state.aim = BlockTarget(hitAt(state, 8, 0, 8));
       for (var i = 0; i < 600; i++) {
