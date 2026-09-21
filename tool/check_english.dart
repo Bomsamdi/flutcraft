@@ -58,7 +58,7 @@ void main() {
 
   stderr.writeln('Polish text found outside the translation files:');
   for (final entry in offenders.entries) {
-    stderr.writeln('  ${entry.key}  (${entry.value} characters)');
+    stderr.writeln('  ${entry.key}  (${entry.value} hits)');
   }
   stderr.writeln('\nThe series is in English; translations belong in ARB.');
   exit(1);
