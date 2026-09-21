@@ -16,6 +16,8 @@ export 'src/blocks/tile.dart';
 export 'src/crafting/recipes.dart';
 export 'src/inventory/inventory.dart';
 export 'src/items/item_type.dart';
+export 'src/loot/block_loot.dart';
+export 'src/loot/loot_table.dart';
 export 'src/machines/furnace_registry.dart';
 export 'src/machines/furnace_state.dart';
 export 'src/physics/voxel_body.dart';

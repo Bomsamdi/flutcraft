@@ -151,27 +151,3 @@ class ItemStack {
   @override
   String toString() => '${type.name} x$count';
 }
-
-/// Co wypada po zbiciu bloku danym narzędziem.
-///
-/// Zwraca `null`, gdy narzędzie jest za słabe (jak w Minecrafcie: kamień
-/// bity ręką nie daje nic) albo blok nie ma dropu.
-ItemStack? dropFor(BlockType block, ItemType? heldItem) {
-  final tier = heldItem?.tool == ToolType.pickaxe ? heldItem!.tier : 0;
-  if (block.requiredTier > tier) return null;
-
-  return switch (block) {
-    BlockType.stone => ItemStack(ItemType.cobblestone),
-    BlockType.grass => ItemStack(ItemType.dirt),
-    BlockType.coalOre => ItemStack(ItemType.coal),
-    BlockType.ironOre => ItemStack(ItemType.rawIron),
-    BlockType.furnaceLit => ItemStack(ItemType.furnace),
-    BlockType.leaves => null,
-    BlockType.bedrock => null,
-    BlockType.air => null,
-    _ => switch (ItemType.forBlock(block)) {
-      final item? => ItemStack(item),
-      _ => null,
-    },
-  };
-}

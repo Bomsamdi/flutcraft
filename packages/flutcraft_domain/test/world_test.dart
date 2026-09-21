@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:vector_math/vector_math.dart';
 import 'package:flutcraft_domain/flutcraft_domain.dart';
 import 'package:test/test.dart';
@@ -184,28 +185,42 @@ void main() {
   });
 
   group('BlockType', () {
+    final rng = math.Random(1);
+    ItemType? dropType(BlockType block, ItemType? tool) {
+      final drops = blockDrops(block, tool, rng);
+      return drops.isEmpty ? null : drops.single.type;
+    }
+
     test('kamień i trawa dają inny drop niż same siebie', () {
       expect(
-        dropFor(BlockType.stone, ItemType.woodenPickaxe)?.type,
+        dropType(BlockType.stone, ItemType.woodenPickaxe),
         ItemType.cobblestone,
       );
-      expect(dropFor(BlockType.grass, null)?.type, ItemType.dirt);
-      expect(dropFor(BlockType.sand, null)?.type, ItemType.sand);
+      expect(dropType(BlockType.grass, null), ItemType.dirt);
+      expect(dropType(BlockType.sand, null), ItemType.sand);
     });
 
     test('bez odpowiedniego kilofa blok nie daje nic', () {
-      expect(dropFor(BlockType.stone, null), isNull);
-      expect(dropFor(BlockType.ironOre, ItemType.woodenPickaxe), isNull);
+      expect(dropType(BlockType.stone, null), isNull);
+      expect(dropType(BlockType.ironOre, ItemType.woodenPickaxe), isNull);
       expect(
-        dropFor(BlockType.ironOre, ItemType.stonePickaxe)?.type,
+        dropType(BlockType.ironOre, ItemType.stonePickaxe),
         ItemType.rawIron,
       );
     });
 
     test('piec zawsze wraca jako zwykły piec', () {
       expect(
-        dropFor(BlockType.furnaceLit, ItemType.stonePickaxe)?.type,
+        dropType(BlockType.furnaceLit, ItemType.stonePickaxe),
         ItemType.furnace,
+      );
+    });
+
+    test('liście i bedrock nie dają nic', () {
+      expect(blockDrops(BlockType.leaves, null, rng), isEmpty);
+      expect(
+        blockDrops(BlockType.bedrock, ItemType.ironPickaxe, rng),
+        isEmpty,
       );
     });
 
