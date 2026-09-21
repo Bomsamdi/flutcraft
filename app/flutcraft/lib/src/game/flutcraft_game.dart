@@ -1,4 +1,3 @@
-import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:flame/input.dart' show KeyboardEvents;
@@ -142,6 +141,9 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
 
   /// Stawianie bloków wraz z regułami, gdzie wolno.
   final PlacementSystem _placement = PlacementSystem();
+
+  /// Wybuchy: destrukcja terenu i obrażenia obszarowe.
+  final ExplosionSystem _explosions = const ExplosionSystem();
   bool _placing = false;
 
   // --- stan gry -------------------------------------------------------------
@@ -370,42 +372,9 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
 
   @override
   void explode(Vector3 at, double radius, int maxDamage) {
-    final r = radius.ceil();
-    final cx = at.x.floor();
-    final cy = at.y.floor();
-    final cz = at.z.floor();
-
-    for (var y = cy - r; y <= cy + r; y++) {
-      for (var z = cz - r; z <= cz + r; z++) {
-        for (var x = cx - r; x <= cx + r; x++) {
-          final dx = x + 0.5 - at.x;
-          final dy = y + 0.5 - at.y;
-          final dz = z + 0.5 - at.z;
-          if (dx * dx + dy * dy + dz * dz > radius * radius) continue;
-          final block = voxels.blockAt(x, y, z);
-          if (!block.solid || !block.breakable) continue;
-          if (block.hasLitVariant) furnaces.remove(BlockPos(x, y, z));
-          voxels.setBlock(x, y, z, BlockType.air);
-        }
-      }
+    for (final event in _explosions.explode(state, at, radius, maxDamage)) {
+      _emit(event);
     }
-
-    final distance = player.center.distanceTo(at);
-    if (distance < radius + 1) {
-      final falloff = 1 - (distance / (radius + 1)).clamp(0.0, 1.0);
-      final damage = math.max(1, (maxDamage * falloff).round());
-      player.damage(damage, source: at);
-    }
-
-    // Wybuch rani też inne potwory - creeper potrafi zrobić czystkę.
-    for (final other in List<Mob>.from(mobs)) {
-      final d = other.center.distanceTo(at);
-      if (d < radius + 0.5) {
-        other.damage(maxDamage * (1 - d / (radius + 0.5)), source: at);
-      }
-    }
-
-    _emit(const CreeperExploded());
   }
 
   // --- celowanie ------------------------------------------------------------
