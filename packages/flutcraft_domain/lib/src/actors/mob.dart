@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:vector_math/vector_math.dart';
 import '../blocks/block_type.dart';
 import '../items/item_type.dart';
+import '../loot/loot_table.dart';
 import '../blocks/tile.dart';
 import 'player.dart';
 import '../physics/voxel_body.dart';
@@ -98,18 +99,22 @@ enum MobKind {
   /// Wybucha zamiast atakować.
   final bool explodes;
 
-  /// Co upuszcza po śmierci.
-  List<ItemStack> roll(math.Random rng) => switch (this) {
-    MobKind.skeleton => [
-      ItemStack(ItemType.bone, 1 + rng.nextInt(2)),
-      if (rng.nextDouble() < 0.6) ItemStack(ItemType.arrow, 1 + rng.nextInt(2)),
-    ],
-    MobKind.spider => [ItemStack(ItemType.string, 1 + rng.nextInt(2))],
-    MobKind.creeper => [ItemStack(ItemType.gunpowder, 1 + rng.nextInt(2))],
+  /// Co upuszcza po śmierci - ten sam typ co przy blokach.
+  LootTable get loot => switch (this) {
+    MobKind.skeleton => LootTable([
+      const LootEntry(ItemType.bone, min: 1, max: 2),
+      const LootEntry(ItemType.arrow, min: 1, max: 2, chance: 0.6),
+    ]),
+    MobKind.spider => LootTable([
+      const LootEntry(ItemType.string, min: 1, max: 2),
+    ]),
+    MobKind.creeper => LootTable([
+      const LootEntry(ItemType.gunpowder, min: 1, max: 2),
+    ]),
     // Zombie tylko sporadycznie gubi żelazo - tak jak w oryginale.
-    MobKind.zombie => [
-      if (rng.nextDouble() < 0.12) ItemStack(ItemType.ironIngot),
-    ],
+    MobKind.zombie => LootTable([
+      const LootEntry(ItemType.ironIngot, chance: 0.12),
+    ]),
   };
 }
 

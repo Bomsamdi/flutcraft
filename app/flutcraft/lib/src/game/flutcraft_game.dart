@@ -317,7 +317,7 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
     mobs.remove(mob);
     _mobComponents.remove(mob)?.removeFromParent();
 
-    final drops = mob.kind.roll(spawner.rng);
+    final drops = mob.kind.loot.roll(spawner.rng);
     for (final drop in drops) {
       inventory.add(drop.type, drop.count);
     }
@@ -462,13 +462,17 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
 
     voxels.setBlock(hit.x, hit.y, hit.z, BlockType.air);
 
-    final drop = dropFor(block, heldItemType);
-    if (drop == null) {
+    final drops = blockDrops(block, heldItemType, spawner.rng);
+    if (drops.isEmpty) {
       if (block.requiredTier > 0) {
         _notify('Potrzebujesz lepszego kilofa: ${block.label}');
       }
-    } else if (inventory.add(drop.type, drop.count) > 0) {
-      _notify('Ekwipunek pełny');
+    } else {
+      for (final drop in drops) {
+        if (inventory.add(drop.type, drop.count) > 0) {
+          _notify('Ekwipunek pełny');
+        }
+      }
     }
 
     _aim = const NoTarget();
