@@ -10,6 +10,7 @@ import 'package:flutcraft_engine/src/game/voxel_camera.dart';
 import 'package:flutcraft_engine/src/render/atlas_texture.dart';
 import 'package:flutcraft_engine/src/render/chunk_renderer.dart';
 import 'package:flutcraft_engine/src/render/mob_renderer.dart';
+import 'package:flutcraft_engine/src/render/player_figure.dart';
 import 'package:flutcraft_engine/src/render/overlay_meshes.dart';
 import 'package:flutcraft_engine/src/systems/entity_sync.dart';
 import 'package:flutcraft_domain/flutcraft_domain.dart';
@@ -57,10 +58,14 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera> {
   late final ItemMeshes itemMeshes;
   late final MobModels mobModels;
 
-  /// Mobs and arrows exist in the simulation; these keep a component per
-  /// entity in step with them.
+  /// Mobs, arrows and other people exist in the simulation; these keep a
+  /// component per entity in step with them.
   late final EntitySync<Mob, MobComponent> _mobs;
   late final EntitySync<Arrow, ArrowComponent> _arrows;
+  late final EntitySync<Participant, PlayerFigure> _others;
+
+  /// Seconds since the last frame, for the figures that animate themselves.
+  double _lastDelta = kStep;
 
   /// The player this client is looking through.
   ///
@@ -124,6 +129,13 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera> {
       build: (arrow) => ArrowComponent(arrow: arrow, mesh: mobModels.arrow),
       sync: (component, _) => component.sync(),
     );
+    _others = EntitySync(
+      world: world,
+      // Everybody but the one whose eyes this is.
+      source: () => state.participants.values.where((it) => it.id != viewer.id),
+      build: (it) => PlayerFigure(participant: it, model: mobModels.player),
+      sync: (component, _) => component.sync(_lastDelta),
+    );
 
     await add(chunkManager);
     await world.addAll(chunkComponents);
@@ -139,6 +151,7 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera> {
       _fps = _fps == 0 ? instant : _fps * 0.9 + instant * 0.1;
     }
 
+    _lastDelta = dt;
     session.tick(dt, input.build(dt));
 
     chunkManager.focus.setFrom(player.position);
@@ -146,6 +159,7 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera> {
     selection.showFor(viewer.aim);
     _mobs.refresh();
     _arrows.refresh();
+    _others.refresh();
     heldItem.syncTo(
       item: viewer.heldItem,
       meshes: itemMeshes,

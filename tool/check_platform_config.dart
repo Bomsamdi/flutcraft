@@ -19,6 +19,7 @@ void main() {
     ..._checkIosOrientation(),
     ..._checkAndroidOrientation(),
     ..._checkRendererFlags(),
+    ..._checkNetworkEntitlement(),
   ];
 
   if (problems.isEmpty) {
@@ -83,6 +84,27 @@ List<String> _checkAndroidOrientation() {
     'AndroidManifest.xml is missing '
         'android:screenOrientation="sensorLandscape" on MainActivity',
   ];
+}
+
+/// A sandboxed macOS app may not open an outgoing connection without asking.
+///
+/// Worth checking rather than remembering: without the entitlement, joining a
+/// server fails with "Operation not permitted" and nothing points at the
+/// sandbox. It is also exactly the kind of file that gets regenerated.
+List<String> _checkNetworkEntitlement() {
+  const needed = 'com.apple.security.network.client';
+  final problems = <String>[];
+
+  for (final name in ['DebugProfile', 'Release']) {
+    final path = 'macos/Runner/$name.entitlements';
+    if (!_read(path).contains(needed)) {
+      problems.add(
+        '$path is missing $needed, so the game cannot join a '
+        'server on macOS',
+      );
+    }
+  }
+  return problems;
 }
 
 /// flutter_gpu only runs on Impeller, and only when explicitly enabled.

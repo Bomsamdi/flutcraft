@@ -57,6 +57,10 @@ enum Tile {
   spiderFace,
   creeperSkin,
   creeperFace,
+
+  // --- other players ---
+  playerSkin,
+  playerFace,
 }
 
 /// Shading levels baked into the atlas instead of computed in a shader.

@@ -19,6 +19,8 @@ dependencies:
     path: ../../packages/flutcraft_engine
   flutcraft_l10n:
     path: ../../packages/flutcraft_l10n
+  flutcraft_protocol:
+    path: ../../packages/flutcraft_protocol
   flutcraft_ui:
     path: ../../packages/flutcraft_ui
   flutter:

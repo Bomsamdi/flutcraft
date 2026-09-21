@@ -12,5 +12,6 @@ export 'src/render/atlas_texture.dart';
 export 'src/render/chunk_renderer.dart';
 export 'src/render/mesh_builder.dart';
 export 'src/render/mob_renderer.dart';
+export 'src/render/player_figure.dart';
 export 'src/render/overlay_meshes.dart';
 export 'src/systems/entity_sync.dart';

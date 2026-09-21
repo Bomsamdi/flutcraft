@@ -89,13 +89,7 @@ class GameHost {
     _links.remove(who)?.close();
     _links[who] = link;
 
-    state.participants.putIfAbsent(
-      who,
-      () => Participant(
-        id: who,
-        player: Player(world: state.world, spawn: Vector3.zero())..respawn(),
-      ),
-    );
+    state.participants.putIfAbsent(who, () => _arrive(who));
     _retireCaretaker();
 
     link.send(
@@ -109,6 +103,23 @@ class GameHost {
       ),
     );
     _sendInventory(who, force: true);
+  }
+
+  /// Somebody who has never been in this world before.
+  ///
+  /// They arrive with the same handful of blocks a new single-player game
+  /// hands out, because a world you cannot build in on your first minute is
+  /// not much of an invitation.
+  Participant _arrive(PlayerId who) {
+    final participant = Participant(
+      id: who,
+      player: Player(world: state.world, spawn: Vector3.zero())..respawn(),
+    );
+    participant.inventory
+      ..add(ItemType.log, 8)
+      ..add(ItemType.planks, 8)
+      ..add(ItemType.cobblestone, 16);
+    return participant;
   }
 
   /// Sees a client out. Returns what they were carrying, so a caller can

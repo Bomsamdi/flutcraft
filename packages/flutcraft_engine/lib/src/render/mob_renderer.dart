@@ -102,15 +102,31 @@ class MobModels {
     MobKind.creeper => _creeper(kind),
   };
 
-  /// Zombie i szkielet: ta sama sylwetka, inne proporcje.
+  /// Another person, drawn the same way a mob is.
+  ///
+  /// A player is a humanoid with a different skin; sharing the builder means
+  /// a change to how a body is put together shows up on everybody, rather
+  /// than on everybody except the people.
+  MobModel get player =>
+      _player ??= _humanoidOf(Tile.playerSkin, Tile.playerFace);
+
+  MobModel? _player;
+
+  /// Zombie and skeleton: the same silhouette, different proportions.
   MobModel _humanoid(
     MobKind kind, {
+    bool slim = false,
+    bool armForward = false,
+  }) => _humanoidOf(kind.skin, kind.face, slim: slim, armForward: armForward);
+
+  MobModel _humanoidOf(
+    Tile skin,
+    Tile face, {
     bool slim = false,
     bool armForward = false,
   }) {
     final limb = slim ? 0.13 : 0.17;
     final torsoWidth = slim ? 0.42 : 0.5;
-    final skin = kind.skin;
 
     return MobModel([
       MobPart(
@@ -145,7 +161,7 @@ class MobModels {
         amount: armForward ? 0.25 : 0.55,
       ),
       MobPart(
-        mesh: _box(0.5, 0.5, 0.5, skin, front: kind.face),
+        mesh: _box(0.5, 0.5, 0.5, skin, front: face),
         anchor: Vector3(0, 1.45, 0),
       ),
     ]);

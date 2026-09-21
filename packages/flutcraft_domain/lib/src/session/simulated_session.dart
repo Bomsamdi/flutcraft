@@ -1,5 +1,6 @@
 import '../actors/player_id.dart';
 import '../input/input_frame.dart';
+import 'game_session.dart';
 import 'game_state.dart';
 import 'participant.dart';
 
@@ -25,6 +26,15 @@ abstract interface class SimulatedSession {
   /// Advances the game by a rendered frame's worth of time.
   void tick(double dt, InputFrame input);
 }
+
+/// A game a client can both play and draw.
+///
+/// The two interfaces exist separately because they are answers to different
+/// questions — what may the interface do, and what does a renderer need to
+/// see — and most code wants only one of them. A composition root wants both,
+/// and saying so is better than a cast.
+abstract interface class PlayableSession
+    implements GameSession, SimulatedSession {}
 
 /// Reading the viewer out of a session.
 extension ViewerOf on SimulatedSession {
