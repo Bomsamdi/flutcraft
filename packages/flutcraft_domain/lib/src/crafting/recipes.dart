@@ -245,13 +245,16 @@ bool canCraft(Recipe recipe, Inventory inventory) {
 }
 
 /// Czego i ile brakuje w ekwipunku, żeby wykonać przepis.
-Map<ItemType, int> missingFor(Recipe recipe, Inventory inventory) {
-  final missing = <ItemType, int>{};
-  for (final MapEntry(key: type, value: needed) in recipe.cost.entries) {
-    final have = inventory.countOf(type);
-    if (have < needed) missing[type] = needed - have;
+Map<ItemType, int> missingFor(Recipe recipe, Iterable<ItemStack?> slots) {
+  final have = <ItemType, int>{};
+  for (final stack in slots) {
+    if (stack != null) have[stack.type] = (have[stack.type] ?? 0) + stack.count;
   }
-  return missing;
+
+  return {
+    for (final MapEntry(key: type, value: needed) in recipe.cost.entries)
+      if (needed > (have[type] ?? 0)) type: needed - (have[type] ?? 0),
+  };
 }
 
 /// Przedmioty, które da się wytopić w piecu - kolejność jak w księdze.

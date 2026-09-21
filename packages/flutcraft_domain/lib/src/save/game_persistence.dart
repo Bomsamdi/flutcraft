@@ -65,6 +65,11 @@ class GamePersistence {
       ..health = data.player.health
       ..flying = data.player.flying;
 
+    // Loading must never drop the player onto the death screen with nothing
+    // to do but respawn. Current versions refuse to save a dead player, but
+    // an older file — or a hand-edited one — can still say so.
+    if (player.isDead) player.respawn();
+
     final inventory = Inventory();
     for (var i = 0; i < data.inventory.length && i < inventory.length; i++) {
       inventory[i] = data.inventory[i];

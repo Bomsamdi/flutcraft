@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import '../input/input_frame.dart';
 import 'game_command.dart';
 import 'game_event.dart';
 import 'game_loop.dart';

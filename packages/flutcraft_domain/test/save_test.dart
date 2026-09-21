@@ -134,6 +134,19 @@ void main() {
       expect(restored.cursor, isNull);
     });
 
+    test('a save that says the player is dead restores them alive', () {
+      final original = freshGame();
+      original.player.damage(Player.maxHealth);
+
+      // Only an older version could write this, but loading it must not
+      // leave the player stuck on the death screen.
+      final restored = persistence.restore(
+        codec.decode(codec.encode(persistence.capture(original))).data,
+      );
+
+      expect(restored.player.isDead, isFalse);
+    });
+
     test('capturing leaves the running game untouched', () {
       final original = freshGame();
       original.smallGrid[0] = const ItemStack(ItemType.log, 3);
@@ -296,6 +309,29 @@ void main() {
       }
 
       expect(sink.saves, hasLength(1), reason: 'the timer restarted at zero');
+    });
+
+    test('a dead player is never autosaved', () {
+      final sink = RecordingSaveSink();
+      final loop = loopWith(sink);
+      loop.state.player.damage(Player.maxHealth);
+
+      for (var i = 0; i < 60 * 11; i++) {
+        loop.tick(1 / 60, InputFrame.idle);
+      }
+
+      // Otherwise the next launch opens on the death screen, with the last
+      // living moment already overwritten.
+      expect(sink.saves, isEmpty);
+    });
+
+    test('an explicit save of a dead player is refused too', () {
+      final sink = RecordingSaveSink();
+      final loop = loopWith(sink);
+      loop.state.player.damage(Player.maxHealth);
+
+      expect(loop.dispatch(const SaveGame()), isEmpty);
+      expect(sink.saves, isEmpty);
     });
 
     test('without a sink the loop simply does not save', () {

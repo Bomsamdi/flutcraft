@@ -61,3 +61,44 @@ final furnaceProvider = Provider<FurnaceView?>(
 final cursorProvider = Provider<ItemStack?>(
   (ref) => ref.watch(currentSnapshotProvider.select((s) => s.cursor)),
 );
+
+final inventoryProvider = Provider<List<ItemStack?>>(
+  (ref) => ref.watch(currentSnapshotProvider.select((s) => s.inventory)),
+);
+
+final gridProvider = Provider<List<ItemStack?>>(
+  (ref) => ref.watch(currentSnapshotProvider.select((s) => s.grid)),
+);
+
+final gridSizeProvider = Provider<int>(
+  (ref) => ref.watch(currentSnapshotProvider.select((s) => s.gridSize)),
+);
+
+final craftPreviewProvider = Provider<ItemStack?>(
+  (ref) => ref.watch(currentSnapshotProvider.select((s) => s.craftPreview)),
+);
+
+final healthProvider = Provider<(int, int)>(
+  (ref) =>
+      ref.watch(currentSnapshotProvider.select((s) => (s.health, s.maxHealth))),
+);
+
+final hurtFlashProvider = Provider<double>(
+  (ref) => ref.watch(currentSnapshotProvider.select((s) => s.hurtFlash)),
+);
+
+final breakProgressProvider = Provider<double>(
+  (ref) => ref.watch(currentSnapshotProvider.select((s) => s.breakProgress)),
+);
+
+final positionProvider = Provider<BlockPos>(
+  (ref) => ref.watch(currentSnapshotProvider.select((s) => s.position)),
+);
+
+final mobCountProvider = Provider<int>(
+  (ref) => ref.watch(currentSnapshotProvider.select((s) => s.mobCount)),
+);
+
+final flyingProvider = Provider<bool>(
+  (ref) => ref.watch(currentSnapshotProvider.select((s) => s.flying)),
+);
