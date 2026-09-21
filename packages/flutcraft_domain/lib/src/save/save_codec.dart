@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import '../actors/player_id.dart';
 import '../blocks/block_pos.dart';
 import '../blocks/block_type.dart';
 import '../items/item_type.dart';
@@ -11,15 +12,26 @@ import 'save_data.dart';
 /// Enums are written by name, never by index. An index is the same trap as a
 /// packed block key: reordering `ItemType` would silently turn every pickaxe
 /// in every save into sand, with nothing failing to compile.
+///
+/// The world and the players are separate documents, so a server can rewrite
+/// `world.json` on its own schedule and touch a player's file only when that
+/// player does something. A single-player game puts both in one file.
 class SaveCodec {
   const SaveCodec();
 
-  /// Bump when the shape changes, and add a migration for the old one.
-  static const int currentVersion = 1;
+  /// Bump when the shape changes, and read the old one below.
+  ///
+  /// Version 2 replaced the single player with a roster.
+  static const int currentVersion = 2;
 
   /// Bump when terrain generation changes, which invalidates edits that were
   /// recorded against the old terrain.
   static const int terrainVersion = 1;
+
+  /// The id a version 1 save's only player is given.
+  ///
+  /// It had none — there was nobody to tell it apart from.
+  static const PlayerId legacyPlayer = PlayerId('solo');
 
   Uint8List encode(SaveData data) => utf8.encode(json.encode(toJson(data)));
 
@@ -27,25 +39,22 @@ class SaveCodec {
     'version': currentVersion,
     'terrainVersion': terrainVersion,
     'savedAt': (data.savedAt ?? DateTime.now()).toUtc().toIso8601String(),
-    'seed': data.seed,
+    'world': worldToJson(data.world),
+    'players': [for (final player in data.players) playerToJson(player)],
+  };
+
+  /// A world on its own — what a server rewrites when it autosaves.
+  Map<String, Object?> worldToJson(WorldSave world) => {
+    'seed': world.seed,
     'edits': [
-      for (final entry in data.edits.entries)
+      for (final entry in world.edits.entries)
         {
           'p': [entry.key.x, entry.key.y, entry.key.z],
           'b': entry.value.name,
         },
     ],
-    'player': {
-      'pos': [data.player.x, data.player.y, data.player.z],
-      'yaw': data.player.yaw,
-      'pitch': data.player.pitch,
-      'health': data.player.health,
-      'flying': data.player.flying,
-    },
-    'selected': data.selectedSlot,
-    'inventory': [for (final stack in data.inventory) _stackToJson(stack)],
     'furnaces': [
-      for (final furnace in data.furnaces)
+      for (final furnace in world.furnaces)
         {
           'p': [furnace.pos.x, furnace.pos.y, furnace.pos.z],
           'in': _stackToJson(furnace.input),
@@ -56,6 +65,18 @@ class SaveCodec {
           'progress': furnace.progress,
         },
     ],
+  };
+
+  /// One player on their own — what a server writes when that player leaves.
+  Map<String, Object?> playerToJson(PlayerSave player) => {
+    'id': player.id.value,
+    'pos': [player.x, player.y, player.z],
+    'yaw': player.yaw,
+    'pitch': player.pitch,
+    'health': player.health,
+    'flying': player.flying,
+    'selected': player.selectedSlot,
+    'inventory': [for (final stack in player.inventory) _stackToJson(stack)],
   };
 
   LoadResult decode(Uint8List bytes) =>
@@ -70,6 +91,30 @@ class SaveCodec {
     }
 
     final warnings = <SaveWarning>[];
+    final savedAt = DateTime.tryParse(raw['savedAt'] as String? ?? '');
+
+    // Version 1 kept the world and its one player flat in the same map.
+    final worldRaw = raw['world'] as Map<String, Object?>? ?? raw;
+    final playersRaw = raw['players'] as List? ?? [raw];
+
+    return LoadResult(
+      SaveData(
+        world: worldFromJson(worldRaw, warnings),
+        players: [
+          for (final entry in playersRaw)
+            playerFromJson(entry as Map<String, Object?>, warnings),
+        ],
+        savedAt: savedAt,
+      ),
+      warnings,
+    );
+  }
+
+  /// Reads a world document.
+  WorldSave worldFromJson(
+    Map<String, Object?> raw,
+    List<SaveWarning> warnings,
+  ) {
     final edits = <BlockPos, BlockType>{};
     for (final entry in (raw['edits'] as List? ?? const [])) {
       final map = entry as Map<String, Object?>;
@@ -79,37 +124,45 @@ class SaveCodec {
       edits[BlockPos(pos[0], pos[1], pos[2])] = block;
     }
 
-    final player = raw['player'] as Map<String, Object?>? ?? const {};
-    final position = (player['pos'] as List? ?? const [0, 0, 0])
+    return WorldSave(
+      seed: raw['seed'] as int? ?? 0,
+      edits: edits,
+      furnaces: [
+        for (final entry in (raw['furnaces'] as List? ?? const []))
+          _furnaceFromJson(entry as Map<String, Object?>, warnings),
+      ],
+    );
+  }
+
+  /// Reads a player document.
+  ///
+  /// A version 1 save has no id; its only player becomes [legacyPlayer], so
+  /// an old world opens with the inventory it was left with.
+  PlayerSave playerFromJson(
+    Map<String, Object?> raw,
+    List<SaveWarning> warnings,
+  ) {
+    final flat = raw['player'] as Map<String, Object?>?;
+    final body = flat ?? raw;
+    final position = (body['pos'] as List? ?? const [0, 0, 0])
         .cast<num>()
         .map((n) => n.toDouble())
         .toList();
 
-    return LoadResult(
-      SaveData(
-        seed: raw['seed'] as int? ?? 0,
-        edits: edits,
-        player: SavedPlayer(
-          x: position[0],
-          y: position[1],
-          z: position[2],
-          yaw: (player['yaw'] as num? ?? 0).toDouble(),
-          pitch: (player['pitch'] as num? ?? 0).toDouble(),
-          health: player['health'] as int? ?? 20,
-          flying: player['flying'] as bool? ?? false,
-        ),
-        inventory: [
-          for (final entry in (raw['inventory'] as List? ?? const []))
-            _stackFromJson(entry as Map<String, Object?>?, warnings),
-        ],
-        selectedSlot: raw['selected'] as int? ?? 0,
-        furnaces: [
-          for (final entry in (raw['furnaces'] as List? ?? const []))
-            _furnaceFromJson(entry as Map<String, Object?>, warnings),
-        ],
-        savedAt: DateTime.tryParse(raw['savedAt'] as String? ?? ''),
-      ),
-      warnings,
+    return PlayerSave(
+      id: PlayerId(raw['id'] as String? ?? legacyPlayer.value),
+      x: position[0],
+      y: position[1],
+      z: position[2],
+      yaw: (body['yaw'] as num? ?? 0).toDouble(),
+      pitch: (body['pitch'] as num? ?? 0).toDouble(),
+      health: body['health'] as int? ?? 20,
+      flying: body['flying'] as bool? ?? false,
+      selectedSlot: raw['selected'] as int? ?? 0,
+      inventory: [
+        for (final entry in (raw['inventory'] as List? ?? const []))
+          _stackFromJson(entry as Map<String, Object?>?, warnings),
+      ],
     );
   }
 

@@ -1,17 +1,42 @@
+import '../actors/player_id.dart';
 import '../blocks/block_pos.dart';
 import '../blocks/block_type.dart';
 import '../items/item_type.dart';
 
-/// A saved game, independent of how it is stored.
+/// A saved game: one world, and everybody who was in it.
+///
+/// The two halves are kept apart on purpose. A world is rewritten every time
+/// the autosave fires; a player's belongings change when that player does
+/// something. Welding them into one document would mean every autosave
+/// rewrites everyone's inventory, and moving a player between worlds would
+/// be impossible.
 class SaveData {
-  const SaveData({
+  const SaveData({required this.world, required this.players, this.savedAt});
+
+  /// A game with exactly one player in it, which is what the app runs.
+  factory SaveData.solo({
+    required WorldSave world,
+    required PlayerSave player,
+    DateTime? savedAt,
+  }) => SaveData(world: world, players: [player], savedAt: savedAt);
+
+  final WorldSave world;
+
+  /// Everyone whose belongings this save holds, in no particular order.
+  final List<PlayerSave> players;
+
+  final DateTime? savedAt;
+
+  /// The only player, for a save that holds one.
+  PlayerSave get solo => players.single;
+}
+
+/// A world: what it was generated from, and everything done to it since.
+class WorldSave {
+  const WorldSave({
     required this.seed,
     required this.edits,
-    required this.player,
-    required this.inventory,
-    required this.selectedSlot,
     required this.furnaces,
-    this.savedAt,
   });
 
   final int seed;
@@ -19,18 +44,13 @@ class SaveData {
   /// Only the blocks that differ from the generated terrain.
   final Map<BlockPos, BlockType> edits;
 
-  final SavedPlayer player;
-
-  /// All 36 slots; `null` means empty.
-  final List<ItemStack?> inventory;
-
-  final int selectedSlot;
   final List<SavedFurnace> furnaces;
-  final DateTime? savedAt;
 }
 
-class SavedPlayer {
-  const SavedPlayer({
+/// One player's belongings and where they were standing.
+class PlayerSave {
+  const PlayerSave({
+    required this.id,
     required this.x,
     required this.y,
     required this.z,
@@ -38,7 +58,16 @@ class SavedPlayer {
     required this.pitch,
     required this.health,
     required this.flying,
+    required this.inventory,
+    required this.selectedSlot,
   });
+
+  /// The player's own id, which survives a reconnect.
+  ///
+  /// Not the connection: coming back after a dropped connection has to find
+  /// the same inventory, not a new player standing beside the old one's
+  /// belongings.
+  final PlayerId id;
 
   final double x;
   final double y;
@@ -47,6 +76,11 @@ class SavedPlayer {
   final double pitch;
   final int health;
   final bool flying;
+
+  /// All 36 slots; `null` means empty.
+  final List<ItemStack?> inventory;
+
+  final int selectedSlot;
 }
 
 class SavedFurnace {

@@ -59,7 +59,7 @@ void main() {
       await repository.save(kWorldSlot, sampleSave(seed: 4242));
       final loaded = await repository.load(kWorldSlot);
 
-      expect(loaded?.data.seed, 4242);
+      expect(loaded?.data.world.seed, 4242);
       expect(await repository.slots(), [kWorldSlot]);
     });
 
@@ -69,7 +69,7 @@ void main() {
       await repository.save(kWorldSlot, sampleSave(seed: 1));
       await repository.save(kWorldSlot, sampleSave(seed: 2));
 
-      expect((await repository.load(kWorldSlot))?.data.seed, 2);
+      expect((await repository.load(kWorldSlot))?.data.world.seed, 2);
     });
   });
 
@@ -84,7 +84,7 @@ void main() {
       await pumpEventQueue();
 
       final loaded = await SaveRepository(storage: storage).load(kWorldSlot);
-      expect(loaded?.data.seed, 11);
+      expect(loaded?.data.world.seed, 11);
     });
 
     test('a newer save supersedes one still queued', () async {
@@ -102,7 +102,9 @@ void main() {
       // The player has already moved on from the first two; only the last
       // state is worth the disk write.
       expect(
-        (await SaveRepository(storage: storage).load(kWorldSlot))?.data.seed,
+        (await SaveRepository(
+          storage: storage,
+        ).load(kWorldSlot))?.data.world.seed,
         3,
       );
     });

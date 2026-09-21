@@ -1,0 +1,34 @@
+{
+  "version": 1,
+  "terrainVersion": 1,
+  "savedAt": "2026-09-21T18:30:00.000Z",
+  "seed": 1337,
+  "edits": [
+    { "p": [64, 25, 64], "b": "planks" },
+    { "p": [64, 26, 64], "b": "furnace" }
+  ],
+  "player": {
+    "pos": [64.5, 23.0, 64.5],
+    "yaw": 1.5,
+    "pitch": -0.25,
+    "health": 17,
+    "flying": false
+  },
+  "selected": 2,
+  "inventory": [
+    { "item": "log", "count": 8 },
+    null,
+    { "item": "ironPickaxe", "count": 1 }
+  ],
+  "furnaces": [
+    {
+      "p": [64, 26, 64],
+      "in": { "item": "rawIron", "count": 3 },
+      "fuel": { "item": "coal", "count": 2 },
+      "out": null,
+      "burnLeft": 4.0,
+      "burnTotal": 8.0,
+      "progress": 0.5
+    }
+  ]
+}

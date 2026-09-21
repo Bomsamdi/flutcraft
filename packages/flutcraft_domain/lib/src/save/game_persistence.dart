@@ -20,26 +20,19 @@ class GamePersistence {
 
   /// Reads [state] into a save. Pure: nothing in the running game changes.
   ///
-  /// The format still holds a single player. A world with several of them
-  /// saves the host's view of it, which is a decision to revisit when the
-  /// series gets to servers — not a limit of what is stored here.
-  SaveData capture(GameState state) => captureOf(state, state.solo);
+  /// Everyone in the world is saved, not only whoever happens to be first.
+  SaveData capture(GameState state) => SaveData(
+    world: captureWorld(state),
+    players: [
+      for (final participant in state.participants.values)
+        capturePlayer(participant),
+    ],
+  );
 
-  /// Reads the world plus one player's belongings.
-  SaveData captureOf(GameState state, Participant participant) => SaveData(
+  /// The world alone — what a server rewrites on its own schedule.
+  WorldSave captureWorld(GameState state) => WorldSave(
     seed: state.world.seed,
     edits: Map.of(state.world.edits),
-    player: SavedPlayer(
-      x: participant.player.position.x,
-      y: participant.player.position.y,
-      z: participant.player.position.z,
-      yaw: participant.player.yaw,
-      pitch: participant.player.pitch,
-      health: participant.player.health,
-      flying: participant.player.flying,
-    ),
-    inventory: _inventoryWithLooseItems(participant),
-    selectedSlot: participant.selectedSlot,
     furnaces: [
       for (final entry in state.furnaces.entries)
         SavedFurnace(
@@ -54,43 +47,30 @@ class GamePersistence {
     ],
   );
 
+  /// One player alone — what a server writes when that player leaves.
+  PlayerSave capturePlayer(Participant it) => PlayerSave(
+    id: it.id,
+    x: it.player.position.x,
+    y: it.player.position.y,
+    z: it.player.position.z,
+    yaw: it.player.yaw,
+    pitch: it.player.pitch,
+    health: it.player.health,
+    flying: it.player.flying,
+    inventory: _inventoryWithLooseItems(it),
+    selectedSlot: it.selectedSlot,
+  );
+
   /// Rebuilds a game from a save: regenerate the terrain from the seed, then
   /// replay the recorded edits on top.
   GameState restore(SaveData data) {
-    final world = VoxelWorld();
-    TerrainGenerator(seed: data.seed).generate(world);
-    for (final entry in data.edits.entries) {
-      final pos = entry.key;
-      world.setRaw(pos.x, pos.y, pos.z, entry.value);
-    }
-    world
-      ..edits.addAll(data.edits)
-      ..markAllDirty();
-
-    final player = Player(world: world, spawn: _spawnOf(data))
-      ..yaw = data.player.yaw
-      ..pitch = data.player.pitch
-      ..health = data.player.health
-      ..flying = data.player.flying;
-
-    // Loading must never drop the player onto the death screen with nothing
-    // to do but respawn. Current versions refuse to save a dead player, but
-    // an older file — or a hand-edited one — can still say so.
-    if (player.isDead) player.respawn();
-
-    final inventory = Inventory();
-    for (var i = 0; i < data.inventory.length && i < inventory.length; i++) {
-      inventory[i] = data.inventory[i];
-    }
-
-    final state = GameState.solo(
+    final world = restoreWorld(data.world);
+    final state = GameState(
       world: world,
-      player: player,
-      inventory: inventory,
-      hotbarSlot: data.selectedSlot,
+      players: [for (final saved in data.players) restorePlayer(saved, world)],
     );
 
-    for (final furnace in data.furnaces) {
+    for (final furnace in data.world.furnaces) {
       if (!world
           .blockAt(furnace.pos.x, furnace.pos.y, furnace.pos.z)
           .hasLitVariant) {
@@ -105,6 +85,45 @@ class GamePersistence {
         ..progress = furnace.progress;
     }
     return state;
+  }
+
+  /// Regenerates the terrain and replays the edits on top of it.
+  VoxelWorld restoreWorld(WorldSave saved) {
+    final world = VoxelWorld();
+    TerrainGenerator(seed: saved.seed).generate(world);
+    for (final entry in saved.edits.entries) {
+      final pos = entry.key;
+      world.setRaw(pos.x, pos.y, pos.z, entry.value);
+    }
+    return world
+      ..edits.addAll(saved.edits)
+      ..markAllDirty();
+  }
+
+  /// Puts one player back in [world] with what they were carrying.
+  Participant restorePlayer(PlayerSave saved, VoxelWorld world) {
+    final player = Player(world: world, spawn: _spawnOf(saved))
+      ..yaw = saved.yaw
+      ..pitch = saved.pitch
+      ..health = saved.health
+      ..flying = saved.flying;
+
+    // Loading must never drop the player onto the death screen with nothing
+    // to do but respawn. Current versions refuse to save a dead player, but
+    // an older file — or a hand-edited one — can still say so.
+    if (player.isDead) player.respawn();
+
+    final inventory = Inventory();
+    for (var i = 0; i < saved.inventory.length && i < inventory.length; i++) {
+      inventory[i] = saved.inventory[i];
+    }
+
+    return Participant(
+      id: saved.id,
+      player: player,
+      inventory: inventory,
+      selectedSlot: saved.selectedSlot,
+    );
   }
 
   /// The inventory as it should be saved: a copy, with whatever sits in the
@@ -131,6 +150,6 @@ class GamePersistence {
     return List.of(copy.slots);
   }
 
-  static Vector3 _spawnOf(SaveData data) =>
-      Vector3(data.player.x, data.player.y, data.player.z);
+  static Vector3 _spawnOf(PlayerSave saved) =>
+      Vector3(saved.x, saved.y, saved.z);
 }

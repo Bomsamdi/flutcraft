@@ -206,6 +206,36 @@ void main() {
     });
   });
 
+  group('A world with company saves everyone in it', () {
+    test('both inventories come back', () {
+      of(alice).inventory.add(ItemType.ironIngot, 3);
+      of(bob).inventory.add(ItemType.bone, 5);
+
+      final restored = const GamePersistence().restore(
+        const SaveCodec()
+            .decode(
+              const SaveCodec().encode(const GamePersistence().capture(state)),
+            )
+            .data,
+      );
+
+      expect(restored.participants, hasLength(2));
+      expect(
+        restored.participants[alice]!.inventory.countOf(ItemType.ironIngot),
+        3,
+      );
+      expect(restored.participants[bob]!.inventory.countOf(ItemType.bone), 5);
+    });
+
+    test('a save no longer throws the moment a second player joins', () {
+      // This used to be pinned as a landmine: capture() read GameState.solo,
+      // which is `participants.values.single`, so a server with a save sink
+      // would have taken the tick loop down a minute after the second player
+      // arrived.
+      expect(() => const GamePersistence().capture(state), returnsNormally);
+    });
+  });
+
   group('Spawning does not scale with the crowd', () {
     test('a second player does not double the spawn rate', () {
       int mobsAfter(int players, {required double seconds}) {
@@ -452,23 +482,6 @@ void main() {
       expect(first == second, isFalse);
       expect(state.mobs.toSet(), hasLength(2));
       expect(first.id, isNot(second.id));
-    });
-  });
-
-  group('Debt this stage is leaving behind', () {
-    test('the save format still holds exactly one player', () {
-      // Landmine, not a feature: AutosaveSystem.saveNow calls capture(state),
-      // which reads GameState.solo — `participants.values.single`. A server
-      // with a save sink attached throws inside the tick loop a minute after
-      // the second player joins.
-      //
-      // Stage 5 of the plan replaces SaveData with a world plus a roster and
-      // deletes this test in the same commit.
-      expect(
-        () => const GamePersistence().capture(state),
-        throwsStateError,
-        reason: 'if this stops throwing, the roster landed — delete this test',
-      );
     });
   });
 
