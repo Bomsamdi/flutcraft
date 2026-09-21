@@ -16,5 +16,6 @@ dependencies:
     path: ../flutcraft_domain
 
 dev_dependencies:
+  coverage: ^1.11.0
   flutter_lints: ^6.0.0
   test: ^1.25.0

@@ -19,6 +19,12 @@ scripts:
       Polish belongs in the ARB files and nowhere else.
     run: dart run tool/check_english.dart
 
+  literals:
+    description: >-
+      No user-facing text written straight into a widget; every string comes
+      from an ARB file.
+    run: dart run tool/check_no_translatable_literals.dart
+
   analyze:
     description: Static analysis across every package, warnings are failures.
     run: dart analyze --fatal-infos --fatal-warnings
