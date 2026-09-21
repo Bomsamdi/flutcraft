@@ -766,11 +766,9 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
     if (!cursorAccepts(cursor, recipe.output, recipe.outputCount)) return;
 
     final held = cursor;
-    if (held == null) {
-      cursor = ItemStack(recipe.output, recipe.outputCount);
-    } else {
-      held.count += recipe.outputCount;
-    }
+    cursor = held == null
+        ? ItemStack(recipe.output, recipe.outputCount)
+        : held.plus(recipe.outputCount);
 
     consumeGrid(grid);
     revision++;

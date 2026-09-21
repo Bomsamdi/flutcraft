@@ -1,24 +1,16 @@
 import '../items/item_type.dart';
+import 'slot_container.dart';
 
 /// Ekwipunek gracza: 9 slotów paska + 27 slotów plecaka.
 ///
 /// Sloty 0-8 to pasek szybkiego dostępu, 9-35 to plecak - dokładnie
 /// jak w Minecrafcie, dzięki czemu numeracja w UI jest oczywista.
-class Inventory {
+final class Inventory extends SlotContainer {
   Inventory({this.hotbarSize = 9, this.backpackSize = 27})
-    : slots = List<ItemStack?>.filled(hotbarSize + backpackSize, null);
+    : super(hotbarSize + backpackSize);
 
   final int hotbarSize;
   final int backpackSize;
-  final List<ItemStack?> slots;
-
-  int get length => slots.length;
-
-  ItemStack? operator [](int index) => slots[index];
-
-  void operator []=(int index, ItemStack? stack) {
-    slots[index] = (stack != null && stack.isEmpty) ? null : stack;
-  }
 
   Iterable<ItemStack?> get hotbar => slots.take(hotbarSize);
 
@@ -32,7 +24,7 @@ class Inventory {
       final stack = slots[i];
       if (stack == null || stack.type != type || stack.space <= 0) continue;
       final moved = left < stack.space ? left : stack.space;
-      stack.count += moved;
+      slots[i] = stack.plus(moved);
       left -= moved;
     }
 
@@ -51,8 +43,7 @@ class Inventory {
     final stack = slots[index];
     if (stack == null) return 0;
     final taken = count < stack.count ? count : stack.count;
-    stack.count -= taken;
-    if (stack.isEmpty) slots[index] = null;
+    this[index] = stack.plus(-taken);
     return taken;
   }
 
@@ -64,13 +55,6 @@ class Inventory {
     return total;
   }
 
-  bool get isEmpty => slots.every((s) => s == null);
-
-  void clear() {
-    for (var i = 0; i < slots.length; i++) {
-      slots[i] = null;
-    }
-  }
 }
 
 /// Zawartość slotu i kursora po przełożeniu.
@@ -93,9 +77,9 @@ SlotSwap transferSlot(ItemStack? slot, ItemStack? cursor) {
   }
 
   final moved = cursor.count < slot.space ? cursor.count : slot.space;
-  slot.count += moved;
-  cursor.count -= moved;
-  return (slot: slot, cursor: cursor.isEmpty ? null : cursor);
+  final merged = slot.plus(moved);
+  final left = cursor.plus(-moved);
+  return (slot: merged, cursor: left.isEmpty ? null : left);
 }
 
 /// Kliknięcie w slot wynikowy (crafting, piec): można tylko zabierać.
@@ -105,9 +89,9 @@ SlotSwap takeOutput(ItemStack? slot, ItemStack? cursor) {
   if (cursor.type != slot.type) return (slot: slot, cursor: cursor);
 
   final moved = slot.count < cursor.space ? slot.count : cursor.space;
-  cursor.count += moved;
-  slot.count -= moved;
-  return (slot: slot.isEmpty ? null : slot, cursor: cursor);
+  final taken = cursor.plus(moved);
+  final rest = slot.plus(-moved);
+  return (slot: rest.isEmpty ? null : rest, cursor: taken);
 }
 
 /// Czy kursor przyjmie [count] sztuk [type] (np. wynik craftingu).
@@ -124,20 +108,19 @@ bool cursorAccepts(ItemStack? cursor, ItemType type, int count) {
 SlotSwap splitSlot(ItemStack? slot, ItemStack? cursor) {
   if (cursor == null) {
     if (slot == null) return (slot: null, cursor: null);
-    final type = slot.type;
     final taken = (slot.count + 1) ~/ 2;
-    slot.count -= taken;
+    final rest = slot.plus(-taken);
     return (
-      slot: slot.isEmpty ? null : slot,
-      cursor: ItemStack(type, taken),
+      slot: rest.isEmpty ? null : rest,
+      cursor: slot.withCount(taken),
     );
   }
 
   if (slot == null) {
-    cursor.count--;
+    final left = cursor.plus(-1);
     return (
-      slot: ItemStack(cursor.type, 1),
-      cursor: cursor.isEmpty ? null : cursor,
+      slot: cursor.withCount(1),
+      cursor: left.isEmpty ? null : left,
     );
   }
 
@@ -146,7 +129,6 @@ SlotSwap splitSlot(ItemStack? slot, ItemStack? cursor) {
     return (slot: slot, cursor: cursor);
   }
 
-  slot.count++;
-  cursor.count--;
-  return (slot: slot, cursor: cursor.isEmpty ? null : cursor);
+  final left = cursor.plus(-1);
+  return (slot: slot.plus(1), cursor: left.isEmpty ? null : left);
 }

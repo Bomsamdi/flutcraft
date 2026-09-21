@@ -1,4 +1,5 @@
 // ignore_for_file: prefer_initializing_formals
+import 'package:meta/meta.dart';
 import '../blocks/block_type.dart';
 import '../blocks/tile.dart';
 
@@ -136,17 +137,35 @@ enum ItemType {
 }
 
 /// Stos przedmiotów w jednym slocie.
-class ItemStack {
-  ItemStack(this.type, [this.count = 1]);
+///
+/// Niemutowalny celowo. Gdy stos można było zmieniać w miejscu, migawka
+/// stanu dla UI nie była migawką — trzeba było ręcznie podbijać licznik
+/// zmian w ośmiu miejscach, a zapomnienie jednego dawało nieaktualny
+/// ekwipunek bez żadnego sygnału.
+@immutable
+final class ItemStack {
+  const ItemStack(this.type, [this.count = 1]);
 
   final ItemType type;
-  int count;
+  final int count;
 
   bool get isEmpty => count <= 0;
 
+  /// Ile jeszcze sztuk zmieści się w tym stosie.
   int get space => type.maxStack - count;
 
-  ItemStack copy() => ItemStack(type, count);
+  /// Ten sam przedmiot w innej ilości.
+  ItemStack withCount(int value) => ItemStack(type, value);
+
+  /// Ten sam przedmiot, ilość zmieniona o [delta] (może być ujemna).
+  ItemStack plus(int delta) => ItemStack(type, count + delta);
+
+  @override
+  bool operator ==(Object other) =>
+      other is ItemStack && other.type == type && other.count == count;
+
+  @override
+  int get hashCode => Object.hash(type, count);
 
   @override
   String toString() => '${type.name} x$count';

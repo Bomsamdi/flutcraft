@@ -17,6 +17,7 @@ export 'src/blocks/block_type.dart';
 export 'src/blocks/tile.dart';
 export 'src/crafting/recipes.dart';
 export 'src/inventory/inventory.dart';
+export 'src/inventory/slot_container.dart';
 export 'src/items/item_type.dart';
 export 'src/loot/block_loot.dart';
 export 'src/loot/loot_table.dart';
