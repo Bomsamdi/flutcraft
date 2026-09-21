@@ -14,3 +14,47 @@ workspace:
   - packages/flutcraft_engine
   - packages/flutcraft_l10n
   - packages/flutcraft_ui
+
+# Melos 7 requires this to be declared here, in the workspace root.
+dev_dependencies:
+  melos: ^7.4.0
+
+# Melos is only a task runner here — dependency resolution is done by the pub
+# workspace above. Melos 7 reads its configuration from this file.
+melos:
+  scripts:
+    layering:
+      description: >-
+        Verify architectural boundaries between packages. Lints cannot see across
+        package borders, so this is where dependency rules are actually enforced.
+      run: dart run tool/check_layering.dart
+
+    english:
+      description: >-
+        The series is recorded in English, so the source reads in English too.
+        Polish belongs in the ARB files and nowhere else.
+      run: dart run tool/check_english.dart
+
+    literals:
+      description: >-
+        No user-facing text written straight into a widget; every string comes
+        from an ARB file.
+      run: dart run tool/check_no_translatable_literals.dart
+
+    analyze:
+      description: Static analysis across every package, warnings are failures.
+      run: dart analyze --fatal-infos --fatal-warnings
+      exec:
+        concurrency: 1
+
+    format:
+      description: Verify formatting without writing changes.
+      run: dart format --output=none --set-exit-if-changed .
+
+    test:
+      description: Run every test suite.
+      run: flutter test
+      exec:
+        concurrency: 1
+      packageFilters:
+        dirExists: test
