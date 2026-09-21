@@ -217,7 +217,7 @@ void _sealedSwitchTests() {
       expect(describe(aimAtMob), 'mob zombie');
     });
 
-    test('MobTarget niesie dystans, nie tylko potwora', () {
+    test('MobTarget carries the distance, not just the mob', () {
       final world = emptyWorld();
       final aim = pickTarget(
         world: world,

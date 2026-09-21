@@ -182,7 +182,7 @@ class _GameScreenState extends State<GameScreen> {
   void _onPointerDown(PointerDownEvent event) {
     _focusNode.requestFocus();
     // While a screen is open the world ignores the pointer.
-    if (_game.screen.pausesWorld) return;
+    if (_session.snapshot.route.pausesWorld) return;
 
     if (event.buttons & kSecondaryMouseButton != 0) {
       _session.dispatch(const UseOrPlace());
@@ -221,7 +221,8 @@ class _GameScreenState extends State<GameScreen> {
   }
 
   void _onSignal(PointerSignalEvent event) {
-    if (event is! PointerScrollEvent || _game.screen.pausesWorld) return;
+    if (event is! PointerScrollEvent) return;
+    if (_session.snapshot.route.pausesWorld) return;
     _session.dispatch(CycleHotbarSlot(event.scrollDelta.dy > 0 ? 1 : -1));
   }
 

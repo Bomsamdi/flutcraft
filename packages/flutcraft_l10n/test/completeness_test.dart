@@ -111,10 +111,10 @@ void main() {
       }
     });
 
-    test('angielski jest szablonem i ma opisy', () {
+    test('English is the template and carries the descriptions', () {
       final en = arb('en');
       for (final key in keysOf(en)) {
-        expect(en, contains('@$key'), reason: 'brak metadanych dla $key');
+        expect(en, contains('@$key'), reason: 'no metadata for $key');
       }
     });
 
@@ -136,10 +136,10 @@ void main() {
   });
 
   group('Liczba mnoga', () {
-    test('polski odmienia potwory przez trzy formy', () async {
+    test('Polish declines mobs through three forms', () async {
       final t = await AppLocalizations.delegate.load(const Locale('pl'));
       expect(t.hudMobs(1), contains('potwór')); // polish-ok
-      expect(t.hudMobs(2), contains('potwory'));
+      expect(t.hudMobs(2), contains('potwory')); // polish-ok
       expect(t.hudMobs(5), contains('potworów')); // polish-ok
     });
 

@@ -48,12 +48,12 @@ void main() {
       expect(BlockType.furnaceLit.unlitVariant, BlockType.furnace);
     });
 
-    test('zapalony piec nie ma dalszego wariantu zapalonego', () {
+    test('a lit furnace has no further lit variant', () {
       expect(BlockType.furnaceLit.litVariant, isNull);
       expect(BlockType.furnace.unlitVariant, isNull);
     });
 
-    test('tylko piec ma dwa stany palenia', () {
+    test('only the furnace has two burning states', () {
       final withVariants = BlockType.values
           .where((b) => b.hasLitVariant)
           .toSet();

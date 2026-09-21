@@ -60,7 +60,7 @@ void main() {
       expect(player.health, lessThan(Player.maxHealth));
     });
 
-    test('z daleka nie rani', () {
+    test('from a distance it does no harm', () {
       final mob = mobOf(MobKind.zombie, x: 40);
       behavior.act(mob, 1 / 60, 7.5, context);
       expect(player.health, Player.maxHealth);
@@ -170,7 +170,7 @@ void main() {
       }
     });
 
-    test('tylko creeper wybucha, tylko szkielet strzela', () {
+    test('only a creeper explodes, only a skeleton shoots', () {
       expect(MobKind.creeper.behavior, isA<ExplodeBehavior>());
       expect(MobKind.skeleton.behavior, isA<RangedBehavior>());
       expect(MobKind.zombie.behavior, isA<MeleeBehavior>());

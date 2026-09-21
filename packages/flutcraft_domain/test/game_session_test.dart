@@ -47,7 +47,7 @@ void main() {
       expect(session.snapshot.selectedSlot, 1);
     });
 
-    test('lista paska jest niemodyfikowalna', () {
+    test('the hotbar list cannot be modified', () {
       final session = newSession();
       expect(() => session.snapshot.hotbar.add(null), throwsUnsupportedError);
     });

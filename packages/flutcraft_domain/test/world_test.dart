@@ -195,7 +195,7 @@ void main() {
       expect(dropType(BlockType.sand, null), ItemType.sand);
     });
 
-    test('bez odpowiedniego kilofa blok nie daje nic', () {
+    test('without the right pickaxe a block drops nothing', () {
       expect(dropType(BlockType.stone, null), isNull);
       expect(dropType(BlockType.ironOre, ItemType.woodenPickaxe), isNull);
       expect(
@@ -216,7 +216,7 @@ void main() {
       expect(blockDrops(BlockType.bedrock, ItemType.ironPickaxe, rng), isEmpty);
     });
 
-    test('bedrock jest niezniszczalny', () {
+    test('bedrock is indestructible', () {
       expect(BlockType.bedrock.breakable, isFalse);
       expect(BlockType.stone.breakable, isTrue);
     });

@@ -4,7 +4,7 @@ import 'tile.dart';
 /// The kind of tool that speeds up mining a block.
 enum ToolType { none, pickaxe, axe, shovel, sword }
 
-/// Wszystkie bloki prototypu. `air` jest blokiem "pustym" i nigdy nie
+/// Every block in the prototype. `air` is the empty one and is never
 /// trafia do siatki.
 enum BlockType {
   air(solid: false, hardness: 0, tool: ToolType.none, top: Tile.stone),
@@ -128,10 +128,10 @@ enum BlockType {
   /// This block's lit variant; `null` when it does not burn.
   BlockType? get litVariant => _byName(_litVariantName);
 
-  /// Wariant wygaszony; `null`, gdy blok nie ma takiego stanu.
+  /// The unlit variant; `null` when the block has no such state.
   BlockType? get unlitVariant => _byName(_unlitVariantName);
 
-  /// Czy blok ma dwa stany palenia (czyli jest piecem).
+  /// Whether the block has a lit and an unlit state — whether it is a furnace.
   bool get hasLitVariant =>
       _litVariantName != null || _unlitVariantName != null;
 

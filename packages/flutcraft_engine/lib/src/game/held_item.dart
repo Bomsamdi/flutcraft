@@ -5,6 +5,8 @@ import 'package:flame_3d/components.dart';
 import 'package:flame_3d/core.dart';
 import 'package:flame_3d/graphics.dart';
 import 'package:flame_3d/resources.dart';
+import 'package:flutcraft_domain/flutcraft_domain.dart';
+import 'package:flutcraft_engine/src/render/overlay_meshes.dart';
 
 /// The item in hand, drawn just in front of the camera.
 ///
@@ -18,6 +20,42 @@ class HeldItem extends Object3D {
 
   /// Swing progress, 0..1; 0 is a hand at rest.
   double swing = 0;
+
+  /// How long one swing takes, in seconds.
+  static const double swingDuration = 0.28;
+
+  double _swingTimer = 0;
+  ItemType? _shownItem;
+
+  /// Brings the held item up to date with the simulation.
+  ///
+  /// The mesh is checked every frame rather than when a command changes the
+  /// hotbar: refreshing it only on a command missed every other way the
+  /// selection can change, and the starting items used to stay invisible.
+  void syncTo({
+    required ItemType? item,
+    required ItemMeshes meshes,
+    required Vector3 eye,
+    required Vector3 forward,
+    required bool swinging,
+    required double dt,
+  }) {
+    if (item != _shownItem) {
+      _shownItem = item;
+      mesh = meshes.forItem(item);
+    }
+
+    if (_swingTimer > 0) {
+      _swingTimer -= dt;
+      if (_swingTimer <= 0) _swingTimer = swinging ? swingDuration : 0;
+    } else if (swinging) {
+      _swingTimer = swingDuration;
+    }
+    swing = _swingTimer <= 0 ? 0 : 1 - (_swingTimer / swingDuration);
+
+    follow(eye, forward);
+    markAabbDirty();
+  }
 
   @override
   void renderTree(Canvas canvas) {

@@ -59,6 +59,20 @@ class SelectionBox extends ToggleableMesh {
   void target(int x, int y, int z) {
     position.setValues(x.toDouble(), y.toDouble(), z.toDouble());
   }
+
+  /// Shows the frame on the aimed block, and hides it otherwise.
+  ///
+  /// The aiming system already decided what is under the crosshair; this
+  /// only draws that decision.
+  void showFor(AimResult aim) {
+    switch (aim) {
+      case BlockTarget(:final hit):
+        visible = true;
+        target(hit.x, hit.y, hit.z);
+      case NoTarget() || MobTarget():
+        visible = false;
+    }
+  }
 }
 
 /// Mesh factories for the item held in hand.

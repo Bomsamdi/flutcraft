@@ -257,7 +257,7 @@ void main() {
       expect(distance, lessThanOrEqualTo(MobSpawner.maxDistance + 2));
     });
 
-    test('nie przekracza limitu populacji', () {
+    test('it stays under the population cap', () {
       final world = flatWorld(size: 96);
       final player = Player(world: world, spawn: Vector3(48.5, 2, 48.5));
       final spawner = MobSpawner(world: world, maxMobs: 3);
