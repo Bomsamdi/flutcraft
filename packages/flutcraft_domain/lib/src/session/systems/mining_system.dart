@@ -55,7 +55,7 @@ class MiningSystem {
     if (participant.attackTimer > 0) return const [];
     participant.attackTimer = attackCooldown;
     final damage = (participant.heldItem?.damage ?? 1).toDouble();
-    mob.damage(damage, source: participant.player.position);
+    mob.damage(damage, source: participant.player.position, by: participant.id);
     return const [];
   }
 

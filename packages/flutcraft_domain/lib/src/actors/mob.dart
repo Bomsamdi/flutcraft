@@ -7,6 +7,7 @@ import '../loot/loot_table.dart';
 import 'mob_behavior.dart';
 import '../blocks/tile.dart';
 import 'player.dart';
+import 'player_id.dart';
 import '../physics/voxel_body.dart';
 import '../world/voxel_world.dart';
 
@@ -222,11 +223,21 @@ class Mob extends VoxelBody {
     return hit == null;
   }
 
+  /// Who struck this mob last, if a player did.
+  ///
+  /// The loot goes to whoever landed the killing blow. Handing it to the
+  /// nearest player instead would mean walking past someone else's fight and
+  /// collecting the bones.
+  PlayerId? lastHitBy;
+
   /// Damages the mob and knocks it back.
-  void damage(double amount, {Vector3? source}) {
+  ///
+  /// [by] is the player responsible, when one is.
+  void damage(double amount, {Vector3? source, PlayerId? by}) {
     if (isDead) return;
     health -= amount;
     hurtFlash = 0.25;
+    if (by != null) lastHitBy = by;
 
     if (source != null) {
       final push = Vector3(position.x - source.x, 0, position.z - source.z);

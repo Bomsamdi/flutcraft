@@ -4,6 +4,7 @@ import '../../actors/mob.dart';
 import '../../actors/mob_behavior.dart';
 import '../game_event.dart';
 import '../game_state.dart';
+import '../participant.dart';
 
 /// Spawning, ticking and retiring mobs.
 ///
@@ -41,17 +42,28 @@ class MobAiSystem {
 
       state.mobs.remove(mob);
       final loot = mob.kind.loot.roll(random);
-      // Whoever was nearest gets the drops — a stand-in until the series
-      // decides who really earned the kill.
-      final claimant =
-          state.nearestLivingTo(mob.position) ??
-          state.participants.values.first;
+      final claimant = _claimantFor(state, mob);
       for (final drop in loot) {
         claimant.inventory.add(drop.type, drop.count);
       }
       events.add(MobKilled(mob.kind, loot));
     }
     return events;
+  }
+
+  /// Who collects what a mob dropped.
+  ///
+  /// Whoever landed the killing blow. A mob that died to something other than
+  /// a player — a creeper, a fall — has nobody to thank, so its drops go to
+  /// the nearest living player rather than evaporating.
+  Participant _claimantFor(GameState state, Mob mob) {
+    final killer = mob.lastHitBy;
+    if (killer != null) {
+      final participant = state.participants[killer];
+      if (participant != null) return participant;
+    }
+    return state.nearestLivingTo(mob.position) ??
+        state.participants.values.first;
   }
 
   /// Clears the world of mobs — used on respawn.
