@@ -1,9 +1,8 @@
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
-import 'package:flutcraft/src/game/hud_state.dart';
-import 'package:flutcraft/src/render/atlas.dart';
 import 'package:flutcraft_domain/flutcraft_domain.dart';
+import 'package:flutcraft/src/render/atlas.dart';
 import 'package:flutter/material.dart';
 
 /// Rysuje kafelek z atlasu tekstur - ta sama grafika co w świecie 3D.
@@ -219,7 +218,7 @@ class _CrosshairPainter extends CustomPainter {
 class TargetHealthBar extends StatelessWidget {
   const TargetHealthBar({required this.target, super.key});
 
-  final TargetMob target;
+  final MobAimView target;
 
   @override
   Widget build(BuildContext context) {
@@ -228,7 +227,7 @@ class TargetHealthBar extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            target.label,
+            target.kind.label,
             style: const TextStyle(
               color: Colors.white,
               fontSize: 13,

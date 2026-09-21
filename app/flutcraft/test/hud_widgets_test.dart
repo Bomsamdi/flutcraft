@@ -1,4 +1,4 @@
-import 'package:flutcraft/src/game/hud_state.dart';
+import 'package:flutcraft_domain/flutcraft_domain.dart';
 import 'package:flutcraft/src/ui/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -36,18 +36,18 @@ void main() {
       await tester.pumpWidget(
         wrap(
           const TargetHealthBar(
-            target: TargetMob(label: 'Creeper', health: 9, maxHealth: 18),
+            target: MobAimView(MobKind.creeper, 9, 18),
           ),
         ),
       );
-      expect(find.text('Creeper'), findsOneWidget);
+      expect(find.text(MobKind.creeper.label), findsOneWidget);
     });
 
     testWidgets('szerokość paska odpowiada ułamkowi życia', (tester) async {
       await tester.pumpWidget(
         wrap(
           const TargetHealthBar(
-            target: TargetMob(label: 'Zombie', health: 5, maxHealth: 20),
+            target: MobAimView(MobKind.zombie, 5, 20),
           ),
         ),
       );
@@ -62,7 +62,7 @@ void main() {
       await tester.pumpWidget(
         wrap(
           const TargetHealthBar(
-            target: TargetMob(label: 'Pająk', health: -3, maxHealth: 14),
+            target: MobAimView(MobKind.spider, -3, 14),
           ),
         ),
       );

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui' as ui;
 
 import 'package:flame/input.dart' show KeyboardEvents;
@@ -134,6 +135,9 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
   /// Symulacja: wykonuje komendy i tyka systemy. Silnik tylko ją
   /// napędza i rysuje wynik.
   late final GameLoop loop;
+
+  /// To, co widzi warstwa UI. Silnik nie wystawia niczego więcej.
+  late final LoopGameSession session;
   bool _placing = false;
 
   // --- stan gry -------------------------------------------------------------
@@ -189,6 +193,7 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
     // Kolejność ma znaczenie: pętla dostaje spawner, więc ten musi już istnieć.
     spawner = MobSpawner(world: voxels, seed: seed);
     loop = GameLoop(state: state, spawner: spawner, random: spawner.rng);
+    session = LoopGameSession(loop);
 
     itemMeshes = ItemMeshes(atlas);
     mobModels = MobModels(atlas);
@@ -202,7 +207,16 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
     await world.add(selection);
     await world.add(heldItem);
 
+    _messages = session.events.listen(_emit);
     _publishHud();
+  }
+
+  StreamSubscription<GameEvent>? _messages;
+
+  @override
+  void onRemove() {
+    _messages?.cancel();
+    super.onRemove();
   }
 
   /// Startowy zestaw: kilka bloków na rozruch, resztę trzeba wykopać.
@@ -222,7 +236,7 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
     }
 
     _applyKeyboardLook(dt);
-    _emitAll(loop.tick(dt, _inputFrame()));
+    session.tick(dt, _inputFrame());
 
     chunkManager.focus.setFrom(player.position);
     _updateCamera();
@@ -239,12 +253,6 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
     using: _placing,
   );
 
-  void _emitAll(List<GameEvent> events) {
-    for (final event in events) {
-      _emit(event);
-      if (event is BlockBroken || event is MobKilled) revision++;
-    }
-  }
 
   /// Ramka zaznaczenia podąża za tym, co wybrał AimingSystem.
   void _updateSelection() {
@@ -383,7 +391,7 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
   // operacji - tylko przekazuje je do symulacji i odświeża widok.
 
   void _run(GameCommand command) {
-    _emitAll(loop.dispatch(command));
+    session.dispatch(command);
     _syncHeldMesh();
     revision++;
     _publishHud();
@@ -520,11 +528,7 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
     hud.value = HudSnapshot(
       targetMob: mob == null
           ? null
-          : TargetMob(
-              label: mob.kind.label,
-              health: mob.health,
-              maxHealth: mob.kind.maxHealth,
-            ),
+          : MobAimView(mob.kind, mob.health, mob.kind.maxHealth),
       hotbar: inventory.hotbar.toList(),
       selected: selected,
       breakProgress: _breakProgress.clamp(0, 1),

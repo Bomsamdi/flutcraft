@@ -1,21 +1,6 @@
 
 import 'package:flutcraft_domain/flutcraft_domain.dart';
 
-/// Potwór aktualnie na celowniku.
-class TargetMob {
-  const TargetMob({
-    required this.label,
-    required this.health,
-    required this.maxHealth,
-  });
-
-  final String label;
-  final double health;
-  final int maxHealth;
-
-  double get fraction => (health / maxHealth).clamp(0.0, 1.0);
-}
-
 /// Migawka stanu gry dla warstwy HUD (Flutter).
 ///
 /// Zawiera tylko wartości skalarne; żywe kolekcje (ekwipunek, siatka
@@ -70,7 +55,7 @@ class HudSnapshot {
   final UiRoute screen;
 
   /// Potwór pod celownikiem - HUD pokazuje wtedy jego pasek życia.
-  final TargetMob? targetMob;
+  final MobAimView? targetMob;
 
   /// Licznik zmian stanu ekwipunku - klucz do odświeżania UI.
   final int revision;
