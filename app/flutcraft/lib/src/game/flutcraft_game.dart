@@ -65,7 +65,6 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
   /// Które bloki reagują na użycie i w jaki sposób.
   static const BlockRegistry blocks = BlockRegistry.standard;
 
-  static const double reach = 5.5;
   static const double lookSensitivity = 0.0032;
 
   VoxelWorld get voxels => state.world;
@@ -154,12 +153,18 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
 
   /// Wytop i podmiana tekstury pieca.
   final FurnaceSystem _furnaces = const FurnaceSystem();
+
+  /// Co jest pod celownikiem.
+  final AimingSystem _aiming = const AimingSystem();
+
+  /// Ruch gracza (fizyka siedzi w Player/VoxelBody).
+  final PlayerMovementSystem _movement = const PlayerMovementSystem();
   bool _placing = false;
 
   // --- stan gry -------------------------------------------------------------
 
+  /// Co jest pod celownikiem. Ustawia to AimingSystem - gra tylko czyta.
   AimResult get _aim => state.aim;
-  set _aim(AimResult value) => state.aim = value;
   double get _breakProgress => state.breakProgress;
   set _breakProgress(double value) => state.breakProgress = value;
   double _swingTimer = 0;
@@ -248,9 +253,8 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
       return;
     }
 
-    final input = _collectInput();
     _applyKeyboardLook(dt);
-    player.update(dt, input);
+    _movement.update(state, dt, _collectInput());
     chunkManager.focus.setFrom(player.position);
 
     if (player.isDead) {
@@ -383,27 +387,14 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
   // --- celowanie ------------------------------------------------------------
 
   void _updateAim() {
-    final previous = _aim;
-    _aim = pickTarget(
-      world: voxels,
-      mobs: mobs,
-      eye: player.eye,
-      direction: player.lookDirection,
-      reach: reach,
-    );
-
+    _aiming.update(state);
     switch (_aim) {
-      case NoTarget() || MobTarget():
-        _breakProgress = 0;
-        selection.visible = false;
       case BlockTarget(:final hit):
-        // Zmiana celowanego bloku kasuje postęp kopania.
-        if (previous is! BlockTarget || !previous.hit.samePosition(hit)) {
-          _breakProgress = 0;
-        }
         selection
           ..visible = true
           ..target(hit.x, hit.y, hit.z);
+      case NoTarget() || MobTarget():
+        selection.visible = false;
     }
   }
 
