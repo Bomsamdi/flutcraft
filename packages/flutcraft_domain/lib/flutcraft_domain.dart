@@ -24,5 +24,6 @@ export 'src/loot/loot_table.dart';
 export 'src/machines/furnace_registry.dart';
 export 'src/machines/furnace_state.dart';
 export 'src/physics/voxel_body.dart';
+export 'src/session/game_event.dart';
 export 'src/world/terrain_generator.dart';
 export 'src/world/voxel_world.dart';

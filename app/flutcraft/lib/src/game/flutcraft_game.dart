@@ -9,6 +9,7 @@ import 'package:flame_3d/resources.dart';
 import 'package:flutcraft/src/game/held_item.dart';
 import 'package:flutcraft/src/game/hud_state.dart';
 import 'package:flutcraft/src/render/atlas.dart';
+import 'package:flutcraft/src/ui/messages/event_messages.dart';
 import 'package:flutcraft/src/render/chunk_renderer.dart';
 import 'package:flutcraft/src/render/mob_renderer.dart';
 import 'package:flutcraft/src/render/overlay_meshes.dart';
@@ -326,14 +327,7 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
       inventory.add(drop.type, drop.count);
     }
 
-    final loot = drops
-        .map((d) => '${d.type.label} x${d.count}')
-        .join(', ');
-    _notify(
-      loot.isEmpty
-          ? 'Pokonano: ${mob.kind.label}'
-          : 'Pokonano: ${mob.kind.label} → $loot',
-    );
+    _emit(MobKilled(mob.kind, drops));
     revision++;
   }
 
@@ -396,7 +390,7 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
       }
     }
 
-    _notify('Creeper wybuchł!');
+    _emit(const CreeperExploded());
   }
 
   // --- celowanie ------------------------------------------------------------
@@ -469,12 +463,12 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
     final drops = blockDrops(block, heldItemType, spawner.rng);
     if (drops.isEmpty) {
       if (block.requiredTier > 0) {
-        _notify('Potrzebujesz lepszego kilofa: ${block.label}');
+        _emit(ToolTooWeak(block));
       }
     } else {
       for (final drop in drops) {
         if (inventory.add(drop.type, drop.count) > 0) {
-          _notify('Ekwipunek pełny');
+          _emit(InventoryFull(drop.type));
         }
       }
     }
@@ -535,7 +529,7 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
     final stack = inventory[selected];
     final item = stack?.type;
     if (stack == null || item == null || !item.isBlock) {
-      _notify('To nie jest blok - wybierz blok z paska');
+      _emit(const PlacementRejected(PlacementRejection.notABlock));
       return;
     }
 
@@ -543,11 +537,11 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
     if (!voxels.inBounds(x, y, z)) return;
     if (voxels.blockAt(x, y, z).solid) return;
     if (player.occupies(x, y, z)) {
-      _notify('Nie postawisz bloku w sobie');
+      _emit(const PlacementRejected(PlacementRejection.insidePlayer));
       return;
     }
     if (mobs.any((m) => m.occupies(x, y, z))) {
-      _notify('Potwór stoi w tym miejscu');
+      _emit(const PlacementRejected(PlacementRejection.insideMob));
       return;
     }
 
@@ -638,7 +632,7 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
   void toggleFly() {
     player.flying = !player.flying;
     if (player.flying) player.velocity.y = 0;
-    _notify(player.flying ? 'Latanie: włączone' : 'Latanie: wyłączone');
+    _emit(FlightToggled(player.flying));
   }
 
   /// Otwiera księgę przepisów, zapamiętując, skąd ją wywołano.
@@ -711,7 +705,7 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
       _arrowComponents.remove(arrow)?.removeFromParent();
     }
     screen = UiScreen.none;
-    _notify('Odrodzono w punkcie startowym');
+    _emit(const PlayerRespawned());
     _publishHud();
   }
 
@@ -864,7 +858,11 @@ class FlutcraftGame extends FlameGame3D<World3D, VoxelCamera>
 
   // --- HUD ------------------------------------------------------------------
 
-  void _notify(String text) {
+  /// Zgłasza zdarzenie graczowi. Silnik nie zna tekstu - tłumaczy go
+  /// [describeEvent] w warstwie prezentacji.
+  void _emit(GameEvent event) {
+    final text = describeEvent(event);
+    if (text.isEmpty) return;
     _message = text;
     _messageTimer = 2.4;
     _publishHud();
