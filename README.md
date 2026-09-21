@@ -154,7 +154,7 @@ height.
 dart run tool/check_layering.dart     # package boundaries
 dart run tool/check_english.dart      # the source reads in English
 dart run tool/check_platform_config.dart
-melos run test                        # every package
+melos run test --no-select            # every package
 ```
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for how the repository is organised and

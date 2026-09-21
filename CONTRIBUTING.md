@@ -7,19 +7,23 @@ of explanation on video is worse here than a plain one that needs none.
 ## Getting set up
 
 ```bash
-flutter pub get          # a pub workspace: one resolve for every package
-melos run test           # or `flutter test` inside a package
+flutter pub get                 # a pub workspace: one resolve for the repo
+dart pub global activate melos  # the task runner
+melos run test --no-select      # or `flutter test` inside one package
 ```
 
-[melos](https://melos.invertase.dev) is only a task runner here; the
-dependency resolution is done by the pub workspace at the repository root.
+[melos](https://melos.invertase.dev) is only a task runner here; dependency
+resolution is done by the pub workspace at the repository root, and the melos
+configuration lives in that root `pubspec.yaml`. Without `--no-select` melos
+asks which package to run in, which is useful by hand and unhelpful in a
+script.
 
 ## Before you open a pull request
 
 ```bash
 dart format .
 flutter analyze --fatal-infos --fatal-warnings
-melos run test
+melos run test --no-select
 dart run tool/check_layering.dart
 dart run tool/check_english.dart
 dart run tool/check_platform_config.dart
