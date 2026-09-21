@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'dart:io';
 import 'dart:math';
 
 import 'package:flutcraft_domain/flutcraft_domain.dart';
@@ -168,12 +170,13 @@ void main() {
       state.solo.inventory.add(ItemType.coal, 5);
       final raw = codec.toJson(persistence.capture(state));
 
-      (raw['inventory'] as List)[0] = {'item': 'unobtanium', 'count': 1};
+      final player = (raw['players'] as List).first as Map<String, Object?>;
+      (player['inventory'] as List)[0] = {'item': 'unobtanium', 'count': 1};
       final result = codec.fromJson(raw);
 
       expect(result.warnings, hasLength(1));
       expect(result.warnings.single.toString(), contains('unobtanium'));
-      expect(result.data.seed, 1337);
+      expect(result.data.world.seed, 1337);
     });
 
     test('an unknown block only costs its own edit', () {
@@ -183,14 +186,15 @@ void main() {
         ..setBlock(11, 20, 10, BlockType.brick);
       final raw = codec.toJson(persistence.capture(state));
 
-      (raw['edits'] as List)[0] = {
+      final world = raw['world'] as Map<String, Object?>;
+      (world['edits'] as List)[0] = {
         'p': [10, 20, 10],
         'b': 'mithril',
       };
       final result = codec.fromJson(raw);
 
       expect(result.warnings, hasLength(1));
-      expect(result.data.edits, hasLength(1));
+      expect(result.data.world.edits, hasLength(1));
     });
 
     test('a save from a future version is refused with a clear error', () {
@@ -205,11 +209,76 @@ void main() {
       state.solo.inventory.add(ItemType.ironSword);
       final raw = codec.toJson(persistence.capture(state));
 
+      final player = (raw['players'] as List).first as Map<String, Object?>;
       final slot =
-          (raw['inventory'] as List).firstWhere((e) => e != null)
+          (player['inventory'] as List).firstWhere((e) => e != null)
               as Map<String, Object?>;
       expect(slot['item'], 'ironSword');
       expect(slot['item'], isA<String>());
+    });
+  });
+
+  group('A save written by version 1 still opens', () {
+    /// A file exactly as the single-player build used to write one, checked
+    /// in rather than generated: a migration proved against a file the old
+    /// code never saw proves nothing.
+    Map<String, Object?> legacyFile() =>
+        json.decode(File('test/fixtures/save_v1.json').readAsStringSync())
+            as Map<String, Object?>;
+
+    test('it becomes a world with one player in it', () {
+      final result = codec.fromJson(legacyFile());
+
+      expect(result.warnings, isEmpty);
+      expect(result.data.world.seed, 1337);
+      expect(result.data.players, hasLength(1));
+      expect(result.data.players.single.id, SaveCodec.legacyPlayer);
+    });
+
+    test('the player keeps what they were carrying and where they stood', () {
+      final saved = codec.fromJson(legacyFile()).data.solo;
+
+      expect(saved.x, closeTo(64.5, 1e-9));
+      expect(saved.health, 17);
+      expect(saved.yaw, closeTo(1.5, 1e-9));
+      expect(saved.selectedSlot, 2);
+      expect(saved.inventory.first, const ItemStack(ItemType.log, 8));
+      expect(saved.inventory[2], const ItemStack(ItemType.ironPickaxe, 1));
+    });
+
+    test('the world keeps its edits and its lit furnace', () {
+      final restored = persistence.restore(codec.fromJson(legacyFile()).data);
+
+      expect(restored.world.blockAt(64, 25, 64), BlockType.planks);
+      final furnace = restored.furnaces[const BlockPos(64, 26, 64)];
+      expect(furnace?.input?.count, 3);
+      expect(furnace?.progress, closeTo(0.5, 1e-9));
+    });
+
+    test('it reopens as a playable single-player game', () {
+      final restored = persistence.restore(codec.fromJson(legacyFile()).data);
+      final loop = GameLoop(
+        state: restored,
+        spawner: MobSpawner(world: restored.world, seed: 1, maxMobs: 0),
+        random: Random(1),
+      );
+
+      // GameState.solo still works, which is what keeps the app unchanged.
+      expect(restored.solo.inventory.countOf(ItemType.log), 8);
+      for (var i = 0; i < 60; i++) {
+        loop.tickSolo(kStep, InputFrame.idle);
+      }
+      expect(restored.solo.player.position.y, greaterThan(0));
+    });
+
+    test('rewritten, it comes back as a version 2 file', () {
+      final migrated = codec.fromJson(legacyFile()).data;
+      final rewritten = codec.toJson(migrated);
+
+      expect(rewritten['version'], 2);
+      expect(rewritten['world'], isA<Map<String, Object?>>());
+      expect(rewritten['players'], hasLength(1));
+      expect(codec.fromJson(rewritten).data.solo.health, 17);
     });
   });
 
@@ -223,7 +292,7 @@ void main() {
       final loaded = await repository.load('one');
 
       expect(loaded, isNotNull);
-      expect(loaded!.data.seed, 99);
+      expect(loaded!.data.world.seed, 99);
       expect(
         persistence.restore(loaded.data).solo.inventory.countOf(ItemType.bone),
         4,

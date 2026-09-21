@@ -22,7 +22,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   where a gamepad puts it. Dragging the screen still works.
 - Saving: the world is stored as a seed plus the blocks that differ from it,
   with a tolerant reader, autosave and a save when the app goes to the
-  background.
+  background. Version 2 splits a save into a world and a roster of players;
+  version 1 files still open, and become a world with one player in them.
 - `flutcraft_protocol`: sealed client and server messages with a JSON codec,
   ready for a server to speak. The world travels as a seed plus its edits.
 - `tool/check_layering.dart`, `tool/check_english.dart` and

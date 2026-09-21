@@ -36,7 +36,7 @@ LoopGameSession createSession({int seed = 1337, SaveSink? saveSink}) {
 /// again, or every reload would be a small windfall.
 LoopGameSession restoreSession(SaveData data, {SaveSink? saveSink}) {
   final state = const GamePersistence().restore(data);
-  return _sessionFor(state, seed: data.seed, saveSink: saveSink);
+  return _sessionFor(state, seed: data.world.seed, saveSink: saveSink);
 }
 
 LoopGameSession _sessionFor(
