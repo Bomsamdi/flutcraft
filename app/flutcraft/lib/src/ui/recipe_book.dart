@@ -197,7 +197,9 @@ class RecipeBook extends StatelessWidget {
   const RecipeBook({required this.image, required this.inventory, super.key});
 
   final ui.Image image;
-  final Inventory inventory;
+
+  /// The player's slots, used to mark what they are still missing.
+  final List<ItemStack?> inventory;
 
   @override
   Widget build(BuildContext context) {

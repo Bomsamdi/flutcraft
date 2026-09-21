@@ -1,39 +1,60 @@
-import 'dart:ui' as ui;
-
-import 'package:flutcraft/src/game/flutcraft_game.dart';
+import 'package:flutcraft/src/ui/providers/engine_providers.dart';
+import 'package:flutcraft/src/ui/providers/session_providers.dart';
 import 'package:flutcraft/src/ui/recipe_book.dart';
 import 'package:flutcraft/src/ui/slots.dart';
 import 'package:flutcraft_domain/flutcraft_domain.dart';
 import 'package:flutcraft_l10n/flutcraft_l10n.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// Na niskim ekranie (telefon w poziomie) sloty muszą być mniejsze,
-/// inaczej ekwipunek nie mieści się bez przewijania.
+/// On a short screen (a phone held sideways) the slots have to shrink, or
+/// the inventory will not fit without scrolling.
 bool _isCompact(BuildContext context) =>
     MediaQuery.sizeOf(context).height < 480;
 
 double _slotSize(BuildContext context, {double normal = 42}) =>
     _isCompact(context) ? normal * 0.76 : normal;
 
-/// Wspólna oprawa ekranów zasłaniających świat.
-class ScreenFrame extends StatelessWidget {
+/// The screen that belongs to the route the player is on.
+///
+/// Every screen reads what it needs from providers and sends commands back,
+/// so none of them knows the engine exists — which is what lets all of them
+/// be rendered in a widget test.
+class GameScreens extends ConsumerWidget {
+  const GameScreens({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return switch (ref.watch(routeProvider)) {
+      UiRoute.none => const SizedBox.shrink(),
+      UiRoute.dead => const DeathScreen(),
+      UiRoute.inventory => const CraftingScreen(isTable: false),
+      UiRoute.craftingTable => const CraftingScreen(isTable: true),
+      UiRoute.recipes => const RecipeScreen(),
+      UiRoute.furnace => const FurnaceScreen(),
+    };
+  }
+}
+
+/// Shared frame around the screens that cover the world.
+class ScreenFrame extends ConsumerWidget {
   const ScreenFrame({
     required this.title,
-    required this.onClose,
     required this.child,
-    this.onRecipes,
+    this.showRecipes = false,
     super.key,
   });
 
   final String title;
-  final VoidCallback onClose;
   final Widget child;
 
-  /// Skrót do księgi przepisów; `null` ukrywa przycisk.
-  final VoidCallback? onRecipes;
+  /// Whether to offer the shortcut to the recipe book.
+  final bool showRecipes;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final dispatch = ref.watch(dispatchProvider);
+
     return Positioned.fill(
       child: ColoredBox(
         color: Colors.black.withValues(alpha: 0.72),
@@ -63,11 +84,11 @@ class ScreenFrame extends StatelessWidget {
                         ),
                         const SizedBox(width: 24),
                         const Spacer(),
-                        if (onRecipes != null)
+                        if (showRecipes)
                           Padding(
                             padding: const EdgeInsets.only(right: 14),
                             child: GestureDetector(
-                              onTap: onRecipes,
+                              onTap: () => dispatch(const OpenRecipes()),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
@@ -89,7 +110,7 @@ class ScreenFrame extends StatelessWidget {
                             ),
                           ),
                         GestureDetector(
-                          onTap: onClose,
+                          onTap: () => dispatch(const CloseRoute()),
                           child: const Icon(Icons.close, color: Colors.white70),
                         ),
                       ],
@@ -107,38 +128,48 @@ class ScreenFrame extends StatelessWidget {
   }
 }
 
-/// Plecak (3x9) i pasek szybkiego dostępu - wspólne dla wszystkich ekranów.
-class InventoryPanel extends StatelessWidget {
-  const InventoryPanel({required this.game, required this.image, super.key});
+/// The backpack (3x9) and the hotbar — shared by every screen.
+class InventoryPanel extends ConsumerWidget {
+  const InventoryPanel({super.key});
 
-  final FlutcraftGame game;
-  final ui.Image image;
+  /// How many slots the hotbar has; the rest of the inventory is backpack.
+  static const int hotbarSize = 9;
 
   @override
-  Widget build(BuildContext context) {
-    final inventory = game.inventory;
+  Widget build(BuildContext context, WidgetRef ref) {
+    final inventory = ref.watch(inventoryProvider);
+    final image = ref.watch(atlasImageProvider);
+    final dispatch = ref.watch(dispatchProvider);
     final size = _slotSize(context);
+
+    void click(int index, {required bool split}) => dispatch(
+      ClickSlot(
+        InventorySlotRef(index),
+        kind: split ? ClickKind.split : ClickKind.primary,
+      ),
+    );
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         SlotGrid(
           image: image,
-          count: inventory.backpackSize,
+          count: inventory.length - hotbarSize,
           columns: 9,
           size: size,
-          stackAt: (i) => inventory[inventory.hotbarSize + i],
-          onTap: (i) => game.clickInventorySlot(inventory.hotbarSize + i),
-          onSplit: (i) => game.splitInventorySlot(inventory.hotbarSize + i),
+          stackAt: (i) => inventory[hotbarSize + i],
+          onTap: (i) => click(hotbarSize + i, split: false),
+          onSplit: (i) => click(hotbarSize + i, split: true),
         ),
         SizedBox(height: _isCompact(context) ? 4 : 8),
         SlotGrid(
           image: image,
-          count: inventory.hotbarSize,
+          count: hotbarSize,
           columns: 9,
           size: size,
           stackAt: (i) => inventory[i],
-          onTap: game.clickInventorySlot,
-          onSplit: game.splitInventorySlot,
+          onTap: (i) => click(i, split: false),
+          onSplit: (i) => click(i, split: true),
           labelAt: (i) => '${i + 1}',
         ),
       ],
@@ -146,45 +177,51 @@ class InventoryPanel extends StatelessWidget {
   }
 }
 
-/// Ekwipunek z siatką 2x2 albo stół rzemieślniczy z siatką 3x3.
-class CraftingScreen extends StatelessWidget {
-  const CraftingScreen({
-    required this.game,
-    required this.image,
-    required this.isTable,
-    super.key,
-  });
+/// What the player is dragging, shown under the inventory.
+class CursorPanel extends ConsumerWidget {
+  const CursorPanel({super.key});
 
-  final FlutcraftGame game;
-  final ui.Image image;
+  @override
+  Widget build(BuildContext context, WidgetRef ref) => CursorBar(
+    image: ref.watch(atlasImageProvider),
+    stack: ref.watch(cursorProvider),
+  );
+}
+
+/// The inventory with its 2x2 grid, or a crafting table with a 3x3 one.
+class CraftingScreen extends ConsumerWidget {
+  const CraftingScreen({required this.isTable, super.key});
+
   final bool isTable;
 
   @override
-  Widget build(BuildContext context) {
-    final grid = game.activeGrid;
-    final preview = game.craftPreview;
+  Widget build(BuildContext context, WidgetRef ref) {
+    final grid = ref.watch(gridProvider);
+    final columns = ref.watch(gridSizeProvider);
+    final preview = ref.watch(craftPreviewProvider);
+    final image = ref.watch(atlasImageProvider);
+    final dispatch = ref.watch(dispatchProvider);
 
     return ScreenFrame(
       title: isTable
           ? context.t.screenCraftingTable
           : context.t.screenInventory,
-      onClose: game.closeScreen,
-      onRecipes: game.openRecipes,
+      showRecipes: true,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Row(
             mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               SlotGrid(
                 image: image,
-                count: grid.slots.length,
-                columns: grid.size,
+                count: grid.length,
+                columns: columns,
                 size: _slotSize(context, normal: 44),
                 stackAt: (i) => grid[i],
-                onTap: game.clickGridSlot,
-                onSplit: game.splitGridSlot,
+                onTap: (i) => dispatch(ClickSlot(GridSlotRef(i))),
+                onSplit: (i) =>
+                    dispatch(ClickSlot(GridSlotRef(i), kind: ClickKind.split)),
               ),
               const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 10),
@@ -197,7 +234,7 @@ class CraftingScreen extends StatelessWidget {
                 highlight: preview == null
                     ? Colors.white24
                     : Colors.lightGreenAccent,
-                onTap: game.takeCraftResult,
+                onTap: () => dispatch(const ClickSlot(CraftResultRef())),
               ),
             ],
           ),
@@ -210,34 +247,37 @@ class CraftingScreen extends StatelessWidget {
               ),
             ),
           Divider(color: Colors.white24, height: _isCompact(context) ? 14 : 22),
-          InventoryPanel(game: game, image: image),
+          const InventoryPanel(),
           SizedBox(height: _isCompact(context) ? 6 : 10),
-          CursorBar(image: image, stack: game.cursor),
+          const CursorPanel(),
         ],
       ),
     );
   }
 }
 
-/// Ekran pieca: wsad, paliwo i wynik wytopu.
-class FurnaceScreen extends StatelessWidget {
-  const FurnaceScreen({
-    required this.game,
-    required this.image,
-    required this.state,
-    super.key,
-  });
-
-  final FlutcraftGame game;
-  final ui.Image image;
-  final FurnaceState state;
+/// The furnace: what goes in, what burns and what comes out.
+class FurnaceScreen extends ConsumerWidget {
+  const FurnaceScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final furnace = ref.watch(furnaceProvider);
+    if (furnace == null) return const SizedBox.shrink();
+
+    final image = ref.watch(atlasImageProvider);
+    final dispatch = ref.watch(dispatchProvider);
+
+    void click(FurnaceSlot slot, {bool split = false}) => dispatch(
+      ClickSlot(
+        FurnaceSlotRef(slot),
+        kind: split ? ClickKind.split : ClickKind.primary,
+      ),
+    );
+
     return ScreenFrame(
       title: context.t.screenFurnace,
-      onClose: game.closeScreen,
-      onRecipes: game.openRecipes,
+      showRecipes: true,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -249,10 +289,10 @@ class FurnaceScreen extends StatelessWidget {
                 children: [
                   ItemSlot(
                     image: image,
-                    stack: state.input,
+                    stack: furnace.input,
                     size: 46,
-                    onTap: () => game.clickFurnaceSlot(0),
-                    onSplit: () => game.clickFurnaceSlot(0, split: true),
+                    onTap: () => click(FurnaceSlot.input),
+                    onSplit: () => click(FurnaceSlot.input, split: true),
                   ),
                   Text(
                     context.t.furnaceInput,
@@ -263,22 +303,22 @@ class FurnaceScreen extends StatelessWidget {
                     width: 26,
                     child: Icon(
                       Icons.local_fire_department,
-                      color: state.isLit
+                      color: furnace.isLit
                           ? Color.lerp(
                               Colors.deepOrange,
                               Colors.amber,
-                              state.fuelFraction,
+                              furnace.fuelFraction,
                             )
                           : Colors.white12,
                     ),
                   ),
                   ItemSlot(
                     image: image,
-                    stack: state.fuel,
+                    stack: furnace.fuel,
                     size: 46,
-                    highlight: state.isLit ? Colors.orangeAccent : null,
-                    onTap: () => game.clickFurnaceSlot(1),
-                    onSplit: () => game.clickFurnaceSlot(1, split: true),
+                    highlight: furnace.isLit ? Colors.orangeAccent : null,
+                    onTap: () => click(FurnaceSlot.fuel),
+                    onSplit: () => click(FurnaceSlot.fuel, split: true),
                   ),
                   Text(
                     context.t.furnaceFuel,
@@ -295,7 +335,7 @@ class FurnaceScreen extends StatelessWidget {
                       const Icon(Icons.arrow_forward, color: Colors.white54),
                       const SizedBox(height: 6),
                       LinearProgressIndicator(
-                        value: state.progress.clamp(0.0, 1.0),
+                        value: furnace.progress.clamp(0.0, 1.0),
                         minHeight: 6,
                         backgroundColor: Colors.white12,
                         valueColor: const AlwaysStoppedAnimation(
@@ -308,10 +348,10 @@ class FurnaceScreen extends StatelessWidget {
               ),
               ItemSlot(
                 image: image,
-                stack: state.output,
+                stack: furnace.output,
                 size: 52,
                 highlight: Colors.lightGreenAccent,
-                onTap: () => game.clickFurnaceSlot(2),
+                onTap: () => click(FurnaceSlot.output),
               ),
             ],
           ),
@@ -323,23 +363,21 @@ class FurnaceScreen extends StatelessWidget {
             ),
           ),
           Divider(color: Colors.white24, height: _isCompact(context) ? 14 : 22),
-          InventoryPanel(game: game, image: image),
+          const InventoryPanel(),
           SizedBox(height: _isCompact(context) ? 6 : 10),
-          CursorBar(image: image, stack: game.cursor),
+          const CursorPanel(),
         ],
       ),
     );
   }
 }
 
-/// Ekran śmierci gracza.
-class DeathScreen extends StatelessWidget {
-  const DeathScreen({required this.game, super.key});
-
-  final FlutcraftGame game;
+/// Shown when the player has died.
+class DeathScreen extends ConsumerWidget {
+  const DeathScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Positioned.fill(
       child: ColoredBox(
         color: const Color(0xAA6B0F0F),
@@ -357,7 +395,7 @@ class DeathScreen extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               FilledButton.icon(
-                onPressed: game.respawn,
+                onPressed: () => ref.read(dispatchProvider)(const Respawn()),
                 icon: const Icon(Icons.refresh),
                 label: Text(context.t.respawnWithKey),
               ),
@@ -369,42 +407,16 @@ class DeathScreen extends StatelessWidget {
   }
 }
 
-/// Księga przepisów - co z czego powstaje.
-class RecipeScreen extends StatelessWidget {
-  const RecipeScreen({required this.game, required this.image, super.key});
-
-  final FlutcraftGame game;
-  final ui.Image image;
+/// The recipe book: what is made from what.
+class RecipeScreen extends ConsumerWidget {
+  const RecipeScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return ScreenFrame(
-      title: context.t.screenRecipes,
-      onClose: game.closeScreen,
-      child: RecipeBook(image: image, inventory: game.inventory),
-    );
-  }
-}
-
-/// Wybiera ekran pasujący do stanu gry.
-Widget? buildScreen(FlutcraftGame game, ui.Image image, UiRoute screen) {
-  return switch (screen) {
-    UiRoute.none => null,
-    UiRoute.dead => DeathScreen(game: game),
-    UiRoute.inventory => CraftingScreen(
-      game: game,
-      image: image,
-      isTable: false,
+  Widget build(BuildContext context, WidgetRef ref) => ScreenFrame(
+    title: context.t.screenRecipes,
+    child: RecipeBook(
+      image: ref.watch(atlasImageProvider),
+      inventory: ref.watch(inventoryProvider),
     ),
-    UiRoute.craftingTable => CraftingScreen(
-      game: game,
-      image: image,
-      isTable: true,
-    ),
-    UiRoute.recipes => RecipeScreen(game: game, image: image),
-    UiRoute.furnace => switch (game.openFurnace) {
-      final state? => FurnaceScreen(game: game, image: image, state: state),
-      _ => null,
-    },
-  };
+  );
 }

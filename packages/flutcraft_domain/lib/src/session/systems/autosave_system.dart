@@ -29,13 +29,18 @@ class AutosaveSystem {
   bool update(GameState state, double dt) {
     _sinceLastSave += dt;
     if (_sinceLastSave < interval) return false;
-    saveNow(state);
-    return true;
+    return saveNow(state);
   }
 
   /// Saves immediately and restarts the countdown.
-  void saveNow(GameState state) {
+  ///
+  /// Returns `false` when there was nothing worth saving. A dead player is
+  /// never written: that state would mean the next launch opens straight onto
+  /// the death screen, with the world's last living moment overwritten.
+  bool saveNow(GameState state) {
     _sinceLastSave = 0;
+    if (state.player.isDead) return false;
     sink.persist(persistence.capture(state));
+    return true;
   }
 }

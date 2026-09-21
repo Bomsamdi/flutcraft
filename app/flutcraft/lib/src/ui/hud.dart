@@ -1,20 +1,22 @@
-import 'dart:ui' as ui;
-
-import 'package:flutcraft/src/game/flutcraft_game.dart';
-import 'package:flutcraft_domain/flutcraft_domain.dart';
-import 'package:flutcraft_l10n/flutcraft_l10n.dart';
-import 'package:flutcraft/src/game/hud_state.dart';
+import 'package:flutcraft/src/ui/providers/engine_providers.dart';
+import 'package:flutcraft/src/ui/providers/message_provider.dart';
+import 'package:flutcraft/src/ui/providers/session_providers.dart';
 import 'package:flutcraft/src/ui/screens.dart';
 import 'package:flutcraft/src/ui/slots.dart';
 import 'package:flutcraft/src/ui/widgets.dart';
+import 'package:flutcraft_domain/flutcraft_domain.dart';
+import 'package:flutcraft_l10n/flutcraft_l10n.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// Cała warstwa 2D nad grą: celownik, zdrowie, pasek przedmiotów,
-/// sterowanie dotykowe i ekrany ekwipunku.
-class Hud extends StatelessWidget {
+/// The whole 2D layer over the world: crosshair, health, hotbar, touch
+/// controls and the screens.
+///
+/// Every part reads its own slice of the snapshot, so a changing item count
+/// does not rebuild the crosshair and a moving player does not rebuild the
+/// inventory.
+class Hud extends ConsumerWidget {
   const Hud({
-    required this.game,
-    required this.snapshot,
     required this.showTouchControls,
     required this.onToggleTouchControls,
     required this.onToggleHelp,
@@ -22,80 +24,81 @@ class Hud extends StatelessWidget {
     super.key,
   });
 
-  final FlutcraftGame game;
-  final HudSnapshot snapshot;
   final bool showTouchControls;
   final VoidCallback onToggleTouchControls;
   final VoidCallback onToggleHelp;
   final bool helpVisible;
 
   @override
-  Widget build(BuildContext context) {
-    final image = game.atlasImage;
-    final screen = image == null
-        ? null
-        : buildScreen(game, image, snapshot.screen);
+  Widget build(BuildContext context, WidgetRef ref) {
+    final playing = ref.watch(routeProvider) == UiRoute.none;
 
     return Stack(
       children: [
-        if (snapshot.hurtFlash > 0)
-          Positioned.fill(
-            child: IgnorePointer(
-              child: ColoredBox(
-                color: Colors.red.withValues(
-                  alpha: (snapshot.hurtFlash * 0.9).clamp(0.0, 0.45),
-                ),
-              ),
-            ),
-          ),
-        if (snapshot.screen == UiRoute.none) ...[
-          Crosshair(
-            progress: snapshot.breakProgress,
-            hasTarget: snapshot.aim is! NoAimView,
-            hostile: snapshot.targetMob != null,
-          ),
-          if (snapshot.targetMob case final target?)
-            Align(
-              alignment: const Alignment(0, -0.18),
-              child: TargetHealthBar(target: target),
-            ),
+        const _HurtFlash(),
+        if (playing) ...[
+          const _AimOverlay(),
           _TopBar(
-            snapshot: snapshot,
             onToggleTouchControls: onToggleTouchControls,
             onToggleHelp: onToggleHelp,
-            onOpenRecipes: game.openRecipes,
             touchControls: showTouchControls,
           ),
-          if (snapshot.event case final event?)
-            Builder(
-              builder: (context) {
-                final text = context.strings.event(event);
-                if (text.isEmpty) return const SizedBox.shrink();
-                return Align(
-                  alignment: const Alignment(0, -0.35),
-                  child: IgnorePointer(
-                    child: _Panel(
-                      child: Text(
-                        text,
-                        style: const TextStyle(color: Colors.amberAccent),
-                      ),
-                    ),
-                  ),
-                );
-              },
+          const _MessageBanner(),
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: Padding(
+              padding: EdgeInsets.only(bottom: showTouchControls ? 116 : 18),
+              child: const _BottomBar(),
             ),
-          if (image != null)
-            Align(
-              alignment: Alignment.bottomCenter,
-              child: Padding(
-                padding: EdgeInsets.only(bottom: showTouchControls ? 116 : 18),
-                child: _BottomBar(game: game, image: image, snapshot: snapshot),
-              ),
-            ),
-          if (showTouchControls) _TouchControls(game: game),
+          ),
+          if (showTouchControls) const _TouchControls(),
           if (helpVisible) _HelpOverlay(onClose: onToggleHelp),
         ],
-        ?screen,
+        const GameScreens(),
+      ],
+    );
+  }
+}
+
+/// Red wash right after taking a hit.
+class _HurtFlash extends ConsumerWidget {
+  const _HurtFlash();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final flash = ref.watch(hurtFlashProvider);
+    if (flash <= 0) return const SizedBox.shrink();
+
+    return Positioned.fill(
+      child: IgnorePointer(
+        child: ColoredBox(
+          color: Colors.red.withValues(alpha: (flash * 0.9).clamp(0.0, 0.45)),
+        ),
+      ),
+    );
+  }
+}
+
+/// Crosshair, plus the health bar of whatever is under it.
+class _AimOverlay extends ConsumerWidget {
+  const _AimOverlay();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final aim = ref.watch(aimProvider);
+
+    return Stack(
+      children: [
+        Crosshair(
+          progress: ref.watch(breakProgressProvider),
+          hasTarget: aim is! NoAimView,
+          hostile: aim is MobAimView,
+        ),
+        if (aim case final MobAimView target)
+          Align(
+            alignment: const Alignment(0, -0.18),
+            child: TargetHealthBar(target: target),
+          ),
       ],
     );
   }
@@ -127,63 +130,26 @@ class _Panel extends StatelessWidget {
   }
 }
 
-class _TopBar extends StatelessWidget {
+class _TopBar extends ConsumerWidget {
   const _TopBar({
-    required this.snapshot,
     required this.onToggleTouchControls,
     required this.onToggleHelp,
-    required this.onOpenRecipes,
     required this.touchControls,
   });
 
-  final HudSnapshot snapshot;
   final VoidCallback onToggleTouchControls;
   final VoidCallback onToggleHelp;
-  final VoidCallback onOpenRecipes;
   final bool touchControls;
 
   @override
-  Widget build(BuildContext context) {
-    final (x, y, z) = snapshot.position;
-    final loading = snapshot.chunksPending > 0;
-
+  Widget build(BuildContext context, WidgetRef ref) {
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.all(10),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            IgnorePointer(
-              child: _Panel(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(context.t.hudFps(snapshot.fps.toStringAsFixed(0))),
-                    Text('XYZ  $x / $y / $z'),
-                    Text(switch (snapshot.aim) {
-                      NoAimView() => context.t.noTarget,
-                      BlockAimView(:final block) => context.t.hudTarget(
-                        context.strings.blockName(block),
-                      ),
-                      MobAimView(:final kind) => context.t.hudTarget(
-                        context.strings.mobName(kind),
-                      ),
-                    }),
-                    Text(context.t.hudMobs(snapshot.mobCount)),
-                    if (snapshot.flying) Text(context.t.flying),
-                    if (loading)
-                      Text(
-                        context.t.hudChunks(
-                          snapshot.chunksTotal - snapshot.chunksPending,
-                          snapshot.chunksTotal,
-                        ),
-                        style: const TextStyle(color: Colors.amberAccent),
-                      ),
-                  ],
-                ),
-              ),
-            ),
+            const IgnorePointer(child: _Panel(child: _StatusText())),
             const Spacer(),
             _IconToggle(
               icon: Icons.gamepad,
@@ -194,7 +160,7 @@ class _TopBar extends StatelessWidget {
             _IconToggle(
               icon: Icons.menu_book,
               active: false,
-              onTap: onOpenRecipes,
+              onTap: () => ref.read(dispatchProvider)(const OpenRecipes()),
             ),
             const SizedBox(width: 8),
             _IconToggle(
@@ -203,6 +169,87 @@ class _TopBar extends StatelessWidget {
               onTap: onToggleHelp,
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Position, frame rate and what the crosshair is on.
+class _StatusText extends ConsumerWidget {
+  const _StatusText();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final position = ref.watch(positionProvider);
+    final aim = ref.watch(aimProvider);
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const _FrameStatsText(),
+        Text('XYZ  ${position.x} / ${position.y} / ${position.z}'),
+        Text(switch (aim) {
+          NoAimView() => context.t.noTarget,
+          BlockAimView(:final block) => context.t.hudTarget(
+            context.strings.blockName(block),
+          ),
+          MobAimView(:final kind) => context.t.hudTarget(
+            context.strings.mobName(kind),
+          ),
+        }),
+        Text(context.t.hudMobs(ref.watch(mobCountProvider))),
+        if (ref.watch(flyingProvider)) Text(context.t.flying),
+      ],
+    );
+  }
+}
+
+/// Frame rate and chunk progress.
+///
+/// These change every single frame, so they are listened to separately —
+/// nothing else in the HUD should rebuild sixty times a second.
+class _FrameStatsText extends ConsumerWidget {
+  const _FrameStatsText();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return ValueListenableBuilder<FrameStats>(
+      valueListenable: ref.watch(frameStatsProvider),
+      builder: (context, stats, _) => Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(context.t.hudFps(stats.fps.toStringAsFixed(0))),
+          if (stats.isLoading)
+            Text(
+              context.t.hudChunks(stats.chunksReady, stats.chunksTotal),
+              style: const TextStyle(color: Colors.amberAccent),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// The last thing worth telling the player, in their language.
+class _MessageBanner extends ConsumerWidget {
+  const _MessageBanner();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final event = ref.watch(messageProvider);
+    if (event == null) return const SizedBox.shrink();
+
+    final text = context.strings.event(event);
+    if (text.isEmpty) return const SizedBox.shrink();
+
+    return Align(
+      alignment: const Alignment(0, -0.35),
+      child: IgnorePointer(
+        child: _Panel(
+          child: Text(text, style: const TextStyle(color: Colors.amberAccent)),
         ),
       ),
     );
@@ -244,28 +291,23 @@ class _IconToggle extends StatelessWidget {
   }
 }
 
-/// Serca i pasek przedmiotów u dołu ekranu.
-class _BottomBar extends StatelessWidget {
-  const _BottomBar({
-    required this.game,
-    required this.image,
-    required this.snapshot,
-  });
-
-  final FlutcraftGame game;
-  final ui.Image image;
-  final HudSnapshot snapshot;
+/// Hearts and the hotbar along the bottom of the screen.
+class _BottomBar extends ConsumerWidget {
+  const _BottomBar();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final (health, maxHealth) = ref.watch(healthProvider);
+    final hotbar = ref.watch(hotbarProvider);
+    final selected = ref.watch(selectedSlotProvider);
+    final image = ref.watch(atlasImageProvider);
+    final dispatch = ref.watch(dispatchProvider);
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         IgnorePointer(
-          child: HeartsBar(
-            health: snapshot.health,
-            maxHealth: snapshot.maxHealth,
-          ),
+          child: HeartsBar(health: health, maxHealth: maxHealth),
         ),
         const SizedBox(height: 6),
         Container(
@@ -278,17 +320,17 @@ class _BottomBar extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              for (var i = 0; i < snapshot.hotbar.length; i++)
+              for (var i = 0; i < hotbar.length; i++)
                 ItemSlot(
                   image: image,
-                  stack: snapshot.hotbar[i],
-                  selected: i == snapshot.selected,
+                  stack: hotbar[i],
+                  selected: i == selected,
                   label: '${i + 1}',
                   size: 44,
-                  onTap: () => game.selectSlot(i),
+                  onTap: () => dispatch(SelectHotbarSlot(i)),
                 ),
               GestureDetector(
-                onTap: game.toggleInventory,
+                onTap: () => dispatch(const OpenRoute(UiRoute.inventory)),
                 child: Container(
                   width: 44,
                   height: 44,
@@ -313,20 +355,24 @@ class _BottomBar extends StatelessWidget {
   }
 }
 
-class _TouchControls extends StatelessWidget {
-  const _TouchControls({required this.game});
-
-  final FlutcraftGame game;
+/// Joystick and buttons for playing with a thumb.
+class _TouchControls extends ConsumerWidget {
+  const _TouchControls();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final router = ref.watch(inputRouterProvider);
+
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            VirtualJoystick(onChanged: game.setMoveAxis),
+            VirtualJoystick(
+              onChanged: (strafe, forward) =>
+                  router.setStick(forward: forward, strafe: strafe),
+            ),
             const Spacer(),
             Column(
               mainAxisSize: MainAxisSize.min,
@@ -337,14 +383,16 @@ class _TouchControls extends StatelessWidget {
                       label: context.t.buttonMineHit,
                       icon: Icons.construction,
                       color: Colors.amberAccent,
-                      onChanged: game.setMining,
+                      onChanged: (down) =>
+                          router.hold(GameAction.primary, down: down),
                     ),
                     const SizedBox(width: 10),
                     HoldButton(
                       label: context.t.buttonUse,
                       icon: Icons.add_box_outlined,
                       color: Colors.lightGreenAccent,
-                      onChanged: game.setPlacing,
+                      onChanged: (down) =>
+                          router.hold(GameAction.secondary, down: down),
                     ),
                   ],
                 ),
@@ -354,16 +402,16 @@ class _TouchControls extends StatelessWidget {
                     HoldButton(
                       label: context.t.buttonJump,
                       icon: Icons.arrow_upward,
-                      onChanged: game.setJump,
+                      onChanged: (down) =>
+                          router.hold(GameAction.jump, down: down),
                     ),
                     const SizedBox(width: 10),
                     HoldButton(
                       label: context.t.buttonFly,
                       icon: Icons.flight,
                       color: Colors.lightBlueAccent,
-                      onChanged: (down) {
-                        if (down) game.toggleFly();
-                      },
+                      onChanged: (down) =>
+                          router.hold(GameAction.toggleFlight, down: down),
                     ),
                   ],
                 ),
@@ -381,8 +429,8 @@ class _HelpOverlay extends StatelessWidget {
 
   final VoidCallback onClose;
 
-  /// Pary (klawisz, akcja) budowane z tłumaczeń, a nie wpisane w kod —
-  /// dzięki temu nie da się przetłumaczyć jednej kolumny i zapomnieć drugiej.
+  /// Pairs of (key, action) built from the translations rather than written
+  /// out here, so one column cannot be translated while the other is missed.
   List<(String, String)> _controls(AppLocalizations t) => [
     (t.helpMove, t.helpMoveAction),
     (t.helpLook, t.helpLookAction),

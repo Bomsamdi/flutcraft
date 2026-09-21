@@ -1,10 +1,13 @@
+import 'dart:ui' as ui;
+
 import 'package:flame/game.dart';
 import 'package:flutcraft/src/bootstrap/game_bootstrap.dart';
 import 'package:flutcraft/src/game/flutcraft_game.dart';
-import 'package:flutcraft/src/game/hud_state.dart';
 import 'package:flutcraft/src/ui/hud.dart';
+import 'package:flutcraft/src/render/atlas.dart';
 import 'package:flutcraft/src/save/file_save_storage.dart';
 import 'package:flutcraft/src/save/repository_save_sink.dart';
+import 'package:flutcraft/src/ui/providers/engine_providers.dart';
 import 'package:flutcraft/src/ui/providers/session_providers.dart';
 import 'package:flutcraft_domain/flutcraft_domain.dart';
 import 'package:flutcraft_l10n/flutcraft_l10n.dart';
@@ -14,8 +17,8 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-/// Na telefonie gra chodzi tylko poziomo - pionowy kadr obcina pole
-/// widzenia i nie mieści sterowania dotykowego.
+/// On a phone the game only runs sideways: a portrait frame crops the field
+/// of view and leaves no room for the touch controls.
 Future<void> _lockLandscape() async {
   if (defaultTargetPlatform != TargetPlatform.android &&
       defaultTargetPlatform != TargetPlatform.iOS) {
@@ -30,7 +33,16 @@ Future<void> _lockLandscape() async {
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await _lockLandscape();
-  runApp(FlutcraftApp(session: await _openSession()));
+  // The atlas is built before the game starts: the HUD has its icons from
+  // the first frame, and the engine is handed a resource instead of making it.
+  final atlas = TextureAtlas.generate();
+  runApp(
+    FlutcraftApp(
+      session: await _openSession(),
+      atlas: atlas,
+      atlasImage: await atlas.toImage(),
+    ),
+  );
 }
 
 /// Continues the last game if there is one, and starts a new world if not.
@@ -74,9 +86,16 @@ Future<SaveData?> _loadWorld(SaveRepository repository) async {
 }
 
 class FlutcraftApp extends StatelessWidget {
-  const FlutcraftApp({required this.session, super.key});
+  const FlutcraftApp({
+    required this.session,
+    required this.atlas,
+    required this.atlasImage,
+    super.key,
+  });
 
   final LoopGameSession session;
+  final TextureAtlas atlas;
+  final ui.Image atlasImage;
 
   @override
   Widget build(BuildContext context) {
@@ -86,15 +105,22 @@ class FlutcraftApp extends StatelessWidget {
       theme: ThemeData.dark(useMaterial3: true),
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
-      home: GameScreen(session: session),
+      home: GameScreen(session: session, atlas: atlas, atlasImage: atlasImage),
     );
   }
 }
 
 class GameScreen extends StatefulWidget {
-  const GameScreen({required this.session, super.key});
+  const GameScreen({
+    required this.session,
+    required this.atlas,
+    required this.atlasImage,
+    super.key,
+  });
 
   final LoopGameSession session;
+  final TextureAtlas atlas;
+  final ui.Image atlasImage;
 
   @override
   State<GameScreen> createState() => _GameScreenState();
@@ -102,16 +128,28 @@ class GameScreen extends StatefulWidget {
 
 class _GameScreenState extends State<GameScreen> {
   LoopGameSession get _session => widget.session;
-  late final FlutcraftGame _game = FlutcraftGame(session: _session);
+
+  /// Every input source pushes into this one router; the game reads the
+  /// finished frame. Created here because touch and pointer live in Flutter,
+  /// not in the engine.
+  final InputRouter _input = InputRouter();
+  late final FlutcraftGame _game = FlutcraftGame(
+    session: _session,
+    input: _input,
+    atlas: widget.atlas,
+  );
   final FocusNode _focusNode = FocusNode();
 
   /// Saves when the app goes to the background — on a phone that is how most
   /// sessions end, and the autosave timer will not get another chance.
   late final AppLifecycleListener _lifecycle;
 
-  /// Po przekroczeniu tego dystansu gest traktujemy jako rozglądanie
-  /// i przerywamy rozpoczęte kopanie.
+  /// Past this distance a drag counts as looking around, and whatever mining
+  /// it started is called off.
   static const double _lookThreshold = 14;
+
+  /// Radians per pixel of pointer movement.
+  static const double _lookSensitivity = 0.0032;
 
   late bool _touchControls = _isTouchPlatform;
   bool _help = false;
@@ -142,11 +180,11 @@ class _GameScreenState extends State<GameScreen> {
 
   void _onPointerDown(PointerDownEvent event) {
     _focusNode.requestFocus();
-    // Gdy otwarty jest ekwipunek, świat nie reaguje na wskaźnik.
+    // While a screen is open the world ignores the pointer.
     if (_game.screen.pausesWorld) return;
 
     if (event.buttons & kSecondaryMouseButton != 0) {
-      _game.interactOrPlace();
+      _session.dispatch(const UseOrPlace());
       return;
     }
     if (_pointer != null) return;
@@ -155,7 +193,7 @@ class _GameScreenState extends State<GameScreen> {
     _last = event.position;
     _travelled = 0;
     _looking = false;
-    _game.setMining(true);
+    _input.press(GameAction.primary);
   }
 
   void _onPointerMove(PointerMoveEvent event) {
@@ -167,27 +205,34 @@ class _GameScreenState extends State<GameScreen> {
 
     if (!_looking && _travelled > _lookThreshold) {
       _looking = true;
-      _game.setMining(false);
+      _input.release(GameAction.primary);
     }
-    if (_looking) _game.look(delta.dx, delta.dy);
+    if (_looking) {
+      _input.look(-delta.dx * _lookSensitivity, -delta.dy * _lookSensitivity);
+    }
   }
 
   void _endPointer(int pointer) {
     if (pointer != _pointer) return;
     _pointer = null;
     _looking = false;
-    _game.setMining(false);
+    _input.release(GameAction.primary);
   }
 
   void _onSignal(PointerSignalEvent event) {
     if (event is! PointerScrollEvent || _game.screen.pausesWorld) return;
-    _game.cycleSlot(event.scrollDelta.dy > 0 ? 1 : -1);
+    _session.dispatch(CycleHotbarSlot(event.scrollDelta.dy > 0 ? 1 : -1));
   }
 
   @override
   Widget build(BuildContext context) {
     return ProviderScope(
-      overrides: [gameSessionProvider.overrideWithValue(_session)],
+      overrides: [
+        gameSessionProvider.overrideWithValue(_session),
+        inputRouterProvider.overrideWithValue(_input),
+        atlasImageProvider.overrideWithValue(widget.atlasImage),
+        frameStatsProvider.overrideWithValue(_game.frameStats),
+      ],
       child: Scaffold(
         body: Stack(
           children: [
@@ -209,32 +254,12 @@ class _GameScreenState extends State<GameScreen> {
               ),
             ),
             Positioned.fill(
-              child: ValueListenableBuilder<HudSnapshot?>(
-                valueListenable: _game.hud,
-                builder: (context, snapshot, _) {
-                  if (snapshot == null) {
-                    return ColoredBox(
-                      color: const Color(0xFF88BBEE),
-                      child: Center(
-                        child: Builder(
-                          builder: (context) => Text(
-                            context.t.loadingWorld,
-                            style: const TextStyle(color: Colors.white),
-                          ),
-                        ),
-                      ),
-                    );
-                  }
-                  return Hud(
-                    game: _game,
-                    snapshot: snapshot,
-                    showTouchControls: _touchControls,
-                    helpVisible: _help,
-                    onToggleTouchControls: () =>
-                        setState(() => _touchControls = !_touchControls),
-                    onToggleHelp: () => setState(() => _help = !_help),
-                  );
-                },
+              child: Hud(
+                showTouchControls: _touchControls,
+                helpVisible: _help,
+                onToggleTouchControls: () =>
+                    setState(() => _touchControls = !_touchControls),
+                onToggleHelp: () => setState(() => _help = !_help),
               ),
             ),
           ],

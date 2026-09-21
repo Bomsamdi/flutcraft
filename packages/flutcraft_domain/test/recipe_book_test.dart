@@ -150,20 +150,23 @@ void _missingTests() {
       final inventory = Inventory()
         ..add(ItemType.cobblestone, 3)
         ..add(ItemType.stick, 2);
-      expect(missingFor(recipeFor(ItemType.stonePickaxe), inventory), isEmpty);
+      expect(
+        missingFor(recipeFor(ItemType.stonePickaxe), inventory.slots),
+        isEmpty,
+      );
     });
 
     test('podaje brakującą różnicę, nie całe zapotrzebowanie', () {
       final inventory = Inventory()
         ..add(ItemType.cobblestone, 2)
         ..add(ItemType.stick, 2);
-      expect(missingFor(recipeFor(ItemType.stonePickaxe), inventory), {
+      expect(missingFor(recipeFor(ItemType.stonePickaxe), inventory.slots), {
         ItemType.cobblestone: 1,
       });
     });
 
     test('wypisuje kilka braków naraz', () {
-      expect(missingFor(recipeFor(ItemType.stonePickaxe), Inventory()), {
+      expect(missingFor(recipeFor(ItemType.stonePickaxe), Inventory().slots), {
         ItemType.cobblestone: 3,
         ItemType.stick: 2,
       });
@@ -171,7 +174,7 @@ void _missingTests() {
 
     test('nadmiar nie pojawia się na liście braków', () {
       final inventory = Inventory()..add(ItemType.log, 64);
-      expect(missingFor(recipeFor(ItemType.planks), inventory), isEmpty);
+      expect(missingFor(recipeFor(ItemType.planks), inventory.slots), isEmpty);
     });
   });
 }

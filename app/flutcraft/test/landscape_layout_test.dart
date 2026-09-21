@@ -66,7 +66,7 @@ void main() {
         supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(
           body: SingleChildScrollView(
-            child: RecipeBook(image: atlasImage, inventory: Inventory()),
+            child: RecipeBook(image: atlasImage, inventory: Inventory().slots),
           ),
         ),
       ),
@@ -89,7 +89,7 @@ void main() {
         supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(
           body: SingleChildScrollView(
-            child: RecipeBook(image: atlasImage, inventory: Inventory()),
+            child: RecipeBook(image: atlasImage, inventory: Inventory().slots),
           ),
         ),
       ),

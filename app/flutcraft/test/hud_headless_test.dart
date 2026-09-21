@@ -2,7 +2,9 @@ import 'dart:math';
 import 'dart:ui' as ui;
 
 import 'package:flutcraft/src/render/atlas.dart';
-import 'package:flutcraft/src/ui/hud/hud_overlay.dart';
+import 'package:flutcraft/src/ui/hud.dart';
+import 'package:flutcraft/src/ui/screens.dart';
+import 'package:flutcraft/src/ui/providers/engine_providers.dart';
 import 'package:flutcraft/src/ui/providers/session_providers.dart';
 import 'package:flutcraft_domain/flutcraft_domain.dart';
 import 'package:flutcraft_l10n/flutcraft_l10n.dart';
@@ -11,7 +13,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vector_math/vector_math.dart';
 
-/// Prawdziwa gra bez GPU: świat, gracz, systemy i pętla.
+/// The real game without a GPU: world, player, systems and loop.
 LoopGameSession headlessGame({int size = 32}) {
   final world = VoxelWorld(sizeX: size, sizeY: 16, sizeZ: size);
   for (var z = 0; z < size; z++) {
@@ -41,6 +43,9 @@ void main() {
     atlas = await TextureAtlas.generate().toImage();
   });
 
+  /// Renders the whole HUD — hotbar, screens and all — against a real game
+  /// loop. The engine is never built, which is the entire point: if a widget
+  /// needed the GPU, this would not compile, let alone pass.
   Future<LoopGameSession> pumpHud(
     WidgetTester tester, {
     LoopGameSession? session,
@@ -48,27 +53,41 @@ void main() {
     final game = session ?? headlessGame();
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [gameSessionProvider.overrideWithValue(game)],
+        overrides: [
+          gameSessionProvider.overrideWithValue(game),
+          atlasImageProvider.overrideWithValue(atlas),
+          inputRouterProvider.overrideWithValue(InputRouter()),
+          frameStatsProvider.overrideWithValue(
+            ValueNotifier(const FrameStats(fps: 60)),
+          ),
+        ],
         child: MaterialApp(
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
-          home: Scaffold(body: HudOverlay(atlas: atlas)),
+          home: const Scaffold(
+            body: Hud(
+              showTouchControls: false,
+              helpVisible: false,
+              onToggleTouchControls: _nothing,
+              onToggleHelp: _nothing,
+            ),
+          ),
         ),
       ),
     );
     return game;
   }
 
-  group('HUD na prawdziwej grze, bez GPU', () {
-    testWidgets('rysuje się i pokazuje pełne życie', (tester) async {
+  group('The HUD on a real game, without a GPU', () {
+    testWidgets('renders, showing full health', (tester) async {
       await pumpHud(tester);
 
-      expect(find.byType(HudOverlay), findsOneWidget);
+      expect(find.byType(Hud), findsOneWidget);
       expect(find.byIcon(Icons.favorite), findsNWidgets(10));
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('pasek odzwierciedla ekwipunek gry', (tester) async {
+    testWidgets('the hotbar mirrors the inventory', (tester) async {
       final game = headlessGame();
       game.loop.state.inventory
         ..add(ItemType.planks, 8)
@@ -79,9 +98,7 @@ void main() {
       expect(find.text('3'), findsOneWidget);
     });
 
-    testWidgets('kliknięcie slotu wysyła komendę do prawdziwej gry', (
-      tester,
-    ) async {
+    testWidgets('tapping a slot reaches the real simulation', (tester) async {
       final game = headlessGame();
       game.loop.state.inventory
         ..add(ItemType.planks, 5)
@@ -90,7 +107,6 @@ void main() {
 
       expect(game.loop.state.selectedSlot, 0);
 
-      // Drugi slot paska.
       await tester.tap(find.text('2'));
       await tester.pump();
 
@@ -98,18 +114,17 @@ void main() {
       expect(game.loop.state.heldItem, ItemType.coal);
     });
 
-    testWidgets('ikona plecaka otwiera ekwipunek w symulacji', (tester) async {
+    testWidgets('the backpack icon opens the inventory screen', (tester) async {
       final game = await pumpHud(tester);
 
       await tester.tap(find.byIcon(Icons.backpack));
       await tester.pump();
 
       expect(game.loop.state.route, UiRoute.inventory);
+      expect(find.byType(CraftingScreen), findsOneWidget);
     });
 
-    testWidgets('obrażenia gracza widać w HUD po następnej migawce', (
-      tester,
-    ) async {
+    testWidgets('damage shows up on the next snapshot', (tester) async {
       final game = await pumpHud(tester);
       expect(find.byIcon(Icons.favorite), findsNWidgets(10));
 
@@ -120,9 +135,7 @@ void main() {
       expect(find.byIcon(Icons.favorite), findsNWidgets(7));
     });
 
-    testWidgets('celownik staje się wrogi, gdy na muszce jest potwór', (
-      tester,
-    ) async {
+    testWidgets('the crosshair turns hostile on a mob', (tester) async {
       final game = headlessGame();
       final state = game.loop.state;
       state.mobs.add(
@@ -132,7 +145,7 @@ void main() {
           spawn: Vector3(16.5, 2, 14.0),
         ),
       );
-      state.player.yaw = 0; // patrzy w -Z
+      state.player.yaw = 0; // looking down -Z
       game.tick(1 / 60, InputFrame.idle);
       game.dispatch(const SelectHotbarSlot(0));
 
@@ -141,7 +154,9 @@ void main() {
       expect(find.text('Zombie'), findsOneWidget);
     });
 
-    testWidgets('gra tyka pod HUD bez wyjątków', (tester) async {
+    testWidgets('the game ticks under the HUD without throwing', (
+      tester,
+    ) async {
       final game = await pumpHud(tester);
 
       for (var i = 0; i < 120; i++) {
@@ -153,4 +168,70 @@ void main() {
       expect(game.loop.state.player.position.y, closeTo(2, 0.2));
     });
   });
+
+  group('Screens, also without a GPU', () {
+    testWidgets('crafting in the inventory reaches the grid', (tester) async {
+      final game = headlessGame();
+      game.loop.state.inventory.add(ItemType.log, 3);
+      game.dispatch(const OpenRoute(UiRoute.inventory));
+      await pumpHud(tester, session: game);
+
+      // Move a log into the 2x2 grid: pick it up, put it down.
+      game
+        ..dispatch(const ClickSlot(InventorySlotRef(0)))
+        ..dispatch(const ClickSlot(GridSlotRef(0)));
+      await tester.pump();
+
+      expect(game.loop.state.smallGrid[0]?.type, ItemType.log);
+      expect(find.byType(CraftingScreen), findsOneWidget);
+    });
+
+    testWidgets('the furnace screen shows what is inside', (tester) async {
+      final game = headlessGame();
+      final state = game.loop.state;
+      state.world.setBlock(16, 2, 16, BlockType.furnace);
+      state.furnaces.open(const BlockPos(16, 2, 16)).input = const ItemStack(
+        ItemType.rawIron,
+        12,
+      );
+      state.openFurnace = const BlockPos(16, 2, 16);
+      game.dispatch(const OpenRoute(UiRoute.furnace));
+
+      await pumpHud(tester, session: game);
+
+      expect(find.byType(FurnaceScreen), findsOneWidget);
+      expect(find.text('12'), findsOneWidget);
+    });
+
+    testWidgets('the death screen respawns the player', (tester) async {
+      final game = headlessGame();
+      game.loop.state.player.damage(Player.maxHealth);
+      // Snapshots are published at 20 Hz, so one frame is not enough for the
+      // interface to have heard about it.
+      for (var i = 0; i < 4; i++) {
+        game.tick(1 / 60, InputFrame.idle);
+      }
+
+      await pumpHud(tester, session: game);
+      expect(find.byType(DeathScreen), findsOneWidget);
+
+      await tester.tap(find.byType(FilledButton));
+      await tester.pump();
+
+      expect(game.loop.state.route, UiRoute.none);
+      expect(game.loop.state.player.isDead, isFalse);
+    });
+
+    testWidgets('the recipe book opens from the top bar', (tester) async {
+      final game = await pumpHud(tester);
+
+      await tester.tap(find.byIcon(Icons.menu_book));
+      await tester.pump();
+
+      expect(game.loop.state.route, UiRoute.recipes);
+      expect(find.byType(RecipeScreen), findsOneWidget);
+    });
+  });
 }
+
+void _nothing() {}

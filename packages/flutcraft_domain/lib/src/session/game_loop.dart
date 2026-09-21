@@ -7,6 +7,9 @@ import '../aiming/aim_result.dart';
 import '../blocks/block_interaction.dart';
 import '../crafting/recipes.dart';
 import '../inventory/inventory.dart';
+import '../input/action_commands.dart';
+import '../input/game_action.dart';
+import '../input/input_frame.dart';
 import '../items/item_type.dart';
 import '../save/save_sink.dart';
 import 'game_command.dart';
@@ -24,22 +27,6 @@ import 'systems/projectile_system.dart';
 import 'ui_route.dart';
 import '../machines/furnace_state.dart';
 import 'package:vector_math/vector_math.dart';
-
-/// What the player is holding down this frame.
-class InputFrame {
-  InputFrame({MoveInput? move, this.mining = false, this.using = false})
-    : move = move ?? MoveInput();
-
-  final MoveInput move;
-
-  /// Primary button: break blocks, hit mobs.
-  final bool mining;
-
-  /// Secondary button: place blocks, use the aimed block.
-  final bool using;
-
-  static final idle = InputFrame();
-}
 
 /// Runs the simulation: executes commands, then ticks every system in order.
 ///
@@ -94,14 +81,30 @@ class GameLoop implements MobTickContext {
     if (state.player.isDead && state.route != UiRoute.dead) {
       state.route = UiRoute.dead;
     }
+
+    // Buttons that were tapped this tick become commands. What each one means
+    // depends on where the player is, which is why it is decided in one
+    // place rather than in whichever source happened to see the key.
+    for (final action in input.pressed) {
+      final command = commandFor(action, state.route);
+      if (command != null) dispatch(command);
+    }
+
     if (state.route.pausesWorld) return List.of(_events);
 
-    _movement.update(state, dt, input.move);
+    if (input.lookYaw != 0 || input.lookPitch != 0) {
+      state.player.look(input.lookYaw, input.lookPitch);
+    }
+    _movement.update(state, dt, input.moveFor(flying: state.player.flying));
     _events.addAll(_mobAi.update(state, dt, this));
     _projectiles.update(state, dt);
     _aiming.update(state);
-    _events.addAll(_mining.update(state, dt, active: input.mining));
-    _events.addAll(_placement.update(state, dt, active: input.using));
+    _events.addAll(
+      _mining.update(state, dt, active: input.isHeld(GameAction.primary)),
+    );
+    _events.addAll(
+      _placement.update(state, dt, active: input.isHeld(GameAction.secondary)),
+    );
 
     return List.of(_events);
   }
@@ -140,9 +143,7 @@ class GameLoop implements MobTickContext {
       case UseOrPlace():
         _useOrPlace();
       case SaveGame():
-        final autosave = _autosave;
-        if (autosave != null) {
-          autosave.saveNow(state);
+        if (_autosave?.saveNow(state) ?? false) {
           _events.add(const GameSaved());
         }
     }
@@ -166,6 +167,7 @@ class GameLoop implements MobTickContext {
 
   void _openRoute(UiRoute route) {
     state.route = route;
+    state.breakProgress = 0;
     _placement.resetCooldown();
   }
 
