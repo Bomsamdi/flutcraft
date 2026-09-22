@@ -136,6 +136,42 @@ void main() {
       );
     });
 
+    test('a burst of frames keeps the whole turn', () {
+      // A client sends one frame per simulation step; a socket hands several
+      // of them over at once whenever the network bunched them up, and the
+      // world steps on its own clock in between. Keeping only the last of a
+      // burst threw nine tenths of this turn away — and since a client is
+      // never corrected about where it is looking, the two never agree again.
+      // Other players were drawn facing somewhere their player never looked.
+      for (var i = 0; i < 10; i++) {
+        host.receive(alice, InputTick(i, const InputFrame(lookYaw: 0.1)));
+      }
+
+      play(1);
+
+      expect(host.state.participants[alice]!.player.yaw, closeTo(1.0, 1e-9));
+    });
+
+    test('a burst of frames keeps every tap', () {
+      // Flight first: it is refused from inside a menu, so the other order
+      // would pass whether or not the second tap survived.
+      host
+        ..receive(
+          alice,
+          const InputTick(1, InputFrame(pressed: [GameAction.toggleFlight])),
+        )
+        ..receive(
+          alice,
+          const InputTick(2, InputFrame(pressed: [GameAction.toggleInventory])),
+        );
+
+      play(1);
+
+      // Two taps, two effects. A lost one is a block that was never placed.
+      expect(host.state.participants[alice]!.player.flying, isTrue);
+      expect(host.state.participants[alice]!.route, UiRoute.inventory);
+    });
+
     test('a client that stops talking stops walking', () {
       host.receive(alice, const InputTick(1, walkForward));
       play(GameHost.inputHoldTicks + 30);

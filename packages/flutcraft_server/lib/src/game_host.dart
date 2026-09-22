@@ -201,7 +201,17 @@ class GameHost {
 
     switch (message) {
       case InputTick(:final tick, :final input):
-        _pending[who] = _HeldInput(input, _tick + inputHoldTicks);
+        // Merged, not replaced. A client sends one frame per simulation step
+        // and a socket delivers several of them at once whenever the network
+        // bunched them up; the world steps on its own clock in between.
+        // Overwriting kept only the last of each burst, which is a state and
+        // so survives — but a turn and a tap are amounts, and those were
+        // simply gone.
+        final waiting = _pending[who];
+        _pending[who] = _HeldInput(
+          waiting == null ? input : waiting.frame.mergedWith(input),
+          _tick + inputHoldTicks,
+        );
         _ackTick[who] = tick;
       case Command(:final command):
         _publish(loop.dispatch(who, command));

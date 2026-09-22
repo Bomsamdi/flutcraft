@@ -295,4 +295,61 @@ void main() {
       }
     });
   });
+
+  group('Two frames that arrive together', () {
+    test('a state is taken from the newer one', () {
+      const first = InputFrame(forward: 1, held: {GameAction.moveForward});
+      const second = InputFrame(strafe: -1, held: {GameAction.strafeLeft});
+
+      final merged = first.mergedWith(second);
+
+      expect(merged.forward, 0);
+      expect(merged.strafe, -1);
+      expect(merged.held, {GameAction.strafeLeft});
+    });
+
+    test('an amount is added up', () {
+      const first = InputFrame(lookYaw: 0.3, lookPitch: -0.1);
+      const second = InputFrame(lookYaw: 0.4, lookPitch: -0.2);
+
+      final merged = first.mergedWith(second);
+
+      // Each is a slice of one continuous turn. Keeping only the newer one
+      // is how most of a fast look ends up thrown away.
+      expect(merged.lookYaw, closeTo(0.7, 1e-9));
+      expect(merged.lookPitch, closeTo(-0.3, 1e-9));
+    });
+
+    test('no tap is lost, and none is invented', () {
+      const first = InputFrame(pressed: [GameAction.toggleInventory]);
+      const second = InputFrame(pressed: [GameAction.toggleFlight]);
+
+      final merged = first.mergedWith(second);
+
+      // A dropped press is a block that was never placed.
+      expect(merged.pressed, [
+        GameAction.toggleInventory,
+        GameAction.toggleFlight,
+      ]);
+    });
+
+    test('the same tap twice is two taps', () {
+      const tap = InputFrame(pressed: [GameAction.toggleInventory]);
+
+      expect(tap.mergedWith(tap).pressed, hasLength(2));
+    });
+
+    test('a whole turn survives being cut up and put back together', () {
+      // What a client does to a rendered frame, undone by what a server does
+      // to a burst of them.
+      const frame = InputFrame(lookYaw: 1.2, forward: 1);
+      var rebuilt = InputFrame.idle;
+      for (var i = 0; i < 6; i++) {
+        rebuilt = rebuilt.mergedWith(frame.asStep(i, 6));
+      }
+
+      expect(rebuilt.lookYaw, closeTo(1.2, 1e-9));
+      expect(rebuilt.forward, 1);
+    });
+  });
 }

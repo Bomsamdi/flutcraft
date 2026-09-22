@@ -68,6 +68,43 @@ void main() {
     expect(sawHer, isTrue, reason: "Bob's world never showed Alice moving");
   });
 
+  test('the server knows which way a player is looking', () async {
+    final alice = await RemoteGameSession.join(
+      await SocketChannel.connect(server.port),
+      newcomer('alice'),
+    );
+    addTearDown(alice.close);
+
+    // Half a turn, spread over rendered frames the way a mouse delivers it.
+    // A frame is worth one or more simulation steps, each of which the client
+    // sends; how many of those the server sees together is up to the network.
+    final frames = Timer.periodic(const Duration(milliseconds: 16), (_) {
+      alice.tick(1 / 60, const InputFrame(lookYaw: 0.05));
+    });
+    addTearDown(frames.cancel);
+
+    await eventually(() => alice.viewer.player.yaw > 3);
+    frames.cancel();
+    final turnedTo = alice.viewer.player.yaw;
+
+    // Nothing corrects a client about where it is looking — that would fight
+    // the mouse — so any turn the server misses is missed for good, and
+    // everybody else draws this player facing somewhere she never looked.
+    final agreed = await eventually(() {
+      final asServerSees = host.state.participants[const PlayerId('alice')];
+      return asServerSees != null &&
+          (asServerSees.player.yaw - turnedTo).abs() < 0.05;
+    });
+
+    expect(
+      agreed,
+      isTrue,
+      reason:
+          'she turned to $turnedTo, the server has '
+          '${host.state.participants[const PlayerId('alice')]?.player.yaw}',
+    );
+  });
+
   test('a prediction survives the round trip it agrees with', () async {
     final alice = await RemoteGameSession.join(
       await SocketChannel.connect(server.port),
