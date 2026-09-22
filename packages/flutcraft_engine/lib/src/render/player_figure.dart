@@ -33,6 +33,7 @@ class PlayerFigure extends Component3D {
     final player = participant.player;
     position.setValues(player.position.x, player.position.y, player.position.z);
     rotation.setFrom(Quaternion.axisAngle(Vector3(0, 1, 0), player.yaw));
+    markPartsMoved(_parts.map((it) => it.$2));
 
     // A player's body has no walk cycle of its own — the simulation never
     // needed one, because a player is normally the camera. Speed on the

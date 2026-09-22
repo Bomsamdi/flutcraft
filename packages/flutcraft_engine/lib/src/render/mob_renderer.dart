@@ -229,6 +229,24 @@ class MobModels {
   }
 }
 
+/// Tells the parts of a figure that they moved when the figure did.
+///
+/// flame_3d marks a child's world transform dirty when its parent moves, so
+/// the part is *drawn* in the right place. It does not mark the child's
+/// cached bounding box dirty — and that box is what the frustum test culls
+/// by. A part whose own transform never changes therefore keeps the box it
+/// had where the figure first stood, and disappears whenever that patch of
+/// ground is out of shot.
+///
+/// Swinging limbs hide the bug: setting a rotation on them every frame
+/// invalidates their box as a side effect. A head and a torso do not swing,
+/// which is why another player walked around as a pair of arms and legs.
+void markPartsMoved(Iterable<Component3D> parts) {
+  for (final part in parts) {
+    part.markAabbDirty();
+  }
+}
+
 /// Renders one mob.
 class MobComponent extends Component3D {
   MobComponent({required this.mob, required MobModel model}) {
@@ -249,6 +267,7 @@ class MobComponent extends Component3D {
   void sync() {
     position.setValues(mob.position.x, mob.position.y, mob.position.z);
     rotation.setFrom(Quaternion.axisAngle(Vector3(0, 1, 0), mob.yaw));
+    markPartsMoved(_parts.map((it) => it.$2));
 
     // A hit, and a creeper's ticking fuse, show as a pulse in scale: the
     // meshes are shared, so their colour cannot be changed per mob.

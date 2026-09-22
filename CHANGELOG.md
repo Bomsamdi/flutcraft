@@ -52,6 +52,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Mobs no longer walk inside the player. Bodies push each other apart, and a
   melee mob stops where the two boxes touch instead of pressing on — you can
   see what is hitting you, and swing at it.
+- Other players and mobs no longer walk about as a pair of arms and legs.
+  flame_3d invalidates a child's world transform when its parent moves, but
+  not the child's cached bounding box — and that box is what decides whether
+  the part is on screen. Limbs got away with it because setting a rotation
+  every frame invalidates the box as a side effect; a head and a torso do not
+  swing, so they were culled as if the figure had never left its spawn.
 - A socket adapter no longer throws when a frame arrives while the connection
   is closing: the listener still fires after the stream behind it is closed.
 - Joining a server no longer arrives empty-handed. The client waited for the
