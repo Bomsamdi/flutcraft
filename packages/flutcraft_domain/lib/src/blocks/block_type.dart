@@ -5,7 +5,7 @@ import 'tile.dart';
 enum ToolType { none, pickaxe, axe, shovel, sword }
 
 /// Every block in the prototype. `air` is the empty one and is never
-/// trafia do siatki.
+/// reaches the mesh.
 enum BlockType {
   air(solid: false, hardness: 0, tool: ToolType.none, top: Tile.stone),
   grass(

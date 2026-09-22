@@ -70,7 +70,7 @@ class TerrainGenerator {
         final h = heights[z * world.sizeX + x];
         if (h <= beachLevel || h > world.sizeY - 10) continue;
         if (world.blockAt(x, h, z) != BlockType.grass) continue;
-        // Rzadki, deterministyczny rozsiew - ~1 drzewo na 110 kratek.
+        // A sparse, deterministic scatter - about one tree per 110 cells.
         if (_hash(x, z, seed + 3) % 110 != 0) continue;
         if (_tooCloseToTree(world, x, h, z)) continue;
 
@@ -116,7 +116,7 @@ class TerrainGenerator {
     }
   }
 
-  // --- szum ------------------------------------------------------------------
+  // --- noise -----------------------------------------------------------------
 
   int _hash(int x, int y, int salt) {
     var h =
