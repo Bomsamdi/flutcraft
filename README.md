@@ -233,6 +233,16 @@ emulate one.
 - Chunk meshes are built on the UI thread, two per frame, with no isolates.
 - A save stores the seed and the edits, so changing the terrain generator
   invalidates older saves. The format carries a `terrainVersion` for that.
+- A password travels as typed. On anything wider than a trusted network the
+  server belongs behind a `wss://` proxy, which is the transport's job and not
+  the protocol's.
+- The server checks that a claimed block is there and within reach, but not
+  that the player can see it: a client could mine the far side of a wall it is
+  standing against. Stopping that costs a second ray per player per tick, and
+  the trade has not been worth making yet.
+- Two copies of the game on one machine share one `client.json`, so the name
+  they offer next time is whoever signed in last. It is a suggestion in a text
+  field, not a login.
 
 ## Impeller
 
