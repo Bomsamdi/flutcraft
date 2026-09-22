@@ -50,6 +50,32 @@ final class InputFrame {
   InputFrame get sustained =>
       InputFrame(forward: forward, strafe: strafe, held: held);
 
+  /// This frame followed by [later], as one frame.
+  ///
+  /// The mirror image of [asStep], and needed for the same reason: a frame is
+  /// part state and part amount, and the two combine differently.
+  ///
+  /// * Axes and held buttons are *states*. The newer one wins; what the
+  ///   player was holding a moment ago does not matter any more.
+  /// * Presses are *edges*, and no edge may be lost: a dropped tap is a block
+  ///   that was never placed.
+  /// * Look deltas are *amounts*. They add up, because each is a piece of one
+  ///   continuous turn.
+  ///
+  /// A server needs this because frames arrive in bursts — a socket hands
+  /// over whatever the network delivered together — while the world steps on
+  /// its own clock. Keeping only the newest of a burst throws away most of a
+  /// fast turn, and the player it belongs to would be drawn facing somewhere
+  /// they never looked.
+  InputFrame mergedWith(InputFrame later) => InputFrame(
+    forward: later.forward,
+    strafe: later.strafe,
+    lookYaw: lookYaw + later.lookYaw,
+    lookPitch: lookPitch + later.lookPitch,
+    held: later.held,
+    pressed: [...pressed, ...later.pressed],
+  );
+
   /// This frame as step [index] of [steps] equal simulation steps.
   ///
   /// A rendered frame can be worth more than one step, and the parts of a

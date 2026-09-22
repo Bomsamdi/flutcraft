@@ -52,6 +52,13 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Mobs no longer walk inside the player. Bodies push each other apart, and a
   melee mob stops where the two boxes touch instead of pressing on — you can
   see what is hitting you, and swing at it.
+- Other players are drawn facing where they are actually looking. A client
+  sends one input frame per simulation step and a socket delivers several of
+  them at once; the server kept only the last of each burst. Axes survived
+  that, being states, but a turn and a tap are amounts, and those were lost —
+  and because nothing corrects a client about its own view, the two never
+  agreed again. Frames are merged now: states from the newer, taps kept, turns
+  added up.
 - Other players and mobs no longer walk about as a pair of arms and legs.
   flame_3d invalidates a child's world transform when its parent moves, but
   not the child's cached bounding box — and that box is what decides whether
