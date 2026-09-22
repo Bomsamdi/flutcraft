@@ -33,6 +33,9 @@ git checkout ep-07 && flutter run -d macos
 Every tag is a working game. Generated files are committed for exactly that
 reason.
 
+The series is cut into episodes, each ending at a tag — see
+[EPISODES.md](EPISODES.md) for the list and what each one covers.
+
 ## Architecture
 
 Six packages, with the dependency rules enforced by the compiler rather than
