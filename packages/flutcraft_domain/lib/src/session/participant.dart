@@ -1,5 +1,6 @@
 import '../actors/player.dart';
 import '../actors/player_id.dart';
+import '../aiming/aim_claim.dart';
 import '../aiming/aim_result.dart';
 import '../blocks/block_pos.dart';
 import '../crafting/recipes.dart';
@@ -45,6 +46,13 @@ final class Participant {
 
   /// What this player is looking at right now.
   AimResult aim = const NoTarget();
+
+  /// What this player's own client says the crosshair is on, if anything.
+  ///
+  /// Only a server ever has one: it is the remedy for its own aim being a
+  /// tick behind the client's. A game on one machine leaves it null and the
+  /// ray decides, because there is nothing to be behind.
+  AimClaim? claimedAim;
 
   /// Seconds until this player may swing again.
   ///

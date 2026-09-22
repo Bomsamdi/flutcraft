@@ -44,7 +44,17 @@ final class SignUp extends ClientMessage {
 /// later "I have applied everything up to here" and the client replay the
 /// rest.
 final class InputTick extends ClientMessage {
-  const InputTick(this.tick, this.input);
+  const InputTick(this.tick, this.input, {this.claim});
+
+  /// Which block the crosshair was on when this tick was simulated.
+  ///
+  /// Travels with the input it belongs to, because that is the pairing that
+  /// matters: the server is a tick behind on where the player is looking, so
+  /// left to its own ray it finishes a swing on the block the player has
+  /// already moved off. Null when the crosshair is on a mob or on nothing —
+  /// a mob is the server's to place, and there is nothing to claim about
+  /// empty air.
+  final AimClaim? claim;
 
   final int tick;
   final InputFrame input;

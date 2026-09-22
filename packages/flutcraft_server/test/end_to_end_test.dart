@@ -105,6 +105,50 @@ void main() {
     );
   });
 
+  test('the server aims where the crosshair is, not a block away', () async {
+    final alice = await RemoteGameSession.join(
+      await SocketChannel.connect(server.port),
+      newcomer('alice'),
+    );
+    addTearDown(alice.close);
+
+    BlockPos? blockOf(AimResult aim) => aim is BlockTarget ? aim.hit.pos : null;
+
+    // The last few blocks the player's own screen showed under the
+    // crosshair. A claim still has to travel, so the server is allowed to be
+    // a little behind — it is not allowed to be somewhere else entirely.
+    final recent = <BlockPos>[];
+    var strayed = 0;
+    final examples = <String>[];
+
+    final frames = Timer.periodic(const Duration(milliseconds: 16), (_) {
+      alice.tick(1 / 60, const InputFrame(lookYaw: 0.02, lookPitch: -0.01));
+      final mine = blockOf(alice.viewer.aim);
+      if (mine != null) {
+        recent.add(mine);
+        if (recent.length > 2) recent.removeAt(0);
+      }
+      final theirs = blockOf(
+        host.state.participants[const PlayerId('alice')]!.aim,
+      );
+      if (theirs != null && recent.isNotEmpty && !recent.contains(theirs)) {
+        strayed++;
+        if (examples.length < 3) examples.add('server $theirs, screen $recent');
+      }
+    });
+    addTearDown(frames.cancel);
+
+    await Future<void>.delayed(const Duration(seconds: 2));
+    frames.cancel();
+
+    // Looking along the ground, a fraction of a degree moves the far end of
+    // the ray by whole blocks, so a server working its own aim out from a
+    // view one tick old lands somewhere the player never pointed. Mining
+    // only finishes after dwelling on one block, so what broke was reliably
+    // the block beside the one under the crosshair.
+    expect(strayed, 0, reason: examples.join('; '));
+  });
+
   test('a prediction survives the round trip it agrees with', () async {
     final alice = await RemoteGameSession.join(
       await SocketChannel.connect(server.port),

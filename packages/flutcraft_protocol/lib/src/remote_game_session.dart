@@ -184,12 +184,29 @@ class RemoteGameSession implements PlayableSession {
     _tick++;
     _unacked.add((_tick, frame));
     if (_unacked.length > _bufferedTicks) _unacked.removeAt(0);
-    channel.send(InputTick(_tick, frame));
 
     loop.tick(kStep, {viewerId: frame});
+    // Sent after the step, not before it, so the crosshair that travels with
+    // this tick is the one this tick produced — the very block the player is
+    // being shown. Sending first would claim the previous tick's block and
+    // recreate, on purpose, the lag this exists to remove.
+    channel.send(InputTick(_tick, frame, claim: _claimOf(viewer.aim)));
     _recordPredictions();
     _easeCorrection();
   }
+
+  /// What to tell the server the crosshair is on.
+  ///
+  /// Blocks only. A mob is the server's to place — it is moving, and by the
+  /// time a claim about one arrived it would be a claim about where the mob
+  /// used to be.
+  static AimClaim? _claimOf(AimResult aim) => switch (aim) {
+    BlockTarget(:final hit) => AimClaim(
+      at: hit.pos,
+      against: BlockPos(hit.x + hit.nx, hit.y + hit.ny, hit.z + hit.nz),
+    ),
+    _ => null,
+  };
 
   /// Moves a little of a small correction into the player each tick.
   ///

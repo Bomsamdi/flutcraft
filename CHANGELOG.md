@@ -52,6 +52,13 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Mobs no longer walk inside the player. Bodies push each other apart, and a
   melee mob stops where the two boxes touch instead of pressing on — you can
   see what is hitting you, and swing at it.
+- Mining breaks the block under the crosshair, not the one beside it. A
+  server works its own aim out a tick after the client does, and along the
+  ground a tick of turning moves the far end of the ray by whole blocks;
+  since a block only breaks after dwelling on one target, what broke was
+  reliably the block the player had just looked away from. The client now
+  says which block it means and the server checks the claim — the block has
+  to be there and be within reach — instead of recomputing it.
 - Other players are drawn facing where they are actually looking. A client
   sends one input frame per simulation step and a socket delivers several of
   them at once; the server kept only the last of each burst. Axes survived
