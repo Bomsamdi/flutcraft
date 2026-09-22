@@ -213,5 +213,47 @@ void main() {
 
       expect(game.state.solo.inventory.countOf(ItemType.planks), 3);
     });
+
+    /// The use ACTION, not the command. These two used to be different games:
+    /// the command opened tables, the action only ever placed blocks, and the
+    /// only source that sent the command was the right mouse button. A table
+    /// and a furnace were therefore unreachable from the R key and from the
+    /// touch USE button, which is half of what the README promises them.
+    test('the use action opens a table, not only the command', () {
+      final game = newGame();
+      game.state.world.setBlock(16, 3, 14, BlockType.craftingTable);
+      game.state.solo.player.yaw = 0;
+      game.loop.tickSolo(1 / 60, InputFrame.idle);
+
+      game.loop.tickSolo(
+        1 / 60,
+        const InputFrame(pressed: [GameAction.secondary]),
+      );
+
+      expect(game.state.solo.route, UiRoute.craftingTable);
+      expect(game.state.solo.activeGrid.size, 3);
+    });
+
+    test('pressing and holding use puts down one block, not two', () {
+      final game = newGame();
+      game.state.solo.inventory.add(ItemType.planks, 8);
+      game.state.solo.player
+        ..yaw = 0
+        ..pitch = -1.2;
+      game.loop.tickSolo(1 / 60, InputFrame.idle);
+
+      // A real button reports both on the first tick: the edge and the hold.
+      // The edge places through the command, the hold through the system —
+      // and the cooldown is what stops the two colliding.
+      game.loop.tickSolo(
+        1 / 60,
+        const InputFrame(
+          pressed: [GameAction.secondary],
+          held: {GameAction.secondary},
+        ),
+      );
+
+      expect(game.state.solo.inventory.countOf(ItemType.planks), 7);
+    });
   });
 }
