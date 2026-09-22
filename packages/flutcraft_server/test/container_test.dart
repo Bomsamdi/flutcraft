@@ -44,8 +44,16 @@ void main() {
     fail('the container never answered on port $port');
   }
 
-  Future<RemoteGameSession> join(PlayerId who) async =>
-      RemoteGameSession.join(await waitForServer(), who);
+  /// Signs up on the first visit and signs in on the second: the container
+  /// keeps its accounts in the same volume as its world, so the second visit
+  /// has to find the first one's name already taken.
+  Future<RemoteGameSession> join(String who, {bool returning = false}) async =>
+      RemoteGameSession.join(
+        await waitForServer(),
+        returning
+            ? Credentials.signingIn(name: who, secret: 'open sesame')
+            : Credentials.registering(name: who, secret: 'open sesame'),
+      );
 
   test(
     'a building outlives the container it was built in',
@@ -73,7 +81,7 @@ void main() {
         '4242',
       ]);
 
-      final builder = await join(const PlayerId('builder'));
+      final builder = await join('builder');
 
       // Straight down would put the block inside the player, and the server
       // would rightly refuse it. Look down and a little forward.
@@ -95,7 +103,9 @@ void main() {
       // is the whole reason the entry point is in exec form.
       await docker(['restart', '--time', '15', name]);
 
-      final visitor = await join(const PlayerId('visitor'));
+      // The same account as before the restart, which is a second thing
+      // the volume has to have kept.
+      final visitor = await join('builder', returning: true);
       addTearDown(visitor.close);
 
       expect(

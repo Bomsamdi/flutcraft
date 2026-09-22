@@ -4,6 +4,7 @@ import 'package:test/test.dart';
 import 'package:vector_math/vector_math.dart';
 
 const me = PlayerId('me');
+const asMe = Credentials.signingIn(name: 'me', secret: 'open sesame');
 const her = PlayerId('her');
 
 const walking = InputFrame(forward: 1, held: {GameAction.moveForward});
@@ -14,7 +15,7 @@ Future<(RemoteGameSession, FakeChannel)> joined({
   Map<BlockPos, BlockType> edits = const {},
 }) async {
   final channel = FakeChannel();
-  final joining = RemoteGameSession.join(channel, me);
+  final joining = RemoteGameSession.join(channel, asMe);
   channel.deliver(
     Welcome(
       you: me,
@@ -83,7 +84,7 @@ void main() {
 
     test('nothing sent right behind the welcome is lost', () async {
       final channel = FakeChannel();
-      final joining = RemoteGameSession.join(channel, me);
+      final joining = RemoteGameSession.join(channel, asMe);
 
       // A server sends the welcome and the player's belongings back to back.
       // Waiting for the welcome on one subscription and the rest on another
@@ -114,11 +115,53 @@ void main() {
       await session.close();
     });
 
-    test('it says hello without being told to', () async {
+    test('it signs in without being told to', () async {
       final (session, channel) = await joined();
 
-      expect(channel.sent.whereType<Hello>(), hasLength(1));
+      expect(channel.sent.whereType<SignIn>(), hasLength(1));
       await session.close();
+    });
+
+    test('registering says so, rather than signing in and hoping', () async {
+      final channel = FakeChannel();
+      final joining = RemoteGameSession.join(
+        channel,
+        const Credentials.registering(name: 'me', secret: 'open sesame'),
+      );
+      channel.deliver(
+        const Welcome(
+          you: me,
+          tick: 1,
+          world: WorldState(seed: 1, edits: {}),
+        ),
+      );
+
+      final session = await joining;
+      expect(channel.sent.whereType<SignUp>(), hasLength(1));
+      await session.close();
+    });
+
+    test('a refusal arrives as a refusal, not as a timeout', () async {
+      final channel = FakeChannel();
+      final joining = RemoteGameSession.join(
+        channel,
+        asMe,
+        timeout: const Duration(seconds: 30),
+      );
+      channel.deliver(const Kick(KickReason.badCredentials));
+
+      // Waiting half a minute to tell somebody their password is wrong would
+      // be a poor way to say it.
+      await expectLater(
+        joining,
+        throwsA(
+          isA<SignInRefused>().having(
+            (it) => it.reason,
+            'reason',
+            KickReason.badCredentials,
+          ),
+        ),
+      );
     });
   });
 

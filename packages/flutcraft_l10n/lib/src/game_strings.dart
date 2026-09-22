@@ -1,4 +1,5 @@
 import 'package:flutcraft_domain/flutcraft_domain.dart';
+import 'package:flutcraft_protocol/flutcraft_protocol.dart';
 
 import 'generated/app_localizations.dart';
 
@@ -13,6 +14,24 @@ class GameStrings {
   const GameStrings(this._t);
 
   final AppLocalizations _t;
+
+  /// Why a server would not let somebody in.
+  ///
+  /// The server sends a code and not a sentence, precisely so that it never
+  /// has to know which language the player reads. This is where the code
+  /// becomes the sentence — and being exhaustive, a new way of saying no
+  /// cannot ship without a way of saying it in both languages.
+  String kickReason(KickReason reason) => switch (reason) {
+    KickReason.badCredentials => _t.kickBadCredentials,
+    KickReason.nameTaken => _t.kickNameTaken,
+    KickReason.badName => _t.kickBadName,
+    KickReason.notSignedIn => _t.kickNotSignedIn,
+    KickReason.alreadyConnected => _t.kickAlreadyConnected,
+    KickReason.protocolMismatch => _t.kickProtocolMismatch,
+    KickReason.worldMismatch => _t.kickWorldMismatch,
+    KickReason.tooSlow => _t.kickTooSlow,
+    KickReason.shuttingDown => _t.kickShuttingDown,
+  };
 
   String blockName(BlockType block) => switch (block) {
     BlockType.air => _t.blockAir,

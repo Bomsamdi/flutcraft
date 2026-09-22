@@ -40,12 +40,16 @@ void main() {
 
       var welcomeBytes = 0;
       var sawHerMove = false;
+      final welcomed = Completer<void>();
       bob.listen((raw) {
         final bytes = raw is Uint8List
             ? raw
             : Uint8List.fromList(raw as List<int>);
         final message = codec.decodeServer(bytes);
-        if (message is Welcome) welcomeBytes = bytes.length;
+        if (message is Welcome) {
+          welcomeBytes = bytes.length;
+          if (!welcomed.isCompleted) welcomed.complete();
+        }
         if (message is PlayerStates) {
           final her = message.players
               .where((p) => p.id == const PlayerId('alice'))
@@ -54,9 +58,13 @@ void main() {
         }
       });
 
-      alice.add(codec.encodeClient(const Hello(PlayerId('alice'))));
-      bob.add(codec.encodeClient(const Hello(PlayerId('bob'))));
-      await Future<void>.delayed(const Duration(milliseconds: 300));
+      alice.add(codec.encodeClient(const SignUp('alice', 'open sesame')));
+      bob.add(codec.encodeClient(const SignUp('bob', 'open sesame')));
+
+      // Waiting a fixed moment here would be guessing. Registering runs a
+      // deliberately slow hash — about a second and a half of it — so the
+      // test waits for the welcome that says it is over.
+      await welcomed.future.timeout(const Duration(seconds: 30));
 
       for (var i = 0; i < 120 && !sawHerMove; i++) {
         alice.add(

@@ -32,6 +32,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - A networked client: `RemoteGameSession` predicts its own movement, corrects
   itself against the server and mirrors everything else. The app joins a
   server with `--dart-define=FLUTCRAFT_SERVER=ws://host:port`.
+- Accounts: a player registers a name with a password and signs in with it,
+  on a screen in the game rather than through a compile-time define. One
+  build now runs as two players on one machine. Secrets are stored as
+  PBKDF2-HMAC-SHA256 with a salt each, checked on an isolate so that a
+  sign-in never stops the world for everybody else.
 - A server image: a two-stage `Dockerfile` that compiles the binary and ships
   it on `debian-slim` as a non-root user, with the world on a volume. CI
   builds it, puts up a building, restarts the container and checks the
@@ -56,6 +61,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- `Hello` is gone from the protocol, and `SignIn`/`SignUp` take its place: a
+  name anybody could claim was a label, not an account.
 - Mobs chase on a leash. Aggro range is measured to the player and so never
   runs out while the player walks away, which left a tail of every mob that
   ever noticed you. A mob now remembers where its chase began, gives up

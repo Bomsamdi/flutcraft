@@ -382,4 +382,68 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get buttonMineHit => 'MINE/HIT';
+
+  @override
+  String get signInHeading => 'Join a server';
+
+  @override
+  String get signInServer => 'Server';
+
+  @override
+  String get signInName => 'Name';
+
+  @override
+  String get signInSecret => 'Password';
+
+  @override
+  String get signInButton => 'Log in';
+
+  @override
+  String get signUpButton => 'Create account';
+
+  @override
+  String get signInOffline => 'Play on this machine';
+
+  @override
+  String get signInWorking => 'Connecting…';
+
+  @override
+  String get signInNameHint => '3 to 16 letters, digits, - or _';
+
+  @override
+  String get signInSecretHint => 'at least 6 characters';
+
+  @override
+  String get kickBadCredentials => 'That name and password do not go together.';
+
+  @override
+  String get kickNameTaken =>
+      'Somebody is already called that. Pick another name.';
+
+  @override
+  String get kickBadName =>
+      'A name is 3 to 16 letters, digits, dashes or underscores, and a password is at least 6 characters.';
+
+  @override
+  String get kickNotSignedIn => 'The server wanted a sign-in first.';
+
+  @override
+  String get kickAlreadyConnected =>
+      'You are already playing on this server somewhere else.';
+
+  @override
+  String get kickProtocolMismatch =>
+      'This server speaks a different version of the game.';
+
+  @override
+  String get kickWorldMismatch => 'This server is running a different world.';
+
+  @override
+  String get kickTooSlow => 'The connection could not keep up.';
+
+  @override
+  String get kickShuttingDown => 'The server is shutting down.';
+
+  @override
+  String get signInUnreachable => 'No server answered at that address.';
 }

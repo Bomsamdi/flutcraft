@@ -108,5 +108,85 @@
   "helpFlyAction": "tryb latania",
   "furnaceHint": "Paliwo: węgiel. Wytop: surowe żelazo, piasek, kłody.",
   "respawnWithKey": "Odrodź się  (R)",
-  "buttonMineHit": "KOP/BIJ"
+  "buttonMineHit": "KOP/BIJ",
+  "signInHeading": "Dołącz do serwera",
+  "@signInHeading": {
+    "description": "UI text"
+  },
+  "signInServer": "Serwer",
+  "@signInServer": {
+    "description": "UI text"
+  },
+  "signInName": "Nazwa",
+  "@signInName": {
+    "description": "UI text"
+  },
+  "signInSecret": "Hasło",
+  "@signInSecret": {
+    "description": "UI text"
+  },
+  "signInButton": "Zaloguj się",
+  "@signInButton": {
+    "description": "UI text"
+  },
+  "signUpButton": "Załóż konto",
+  "@signUpButton": {
+    "description": "UI text"
+  },
+  "signInOffline": "Graj na tej maszynie",
+  "@signInOffline": {
+    "description": "UI text"
+  },
+  "signInWorking": "Łączenie…",
+  "@signInWorking": {
+    "description": "UI text"
+  },
+  "signInNameHint": "od 3 do 16 liter, cyfr, - lub _",
+  "@signInNameHint": {
+    "description": "UI text"
+  },
+  "signInSecretHint": "co najmniej 6 znaków",
+  "@signInSecretHint": {
+    "description": "UI text"
+  },
+  "kickBadCredentials": "Ta nazwa i hasło do siebie nie pasują.",
+  "@kickBadCredentials": {
+    "description": "UI text"
+  },
+  "kickNameTaken": "Ktoś już się tak nazywa. Wybierz inną nazwę.",
+  "@kickNameTaken": {
+    "description": "UI text"
+  },
+  "kickBadName": "Nazwa to od 3 do 16 liter, cyfr, myślników lub podkreśleń, a hasło ma co najmniej 6 znaków.",
+  "@kickBadName": {
+    "description": "UI text"
+  },
+  "kickNotSignedIn": "Serwer najpierw chciał logowania.",
+  "@kickNotSignedIn": {
+    "description": "UI text"
+  },
+  "kickAlreadyConnected": "Grasz już na tym serwerze gdzie indziej.",
+  "@kickAlreadyConnected": {
+    "description": "UI text"
+  },
+  "kickProtocolMismatch": "Ten serwer mówi inną wersją gry.",
+  "@kickProtocolMismatch": {
+    "description": "UI text"
+  },
+  "kickWorldMismatch": "Na tym serwerze działa inny świat.",
+  "@kickWorldMismatch": {
+    "description": "UI text"
+  },
+  "kickTooSlow": "Połączenie nie nadążyło.",
+  "@kickTooSlow": {
+    "description": "UI text"
+  },
+  "kickShuttingDown": "Serwer się zamyka.",
+  "@kickShuttingDown": {
+    "description": "UI text"
+  },
+  "signInUnreachable": "Pod tym adresem nikt nie odpowiedział.",
+  "@signInUnreachable": {
+    "description": "UI text"
+  }
 }

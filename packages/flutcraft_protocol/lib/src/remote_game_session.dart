@@ -5,6 +5,7 @@ import 'package:flutcraft_domain/flutcraft_domain.dart';
 import 'package:vector_math/vector_math.dart';
 
 import 'entity_mirror.dart';
+import 'credentials.dart';
 import 'message_channel.dart';
 import 'messages.dart';
 
@@ -42,9 +43,12 @@ class RemoteGameSession implements PlayableSession {
   /// Asynchronous because there is nothing to render until the world arrives;
   /// the composition root already waits for a save to load, and this is the
   /// same wait with a different source.
+  /// A refusal comes back as a [SignInRefused], not as a timeout: a server
+  /// that will not have you says so at once, and waiting ten seconds to tell
+  /// the player their password is wrong would be a poor way to say it.
   static Future<RemoteGameSession> join(
     MessageChannel channel,
-    PlayerId me, {
+    Credentials credentials, {
     Duration timeout = const Duration(seconds: 10),
   }) async {
     // One subscription from the first moment, and anything that arrives
@@ -59,13 +63,20 @@ class RemoteGameSession implements PlayableSession {
     final welcome = Completer<Welcome>();
 
     final subscription = channel.incoming.listen((message) {
-      if (message is Welcome && !welcome.isCompleted) {
-        welcome.complete(message);
+      if (welcome.isCompleted) {
+        waiting.add(message);
         return;
       }
-      waiting.add(message);
+      switch (message) {
+        case Welcome():
+          welcome.complete(message);
+        case Kick(:final reason):
+          welcome.completeError(SignInRefused(reason));
+        default:
+          waiting.add(message);
+      }
     });
-    channel.send(Hello(me));
+    channel.send(credentials.greeting);
 
     final Welcome arrived;
     try {

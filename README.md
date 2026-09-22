@@ -189,6 +189,18 @@ cd app/flutcraft
 flutter run -d macos --dart-define=FLUTCRAFT_SERVER=ws://127.0.0.1:8787
 ```
 
+The define only fills in the address field. The game asks who you are before
+it joins: a name of 3 to 16 letters, digits, dashes or underscores, and a
+password of at least 6 characters. **Create account** claims a name,
+**Log in** proves it, and the name is what the world remembers your
+belongings by. One build is therefore enough for two players on one machine —
+open it twice and sign in as two people.
+
+Accounts are kept in `accounts.json` beside the world, as a PBKDF2-HMAC-SHA256
+hash with a salt each. The password itself travels as typed, so anything
+beyond a trusted network wants a `wss://` proxy in front of the server; that
+is the transport's job and not the protocol's.
+
 The client simulates its own player straight away and corrects itself against
 the server; everything else in the world — mobs, arrows, other people — is
 mirrored and interpolated. Nothing above `GameSession` knows the difference.

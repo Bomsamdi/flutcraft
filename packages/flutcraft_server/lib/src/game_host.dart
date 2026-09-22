@@ -205,8 +205,10 @@ class GameHost {
         _ackTick[who] = tick;
       case Command(:final command):
         _publish(loop.dispatch(who, command));
-      case Hello():
-      // Already in; a second hello is not news.
+      case SignIn():
+      case SignUp():
+      // Already in. Signing in twice on one connection is not news, and it is
+      // certainly not a way to become somebody else.
       case Pong():
       // Timing only, and nothing yet depends on it.
     }

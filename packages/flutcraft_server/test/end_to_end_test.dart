@@ -7,13 +7,21 @@ import 'package:test/test.dart';
 
 import 'socket_channel.dart';
 
+/// Somebody signing up as they arrive.
+///
+/// The server has an empty account store, so every test player is new. That
+/// this is the same call a real client makes is the point: the handshake is
+/// not stubbed out for the tests.
+Credentials newcomer(String name) =>
+    Credentials.registering(name: name, secret: 'open sesame');
+
 void main() {
   late GameHost host;
   late WebSocketHost server;
 
   setUp(() async {
     host = GameHost.newWorld(seed: 4242);
-    server = WebSocketHost(host);
+    server = WebSocketHost(host, accounts: AccountStore.inMemory(rounds: 500));
     await server.start(port: 0);
   });
 
@@ -22,7 +30,7 @@ void main() {
   test('a client joins a real server and gets its world', () async {
     final session = await RemoteGameSession.join(
       await SocketChannel.connect(server.port),
-      const PlayerId('alice'),
+      newcomer('alice'),
     );
     addTearDown(session.close);
 
@@ -33,11 +41,11 @@ void main() {
   test('two clients see each other, each through its own session', () async {
     final alice = await RemoteGameSession.join(
       await SocketChannel.connect(server.port),
-      const PlayerId('alice'),
+      newcomer('alice'),
     );
     final bob = await RemoteGameSession.join(
       await SocketChannel.connect(server.port),
-      const PlayerId('bob'),
+      newcomer('bob'),
     );
     addTearDown(alice.close);
     addTearDown(bob.close);
@@ -63,7 +71,7 @@ void main() {
   test('a prediction survives the round trip it agrees with', () async {
     final alice = await RemoteGameSession.join(
       await SocketChannel.connect(server.port),
-      const PlayerId('alice'),
+      newcomer('alice'),
     );
     addTearDown(alice.close);
 
@@ -82,7 +90,7 @@ void main() {
   test('the client stays close to where the server thinks it is', () async {
     final alice = await RemoteGameSession.join(
       await SocketChannel.connect(server.port),
-      const PlayerId('alice'),
+      newcomer('alice'),
     );
     addTearDown(alice.close);
 

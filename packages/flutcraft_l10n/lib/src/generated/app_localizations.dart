@@ -751,6 +751,126 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'MINE/HIT'**
   String get buttonMineHit;
+
+  /// UI text
+  ///
+  /// In en, this message translates to:
+  /// **'Join a server'**
+  String get signInHeading;
+
+  /// UI text
+  ///
+  /// In en, this message translates to:
+  /// **'Server'**
+  String get signInServer;
+
+  /// UI text
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get signInName;
+
+  /// UI text
+  ///
+  /// In en, this message translates to:
+  /// **'Password'**
+  String get signInSecret;
+
+  /// UI text
+  ///
+  /// In en, this message translates to:
+  /// **'Log in'**
+  String get signInButton;
+
+  /// UI text
+  ///
+  /// In en, this message translates to:
+  /// **'Create account'**
+  String get signUpButton;
+
+  /// UI text
+  ///
+  /// In en, this message translates to:
+  /// **'Play on this machine'**
+  String get signInOffline;
+
+  /// UI text
+  ///
+  /// In en, this message translates to:
+  /// **'Connecting…'**
+  String get signInWorking;
+
+  /// UI text
+  ///
+  /// In en, this message translates to:
+  /// **'3 to 16 letters, digits, - or _'**
+  String get signInNameHint;
+
+  /// UI text
+  ///
+  /// In en, this message translates to:
+  /// **'at least 6 characters'**
+  String get signInSecretHint;
+
+  /// UI text
+  ///
+  /// In en, this message translates to:
+  /// **'That name and password do not go together.'**
+  String get kickBadCredentials;
+
+  /// UI text
+  ///
+  /// In en, this message translates to:
+  /// **'Somebody is already called that. Pick another name.'**
+  String get kickNameTaken;
+
+  /// UI text
+  ///
+  /// In en, this message translates to:
+  /// **'A name is 3 to 16 letters, digits, dashes or underscores, and a password is at least 6 characters.'**
+  String get kickBadName;
+
+  /// UI text
+  ///
+  /// In en, this message translates to:
+  /// **'The server wanted a sign-in first.'**
+  String get kickNotSignedIn;
+
+  /// UI text
+  ///
+  /// In en, this message translates to:
+  /// **'You are already playing on this server somewhere else.'**
+  String get kickAlreadyConnected;
+
+  /// UI text
+  ///
+  /// In en, this message translates to:
+  /// **'This server speaks a different version of the game.'**
+  String get kickProtocolMismatch;
+
+  /// UI text
+  ///
+  /// In en, this message translates to:
+  /// **'This server is running a different world.'**
+  String get kickWorldMismatch;
+
+  /// UI text
+  ///
+  /// In en, this message translates to:
+  /// **'The connection could not keep up.'**
+  String get kickTooSlow;
+
+  /// UI text
+  ///
+  /// In en, this message translates to:
+  /// **'The server is shutting down.'**
+  String get kickShuttingDown;
+
+  /// UI text
+  ///
+  /// In en, this message translates to:
+  /// **'No server answered at that address.'**
+  String get signInUnreachable;
 }
 
 class _AppLocalizationsDelegate

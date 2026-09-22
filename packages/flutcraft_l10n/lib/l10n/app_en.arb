@@ -504,5 +504,85 @@
   "buttonMineHit": "MINE/HIT",
   "@buttonMineHit": {
     "description": "UI text"
+  },
+  "signInHeading": "Join a server",
+  "@signInHeading": {
+    "description": "UI text"
+  },
+  "signInServer": "Server",
+  "@signInServer": {
+    "description": "UI text"
+  },
+  "signInName": "Name",
+  "@signInName": {
+    "description": "UI text"
+  },
+  "signInSecret": "Password",
+  "@signInSecret": {
+    "description": "UI text"
+  },
+  "signInButton": "Log in",
+  "@signInButton": {
+    "description": "UI text"
+  },
+  "signUpButton": "Create account",
+  "@signUpButton": {
+    "description": "UI text"
+  },
+  "signInOffline": "Play on this machine",
+  "@signInOffline": {
+    "description": "UI text"
+  },
+  "signInWorking": "Connecting…",
+  "@signInWorking": {
+    "description": "UI text"
+  },
+  "signInNameHint": "3 to 16 letters, digits, - or _",
+  "@signInNameHint": {
+    "description": "UI text"
+  },
+  "signInSecretHint": "at least 6 characters",
+  "@signInSecretHint": {
+    "description": "UI text"
+  },
+  "kickBadCredentials": "That name and password do not go together.",
+  "@kickBadCredentials": {
+    "description": "UI text"
+  },
+  "kickNameTaken": "Somebody is already called that. Pick another name.",
+  "@kickNameTaken": {
+    "description": "UI text"
+  },
+  "kickBadName": "A name is 3 to 16 letters, digits, dashes or underscores, and a password is at least 6 characters.",
+  "@kickBadName": {
+    "description": "UI text"
+  },
+  "kickNotSignedIn": "The server wanted a sign-in first.",
+  "@kickNotSignedIn": {
+    "description": "UI text"
+  },
+  "kickAlreadyConnected": "You are already playing on this server somewhere else.",
+  "@kickAlreadyConnected": {
+    "description": "UI text"
+  },
+  "kickProtocolMismatch": "This server speaks a different version of the game.",
+  "@kickProtocolMismatch": {
+    "description": "UI text"
+  },
+  "kickWorldMismatch": "This server is running a different world.",
+  "@kickWorldMismatch": {
+    "description": "UI text"
+  },
+  "kickTooSlow": "The connection could not keep up.",
+  "@kickTooSlow": {
+    "description": "UI text"
+  },
+  "kickShuttingDown": "The server is shutting down.",
+  "@kickShuttingDown": {
+    "description": "UI text"
+  },
+  "signInUnreachable": "No server answered at that address.",
+  "@signInUnreachable": {
+    "description": "UI text"
   }
 }

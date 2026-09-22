@@ -386,4 +386,65 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get buttonMineHit => 'KOP/BIJ';
+
+  @override
+  String get signInHeading => 'Dołącz do serwera';
+
+  @override
+  String get signInServer => 'Serwer';
+
+  @override
+  String get signInName => 'Nazwa';
+
+  @override
+  String get signInSecret => 'Hasło';
+
+  @override
+  String get signInButton => 'Zaloguj się';
+
+  @override
+  String get signUpButton => 'Załóż konto';
+
+  @override
+  String get signInOffline => 'Graj na tej maszynie';
+
+  @override
+  String get signInWorking => 'Łączenie…';
+
+  @override
+  String get signInNameHint => 'od 3 do 16 liter, cyfr, - lub _';
+
+  @override
+  String get signInSecretHint => 'co najmniej 6 znaków';
+
+  @override
+  String get kickBadCredentials => 'Ta nazwa i hasło do siebie nie pasują.';
+
+  @override
+  String get kickNameTaken => 'Ktoś już się tak nazywa. Wybierz inną nazwę.';
+
+  @override
+  String get kickBadName =>
+      'Nazwa to od 3 do 16 liter, cyfr, myślników lub podkreśleń, a hasło ma co najmniej 6 znaków.';
+
+  @override
+  String get kickNotSignedIn => 'Serwer najpierw chciał logowania.';
+
+  @override
+  String get kickAlreadyConnected => 'Grasz już na tym serwerze gdzie indziej.';
+
+  @override
+  String get kickProtocolMismatch => 'Ten serwer mówi inną wersją gry.';
+
+  @override
+  String get kickWorldMismatch => 'Na tym serwerze działa inny świat.';
+
+  @override
+  String get kickTooSlow => 'Połączenie nie nadążyło.';
+
+  @override
+  String get kickShuttingDown => 'Serwer się zamyka.';
+
+  @override
+  String get signInUnreachable => 'Pod tym adresem nikt nie odpowiedział.';
 }
