@@ -200,7 +200,7 @@ class GameHost {
     if (!state.participants.containsKey(who)) return;
 
     switch (message) {
-      case InputTick(:final tick, :final input):
+      case InputTick(:final tick, :final input, :final claim):
         // Merged, not replaced. A client sends one frame per simulation step
         // and a socket delivers several of them at once whenever the network
         // bunched them up; the world steps on its own clock in between.
@@ -211,6 +211,9 @@ class GameHost {
         _pending[who] = _HeldInput(
           waiting == null ? input : waiting.frame.mergedWith(input),
           _tick + inputHoldTicks,
+          // A claim is a state, like an axis: the newest one is the truth,
+          // and there is nothing to add up.
+          claim: claim,
         );
         _ackTick[who] = tick;
       case Command(:final command):
@@ -241,6 +244,12 @@ class GameHost {
     final inputs = {
       for (final entry in _pending.entries) entry.key: entry.value.frame,
     };
+    // Whatever each player last said their crosshair was on, and nothing at
+    // all for whoever has gone quiet: a claim that outlived its input would
+    // pin that player's aim to a block they walked away from.
+    for (final it in state.participants.values) {
+      it.claimedAim = _pending[it.id]?.claim;
+    }
     _publish(loop.tick(kStep, inputs));
 
     // What is left of an input on the next tick is the part that may repeat:
@@ -405,8 +414,11 @@ class GameHost {
 
 /// A client's last input, and the tick it stops applying on.
 class _HeldInput {
-  _HeldInput(this.frame, this.expiresAt);
+  _HeldInput(this.frame, this.expiresAt, {this.claim});
 
   InputFrame frame;
   final int expiresAt;
+
+  /// Which block that client said its crosshair was on.
+  final AimClaim? claim;
 }

@@ -229,4 +229,103 @@ void _sealedSwitchTests() {
       expect((aim as MobTarget).distance, closeTo(2.2, 0.5));
     });
   });
+
+  group('Taking the player at their word', () {
+    late GameState state;
+    late Participant it;
+    const aiming = AimingSystem();
+
+    setUp(() {
+      final world = emptyWorld();
+      // A pillar off to one side, so the ray straight ahead cannot find it.
+      world.setRaw(18, 1, 14, BlockType.stone);
+      state = GameState.solo(
+        world: world,
+        player: Player(world: world, spawn: Vector3(16.5, 1, 16.5)),
+        inventory: Inventory(),
+      );
+      it = state.solo;
+      it.player
+        ..position.setValues(16.5, 1, 16.5)
+        ..yaw = 0
+        ..pitch = 0;
+    });
+
+    BlockPos? aimed() {
+      final aim = it.aim;
+      return aim is BlockTarget ? aim.hit.pos : null;
+    }
+
+    test('a claim decides the target, and the ray does not', () {
+      aiming.update(state, it);
+      final byRay = aimed();
+
+      it.claimedAim = const AimClaim(
+        at: BlockPos(18, 1, 14),
+        against: BlockPos(18, 2, 14),
+      );
+      aiming.update(state, it);
+
+      // The whole point: a server's own ray is a tick out of date, and along
+      // the ground a tick is worth whole blocks.
+      expect(aimed(), const BlockPos(18, 1, 14));
+      expect(aimed(), isNot(byRay));
+    });
+
+    test('the face comes with it, so a block goes on the right side', () {
+      it.claimedAim = const AimClaim(
+        at: BlockPos(18, 1, 14),
+        against: BlockPos(18, 2, 14),
+      );
+
+      aiming.update(state, it);
+
+      final hit = (it.aim as BlockTarget).hit;
+      expect(hit.placement, (18, 2, 14));
+    });
+
+    test('a claim about empty air is refused', () {
+      it.claimedAim = const AimClaim(
+        at: BlockPos(18, 5, 14),
+        against: BlockPos(18, 6, 14),
+      );
+
+      aiming.update(state, it);
+
+      // Nothing is there, so the ray decides after all.
+      expect(aimed(), isNot(const BlockPos(18, 5, 14)));
+    });
+
+    test('a claim out of arm\'s reach is refused', () {
+      // Solid, and much too far: this is the one a client would lie about.
+      state.world.setRaw(30, 1, 16, BlockType.stone);
+      it.claimedAim = const AimClaim(
+        at: BlockPos(30, 1, 16),
+        against: BlockPos(30, 2, 16),
+      );
+
+      aiming.update(state, it);
+
+      expect(aimed(), isNot(const BlockPos(30, 1, 16)));
+    });
+
+    test('moving the claim resets the progress, as moving the ray does', () {
+      it.claimedAim = const AimClaim(
+        at: BlockPos(18, 1, 14),
+        against: BlockPos(18, 2, 14),
+      );
+      aiming.update(state, it);
+      it.breakProgress = 0.8;
+
+      it.claimedAim = const AimClaim(
+        at: BlockPos(16, 0, 16),
+        against: BlockPos(16, 1, 16),
+      );
+      aiming.update(state, it);
+
+      // Otherwise a player could chip at three blocks at once by sweeping,
+      // which is the rule this system already had and the claim must obey.
+      expect(it.breakProgress, 0);
+    });
+  });
 }

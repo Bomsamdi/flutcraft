@@ -71,14 +71,36 @@ class JsonMessageCodec implements MessageCodec {
           'name': name,
           'secret': secret,
         },
-        InputTick(:final tick, :final input) => {
+        InputTick(:final tick, :final input, :final claim) => {
           't': 'input',
           'tick': tick,
           'in': _inputToJson(input),
+          // Null-aware, so a tick that claims nothing costs nothing: the
+          // key is simply absent.
+          'aim': ?_claimToJson(claim),
         },
         Command(:final command) => {'t': 'cmd', 'cmd': _commandToJson(command)},
         Pong(:final id) => {'t': 'pong', 'id': id},
       };
+
+  Map<String, Object?>? _claimToJson(AimClaim? claim) => claim == null
+      ? null
+      : {
+          'at': [claim.at.x, claim.at.y, claim.at.z],
+          'on': [claim.against.x, claim.against.y, claim.against.z],
+        };
+
+  AimClaim? _claimFromJson(Map<String, Object?>? raw) {
+    if (raw == null) return null;
+    final at = (raw['at'] as List<Object?>?)?.cast<int>();
+    final against = (raw['on'] as List<Object?>?)?.cast<int>();
+    if (at == null || at.length != 3) return null;
+    if (against == null || against.length != 3) return null;
+    return AimClaim(
+      at: BlockPos(at[0], at[1], at[2]),
+      against: BlockPos(against[0], against[1], against[2]),
+    );
+  }
 
   /// Reads a client message. Visible for tests that write JSON by hand.
   ClientMessage clientFromJson(Map<String, Object?> raw) {
@@ -95,6 +117,7 @@ class JsonMessageCodec implements MessageCodec {
       'input' => InputTick(
         raw['tick'] as int? ?? 0,
         _inputFromJson(raw['in'] as Map<String, Object?>? ?? const {}),
+        claim: _claimFromJson(raw['aim'] as Map<String, Object?>?),
       ),
       'cmd' => Command(
         _commandFromJson(raw['cmd'] as Map<String, Object?>? ?? const {}),
