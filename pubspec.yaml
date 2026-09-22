@@ -44,10 +44,12 @@ melos:
       run: dart run tool/check_no_translatable_literals.dart
 
     analyze:
-      description: Static analysis across every package, warnings are failures.
-      run: dart analyze --fatal-infos --fatal-warnings
-      exec:
-        concurrency: 1
+      # One command over the whole tree rather than one per package, because
+      # the two do not see the same things: a pubspec that points at nothing
+      # is invisible from inside a package, and that difference once let two
+      # real problems through a green local run and into CI.
+      description: Static analysis across the whole tree, warnings are failures.
+      run: flutter analyze --fatal-infos --fatal-warnings
 
     format:
       description: Verify formatting without writing changes.

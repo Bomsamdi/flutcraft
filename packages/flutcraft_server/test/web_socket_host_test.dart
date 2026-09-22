@@ -31,7 +31,6 @@ class TestClient {
     return TestClient(socket, received);
   }
 
-  static Uint8List _bytes(Object? raw) => bytesOf(raw);
   final WebSocket socket;
   final List<ServerMessage> received;
 
