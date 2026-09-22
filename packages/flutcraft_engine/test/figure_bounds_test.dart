@@ -4,7 +4,6 @@ import 'package:flutcraft_atlas/flutcraft_atlas.dart';
 import 'package:flutcraft_domain/flutcraft_domain.dart';
 import 'package:flutcraft_engine/flutcraft_engine.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:vector_math/vector_math.dart';
 
 /// Mounting is all these need. `FlameGame3D` wants a GPU, and what is under
 /// test is arithmetic on bounding boxes.

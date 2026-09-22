@@ -269,4 +269,4 @@ A cached bounding box, a burst of input frames overwritten, and a server aiming 
 
 **Before the First Video**
 
-What a readiness pass turns up: CI off the push path, the limits of the network code written down, and a history cut into episodes.
+What a readiness pass turns up: CI off the push path, the limits of the network code written down, a history cut into episodes, and a local check that had been quietly weaker than the one in CI.
