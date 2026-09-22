@@ -105,6 +105,25 @@ enum KickReason {
   /// Somebody else is already playing as this player.
   alreadyConnected,
 
+  /// The name or the secret is wrong.
+  ///
+  /// One reason for both on purpose: told which of the two was wrong, anybody
+  /// could ask a server which of its players exist.
+  badCredentials,
+
+  /// Somebody registered under that name first.
+  ///
+  /// This one does say so, because there is no way to refuse a registration
+  /// without admitting the name is taken.
+  nameTaken,
+
+  /// The name cannot be used: empty, too long, or made of the wrong
+  /// characters. The secret being too short comes back this way too.
+  badName,
+
+  /// The client sent something other than a sign-in as its first message.
+  notSignedIn,
+
   /// The server is going away.
   shuttingDown,
 }

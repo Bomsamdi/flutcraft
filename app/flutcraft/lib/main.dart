@@ -6,6 +6,7 @@ import 'package:flutcraft_engine/flutcraft_engine.dart';
 import 'package:flutcraft_ui/flutcraft_ui.dart';
 import 'package:flutcraft_atlas/flutcraft_atlas.dart';
 import 'package:flutcraft/src/save/file_save_storage.dart';
+import 'package:flutcraft/src/net/last_server.dart';
 import 'package:flutcraft/src/net/web_socket_channel.dart';
 import 'package:flutcraft/src/save/repository_save_sink.dart';
 import 'package:flutcraft_protocol/flutcraft_protocol.dart';
@@ -36,57 +37,31 @@ Future<void> main() async {
   // The atlas is built before the game starts: the HUD has its icons from
   // the first frame, and the engine is handed a resource instead of making it.
   final atlas = TextureAtlas.generate();
+  final storage = await _openStorage();
   runApp(
     FlutcraftApp(
-      session: await _openSession(),
       atlas: atlas,
       atlasImage: await decodeAtlasImage(atlas),
+      storage: storage,
+      lastVisit: await ClientMemory(storage).read(),
     ),
   );
 }
 
-/// Where to play: a server if one was named, otherwise this machine.
+/// A server to offer on the sign-in screen before anybody has typed one.
 ///
-/// A compile-time define rather than a setting, because the season has not
-/// built a server browser yet and a hidden knob is more honest than a menu
-/// with one entry in it:
+/// Still a define, and now only a default: the address is a text field, the
+/// name is a text field, and one build of the game can be two players on one
+/// machine. That it used to take two builds is why this screen exists.
 ///
 /// ```
 /// flutter run --dart-define=FLUTCRAFT_SERVER=ws://192.168.1.10:8787
 /// ```
 const _serverAddress = String.fromEnvironment('FLUTCRAFT_SERVER');
 
-/// Who this client says it is.
-///
-/// A define for the same reason as [_serverAddress], and with a second use:
-/// two clients on one machine have to be two people, or the server takes the
-/// second for the first reconnecting and closes the first one's socket.
-///
-/// ```
-/// flutter run --dart-define=FLUTCRAFT_PLAYER=alice
-/// ```
-///
-/// It belongs on disk beside the save, so that reconnecting finds the same
-/// inventory rather than a new player standing beside the old one's
-/// belongings. Until it does, this is the knob.
-const _playerId = PlayerId(
-  String.fromEnvironment('FLUTCRAFT_PLAYER', defaultValue: 'player'),
-);
-
-/// Opens a game: on a server if one was named, otherwise on this machine.
-Future<PlayableSession> _openSession() async {
-  if (_serverAddress.isNotEmpty) {
-    return RemoteGameSession.join(
-      await WebSocketChannel.connect(Uri.parse(_serverAddress)),
-      _playerId,
-    );
-  }
-  return _openLocalSession();
-}
-
 /// Continues the last game if there is one, and starts a new world if not.
-Future<LoopGameSession> _openLocalSession() async {
-  final repository = SaveRepository(storage: await _openStorage());
+Future<LoopGameSession> _openLocalSession(SaveStorage storage) async {
+  final repository = SaveRepository(storage: storage);
   final sink = RepositorySaveSink(repository: repository);
   final saved = await _loadWorld(repository);
 
@@ -126,15 +101,19 @@ Future<SaveData?> _loadWorld(SaveRepository repository) async {
 
 class FlutcraftApp extends StatelessWidget {
   const FlutcraftApp({
-    required this.session,
     required this.atlas,
     required this.atlasImage,
+    required this.storage,
+    this.lastVisit = const LastVisit(),
     super.key,
   });
 
-  final PlayableSession session;
   final TextureAtlas atlas;
   final ui.Image atlasImage;
+  final SaveStorage storage;
+
+  /// Where this client played last, to fill the fields in with.
+  final LastVisit lastVisit;
 
   @override
   Widget build(BuildContext context) {
@@ -144,7 +123,99 @@ class FlutcraftApp extends StatelessWidget {
       theme: ThemeData.dark(useMaterial3: true),
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
-      home: GameScreen(session: session, atlas: atlas, atlasImage: atlasImage),
+      home: Doorway(
+        atlas: atlas,
+        atlasImage: atlasImage,
+        storage: storage,
+        lastVisit: lastVisit,
+      ),
+    );
+  }
+}
+
+/// Decides what the player sees first: a world, or a question about which
+/// world.
+///
+/// Nobody is asked to sign in to play by themselves — that would be a form
+/// standing in front of a single-player game. The screen appears when there
+/// is a server to join: named at build time, or remembered from last time.
+class Doorway extends StatefulWidget {
+  const Doorway({
+    required this.atlas,
+    required this.atlasImage,
+    required this.storage,
+    this.lastVisit = const LastVisit(),
+    super.key,
+  });
+
+  final TextureAtlas atlas;
+  final ui.Image atlasImage;
+  final SaveStorage storage;
+  final LastVisit lastVisit;
+
+  @override
+  State<Doorway> createState() => _DoorwayState();
+}
+
+class _DoorwayState extends State<Doorway> {
+  PlayableSession? _session;
+
+  String get _suggestedAddress =>
+      _serverAddress.isNotEmpty ? _serverAddress : widget.lastVisit.address;
+
+  @override
+  void initState() {
+    super.initState();
+    if (_suggestedAddress.isEmpty) _playHere();
+  }
+
+  Future<void> _playHere() async {
+    final session = await _openLocalSession(widget.storage);
+    if (!mounted) return;
+    setState(() => _session = session);
+  }
+
+  Future<SignInProblem?> _join(SignInAttempt attempt) async {
+    try {
+      final session = await RemoteGameSession.join(
+        await WebSocketChannel.connect(Uri.parse(attempt.address)),
+        attempt.credentials,
+      );
+      await ClientMemory(widget.storage).write(
+        LastVisit(address: attempt.address, name: attempt.credentials.name),
+      );
+      if (mounted) setState(() => _session = session);
+      return null;
+    } on SignInRefused catch (refusal) {
+      return SignInProblem.refused(refusal.reason);
+    } on Object catch (error) {
+      // A bad address, no route, nothing listening, a server that stopped
+      // halfway through the handshake: to the player they are one thing, and
+      // it is not their fault.
+      debugPrint('Could not reach ${attempt.address}: $error');
+      return const SignInProblem.unreachable();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final session = _session;
+    if (session != null) {
+      return GameScreen(
+        session: session,
+        atlas: widget.atlas,
+        atlasImage: widget.atlasImage,
+      );
+    }
+    if (_suggestedAddress.isEmpty) {
+      // Loading a world off disk, which is quick and has nothing to say.
+      return const Scaffold(body: SizedBox.expand());
+    }
+    return SignInScreen(
+      address: _suggestedAddress,
+      name: widget.lastVisit.name,
+      onAttempt: _join,
+      onPlayOffline: _playHere,
     );
   }
 }

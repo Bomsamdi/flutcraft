@@ -20,10 +20,21 @@ Uint8List handWritten(Map<String, Object?> body) =>
 
 void main() {
   group('Client messages survive the trip', () {
-    test('hello carries the player id', () {
-      final message = roundTripClient(const Hello(PlayerId('alice'))) as Hello;
+    test('a sign-in carries the name and the secret', () {
+      final message =
+          roundTripClient(const SignIn('alice', 'open sesame')) as SignIn;
 
-      expect(message.player, const PlayerId('alice'));
+      expect(message.name, 'alice');
+      expect(message.secret, 'open sesame');
+    });
+
+    test('a sign-up is not mistaken for a sign-in', () {
+      // The two carry the same two strings and mean different things: one
+      // claims a name, the other proves it. A codec that folded them into a
+      // flag would let a typo register a new account.
+      final message = roundTripClient(const SignUp('alice', 'open sesame'));
+
+      expect(message, isA<SignUp>());
     });
 
     test('input keeps its axes, its held keys and its edges', () {

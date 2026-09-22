@@ -17,12 +17,18 @@ Future<void> main(List<String> arguments) async {
   final host = store == null
       ? GameHost.newWorld(seed: options.seed)
       : GameHost.fromStore(store, seed: options.seed);
-  final server = WebSocketHost(host);
+  // Accounts live beside the world. A world nobody keeps has no business
+  // keeping the passwords that went with it, so in memory they go together.
+  final accounts = options.world == null
+      ? AccountStore.inMemory()
+      : AccountStore.inDirectory(Directory(options.world!));
+  final server = WebSocketHost(host, accounts: accounts);
 
   await server.start(address: InternetAddress.anyIPv4, port: options.port);
   stdout.writeln(
     'Flutcraft on port ${server.port}, world ${host.state.world.seed}'
-    '${store == null ? ' (in memory)' : ' in ${options.world}'}',
+    '${store == null ? ' (in memory)' : ' in ${options.world}'}, '
+    '${accounts.names.length} account(s)',
   );
 
   // A container stops a process with SIGTERM; shutting down cleanly is what

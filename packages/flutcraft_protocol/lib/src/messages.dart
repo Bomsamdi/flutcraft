@@ -12,15 +12,30 @@ sealed class ClientMessage {
   const ClientMessage();
 }
 
-/// The first thing a client says: who it claims to be.
+/// The first thing a client says: who it is, and what proves it.
 ///
-/// The id is the client's own and survives reconnecting, so that coming back
-/// after a dropped connection finds the same inventory rather than a new
-/// player standing next to the old one's belongings.
-final class Hello extends ClientMessage {
-  const Hello(this.player);
+/// A name alone would do for a world among friends, and it is what this
+/// started as. It stops working the moment two people want the same one, or
+/// one of them wants the belongings that go with it: a name that anybody can
+/// claim is not an account, it is a label.
+///
+/// The secret travels as the player typed it. Hashing it in the client would
+/// look safer and would not be: whatever the client sends is what the server
+/// compares, so a stolen copy of that is a password. The thing that actually
+/// protects it on the way over is `wss://`, and that belongs to the transport.
+final class SignIn extends ClientMessage {
+  const SignIn(this.name, this.secret);
 
-  final PlayerId player;
+  final String name;
+  final String secret;
+}
+
+/// A name nobody has taken yet, claimed with the secret that will hold it.
+final class SignUp extends ClientMessage {
+  const SignUp(this.name, this.secret);
+
+  final String name;
+  final String secret;
 }
 
 /// What one player wants to do during one simulation step.

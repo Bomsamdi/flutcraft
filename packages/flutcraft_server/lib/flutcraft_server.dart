@@ -5,6 +5,7 @@
 /// told, and when.
 library;
 
+export 'src/accounts.dart';
 export 'src/client_link.dart';
 export 'src/game_host.dart';
 export 'src/outbound_queue.dart';

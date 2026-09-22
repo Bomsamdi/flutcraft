@@ -12,6 +12,7 @@ environment:
 resolution: workspace
 
 dependencies:
+  crypto: ^3.0.0
   flutcraft_domain:
     path: ../flutcraft_domain
   flutcraft_protocol:

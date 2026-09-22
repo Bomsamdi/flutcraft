@@ -6,6 +6,7 @@ import 'dart:typed_data';
 import 'package:flutcraft_domain/flutcraft_domain.dart';
 import 'package:flutcraft_protocol/flutcraft_protocol.dart';
 
+import 'accounts.dart';
 import 'client_link.dart';
 import 'game_host.dart';
 import 'outbound_queue.dart';
@@ -51,9 +52,22 @@ class WebSocketLink implements ClientLink {
 
 /// Runs a [GameHost] over WebSockets.
 class WebSocketHost {
-  WebSocketHost(this.host, {this.codec = const JsonMessageCodec()});
+  WebSocketHost(
+    this.host, {
+    AccountStore? accounts,
+    this.codec = const JsonMessageCodec(),
+  }) : accounts = accounts ?? AccountStore.inMemory();
 
   final GameHost host;
+
+  /// Who is allowed in.
+  ///
+  /// It lives here and not in [GameHost] on purpose: the game knows about
+  /// players, not about passwords. Everything below this line is a world with
+  /// people in it, and it would run exactly the same if the way in were a
+  /// guest list on the door.
+  final AccountStore accounts;
+
   final MessageCodec codec;
 
   /// How often a silent connection is prodded.
@@ -95,12 +109,24 @@ class WebSocketHost {
     socket.pingInterval = heartbeat;
 
     PlayerId? who;
-    socket.listen(
+    var admitting = false;
+    late final StreamSubscription<Object?> connection;
+    connection = socket.listen(
       (raw) {
         final message = codec.decodeClient(_bytes(raw));
-        if (message is Hello) {
-          who = message.player;
-          host.join(message.player, WebSocketLink(socket, codec));
+        if (who == null) {
+          if (admitting) return;
+          admitting = true;
+          // Checking a secret is slow on purpose and happens elsewhere, so
+          // the answer arrives later. Pausing holds everything this client
+          // sends in the meantime rather than letting it reach a world it
+          // has not been admitted to yet; the buffer empties on resume.
+          connection.pause();
+          _admit(socket, message).then((id) {
+            who = id;
+            admitting = false;
+            connection.resume();
+          });
           return;
         }
         final id = who;
@@ -116,6 +142,47 @@ class WebSocketHost {
       },
       cancelOnError: true,
     );
+  }
+
+  /// Decides whether a connection gets to play, and lets it in if it does.
+  ///
+  /// Returns who the connection is, or null when it was refused — and a
+  /// refusal closes the socket. Nothing before this point is allowed to touch
+  /// the world: a client that has not signed in can send a thousand messages
+  /// and every one of them lands here.
+  Future<PlayerId?> _admit(WebSocket socket, ClientMessage message) async {
+    void refuse(KickReason reason) {
+      socket.add(codec.encodeServer(Kick(reason)));
+      unawaited(socket.close());
+    }
+
+    switch (message) {
+      case SignUp(:final name, :final secret):
+        final problem = await accounts.register(name, secret);
+        if (problem != null) {
+          refuse(problem);
+          return null;
+        }
+      case SignIn(:final name, :final secret):
+        if (await accounts.verify(name, secret) == null) {
+          refuse(KickReason.badCredentials);
+          return null;
+        }
+      default:
+        // Input before a sign-in is either a confused client or somebody
+        // trying the world without asking. Neither gets a tick.
+        refuse(KickReason.notSignedIn);
+        return null;
+    }
+
+    final name = switch (message) {
+      SignUp(:final name) => name,
+      SignIn(:final name) => name,
+      _ => '',
+    };
+    final id = PlayerId(name);
+    host.join(id, WebSocketLink(socket, codec));
+    return id;
   }
 
   /// A frame arrives as bytes or as text, depending on how the other end

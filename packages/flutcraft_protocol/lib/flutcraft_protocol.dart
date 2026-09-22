@@ -5,6 +5,7 @@
 /// compile into a Flutter app and into a server binary.
 library;
 
+export 'src/credentials.dart';
 export 'src/entity_mirror.dart';
 export 'src/json_message_codec.dart';
 export 'src/message_channel.dart';

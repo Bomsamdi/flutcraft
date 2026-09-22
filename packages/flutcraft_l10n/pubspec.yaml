@@ -14,6 +14,8 @@ resolution: workspace
 dependencies:
   flutcraft_domain:
     path: ../flutcraft_domain
+  flutcraft_protocol:
+    path: ../flutcraft_protocol
   flutter:
     sdk: flutter
   flutter_localizations:

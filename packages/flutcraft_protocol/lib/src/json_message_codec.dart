@@ -61,7 +61,16 @@ class JsonMessageCodec implements MessageCodec {
 
   Map<String, Object?> _clientToJson(ClientMessage message) =>
       switch (message) {
-        Hello(:final player) => {'t': 'hello', 'player': player.value},
+        SignIn(:final name, :final secret) => {
+          't': 'signin',
+          'name': name,
+          'secret': secret,
+        },
+        SignUp(:final name, :final secret) => {
+          't': 'signup',
+          'name': name,
+          'secret': secret,
+        },
         InputTick(:final tick, :final input) => {
           't': 'input',
           'tick': tick,
@@ -75,7 +84,14 @@ class JsonMessageCodec implements MessageCodec {
   ClientMessage clientFromJson(Map<String, Object?> raw) {
     final type = raw['t'] as String? ?? '';
     return switch (type) {
-      'hello' => Hello(PlayerId(raw['player'] as String? ?? '')),
+      'signin' => SignIn(
+        raw['name'] as String? ?? '',
+        raw['secret'] as String? ?? '',
+      ),
+      'signup' => SignUp(
+        raw['name'] as String? ?? '',
+        raw['secret'] as String? ?? '',
+      ),
       'input' => InputTick(
         raw['tick'] as int? ?? 0,
         _inputFromJson(raw['in'] as Map<String, Object?>? ?? const {}),

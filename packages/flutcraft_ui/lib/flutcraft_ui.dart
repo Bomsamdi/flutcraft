@@ -13,5 +13,6 @@ export 'src/providers/message_provider.dart';
 export 'src/providers/session_providers.dart';
 export 'src/recipe_book.dart';
 export 'src/screens.dart';
+export 'src/sign_in_screen.dart';
 export 'src/slots.dart';
 export 'src/widgets.dart';
