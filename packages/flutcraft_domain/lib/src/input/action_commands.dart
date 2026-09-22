@@ -29,7 +29,21 @@ GameCommand? commandFor(GameAction action, UiRoute route) {
     GameAction.respawn => route == UiRoute.dead ? const Respawn() : null,
     // A dead player has nothing to use, so the use key doubles as respawn —
     // which is exactly what the death screen offers.
-    GameAction.secondary => route == UiRoute.dead ? const Respawn() : null,
+    //
+    // Anywhere else it is one discrete press: open what is aimed at, or put
+    // a block down once. Holding it is a different thing entirely, handled by
+    // PlacementSystem, which repeats every 0.22 s.
+    //
+    // This used to return null, and the only way to reach UseOrPlace was the
+    // right mouse button in the composition root. That made a crafting table
+    // and a furnace unreachable from the R key and from the touch USE button
+    // — half of what the README promises those inputs do. Deciding it here
+    // means every source gets it at once, which is the whole point of having
+    // actions instead of key codes.
+    GameAction.secondary => switch (route) {
+      UiRoute.dead => const Respawn(),
+      _ => route.pausesWorld ? null : const UseOrPlace(),
+    },
     GameAction.saveGame => const SaveGame(),
     GameAction.nextSlot => route.pausesWorld ? null : const CycleHotbarSlot(1),
     GameAction.previousSlot =>

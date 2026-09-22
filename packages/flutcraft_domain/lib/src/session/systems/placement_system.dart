@@ -40,9 +40,16 @@ class PlacementSystem {
   }
 
   /// Places immediately, ignoring the cooldown — used by a single key press.
+  ///
+  /// Starts the cooldown afterwards, exactly as [update] does before placing.
+  /// A press and a hold of the same button arrive in the same tick — the press
+  /// as a command, the hold as `active` — so without this the first frame of
+  /// holding puts down two blocks instead of one.
   List<GameEvent> placeNow(GameState state, Participant participant) {
     if (participant.aim case BlockTarget(:final hit)) {
-      return _place(state, participant, hit);
+      final events = _place(state, participant, hit);
+      participant.placeTimer = cooldown;
+      return events;
     }
     return const [];
   }

@@ -275,7 +275,19 @@ void main() {
 
     test('the use key respawns on the death screen', () {
       expect(commandFor(GameAction.secondary, UiRoute.dead), isA<Respawn>());
-      expect(commandFor(GameAction.secondary, UiRoute.none), isNull);
+    });
+
+    test('the use key uses or places while playing', () {
+      expect(
+        commandFor(GameAction.secondary, UiRoute.none),
+        isA<UseOrPlace>(),
+      );
+    });
+
+    test('the use key is ignored while a screen is open', () {
+      expect(commandFor(GameAction.secondary, UiRoute.inventory), isNull);
+      expect(commandFor(GameAction.secondary, UiRoute.craftingTable), isNull);
+      expect(commandFor(GameAction.secondary, UiRoute.furnace), isNull);
     });
 
     test('flying cannot be toggled from a menu', () {
