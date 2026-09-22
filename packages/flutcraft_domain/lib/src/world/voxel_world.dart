@@ -4,7 +4,7 @@ import 'package:vector_math/vector_math.dart';
 import '../blocks/block_pos.dart';
 import '../blocks/block_type.dart';
 
-/// Trafienie promienia w blok.
+/// A ray hitting a block.
 class RayHit {
   const RayHit({
     required this.x,

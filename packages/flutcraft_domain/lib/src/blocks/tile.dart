@@ -1,7 +1,7 @@
 /// Pojedyncze kafelki 16x16 px w proceduralnym atlasie tekstur.
 ///
 /// The order sets the column layout in the atlas, so do not change it
-/// bez regeneracji [TextureAtlas].
+/// without regenerating the [TextureAtlas].
 enum Tile {
   // --- blocks ---
   grassTop,

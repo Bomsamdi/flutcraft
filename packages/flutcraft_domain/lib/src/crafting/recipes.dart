@@ -48,7 +48,7 @@ class Recipe {
   }
 }
 
-/// Wszystkie przepisy prototypu.
+/// Every recipe in the prototype.
 ///
 /// They follow the original: a log gives planks, planks give sticks, and a
 /// tool is its material on top with sticks for a handle.
@@ -127,7 +127,7 @@ const List<Recipe> kRecipes = [
   ),
 ];
 
-/// Siatka craftingu o dowolnym rozmiarze (2x2 w ekwipunku, 3x3 przy stole).
+/// A crafting grid of any size (2x2 in the inventory, 3x3 at the table).
 final class CraftingGrid extends SlotContainer {
   CraftingGrid(this.size) : super(size * size);
 

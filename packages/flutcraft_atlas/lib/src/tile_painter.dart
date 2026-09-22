@@ -19,7 +19,7 @@ int _hash(int x, int y, int salt) {
   return (h ^ (h >> 16)) & 0xFFFFFFFF;
 }
 
-/// Deterministyczny szum 0..1.
+/// Deterministic noise, 0..1.
 double _noise(int x, int y, int salt) => (_hash(x, y, salt) % 1024) / 1023.0;
 
 /// Colours are 0xAARRGGBB; an alpha of 0 means the pixel is skipped, which

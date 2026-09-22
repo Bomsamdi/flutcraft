@@ -5,7 +5,7 @@ import 'package:flutcraft_l10n/flutcraft_l10n.dart';
 import 'package:flutcraft_domain/flutcraft_domain.dart';
 import 'package:flutter/material.dart';
 
-/// Pojedynczy slot ekwipunku: ikona, licznik sztuk i ramka zaznaczenia.
+/// A single inventory slot: icon, item count and selection frame.
 class ItemSlot extends StatelessWidget {
   const ItemSlot({
     required this.image,
@@ -23,12 +23,12 @@ class ItemSlot extends StatelessWidget {
   final ItemStack? stack;
   final VoidCallback? onTap;
 
-  /// Prawy przycisk myszy albo przytrzymanie palcem - dzieli stos.
+  /// Right mouse button, or a finger held down - splits the stack.
   final VoidCallback? onSplit;
   final bool selected;
   final double size;
 
-  /// Numer klawisza albo podpis slotu (np. "paliwo").
+  /// The key number, or a caption for the slot ("fuel", say).
   final String? label;
 
   /// Border colour for the special slots: craft result, smelt output.

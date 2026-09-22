@@ -93,7 +93,7 @@ SlotSwap takeOutput(ItemStack? slot, ItemStack? cursor) {
   return (slot: rest.isEmpty ? null : rest, cursor: taken);
 }
 
-/// Czy kursor przyjmie [count] sztuk [type] (np. wynik craftingu).
+/// Whether the cursor will take [count] of [type] (a crafting result, say).
 bool cursorAccepts(ItemStack? cursor, ItemType type, int count) {
   if (cursor == null) return true;
   return cursor.type == type && cursor.space >= count;
